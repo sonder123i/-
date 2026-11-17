@@ -524,7 +524,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
         mGeoCoder.setOnGetGeoCodeResultListener(new OnGetGeoCoderResultListener() {
             @Override
             public void onGetGeoCodeResult(GeoCodeResult geoCodeResult) {
-                XLog.i(geoCodeResult.getLocation());
+                // 不再把真实定位/地理编码结果写入持久日志（日志文件可随意见反馈外发）
             }
 
             @Override
@@ -592,7 +592,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
                             builder.target(mMarkLatLngMap).zoom(18.0f);
                             mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
 
-                            XLog.i("First Baidu LatLng: " + mMarkLatLngMap);
+                            // 首次真实定位不再落盘日志（含用户位置，隐私敏感）
                         }
                     }
                 }
