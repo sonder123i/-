@@ -542,6 +542,8 @@ class FreeRoamFragment : Fragment() {
 
     private fun setupSearch() {
         suggestionSearch.setOnGetSuggestionResultListener { result ->
+            // 回调可能在 Fragment 销毁后到达，requireContext() 会抛 IllegalStateException
+            if (!isAdded) return@setOnGetSuggestionResultListener
             val all = result?.allSuggestions.orEmpty()
             if (all.isEmpty()) {
                 toast("没有搜到结果")

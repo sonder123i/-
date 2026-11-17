@@ -1321,6 +1321,8 @@ class RouteEditorActivity : AppCompatActivity() {
 
     private fun setupSearch() {
         suggestionSearch.setOnGetSuggestionResultListener { result ->
+            // 百度回调可能在页面销毁后异步到达，先判活再弹窗，防 BadTokenException
+            if (isFinishing || isDestroyed) return@setOnGetSuggestionResultListener
             val all = result?.allSuggestions.orEmpty()
             if (all.isEmpty()) {
                 toast("没有搜到结果")

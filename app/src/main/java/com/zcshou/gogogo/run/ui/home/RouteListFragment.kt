@@ -391,7 +391,14 @@ class RouteListFragment : Fragment() {
         runCatching {
             val code = RouteShareCodec.encode(route.name, points, route.isClockwise)
             val cm = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("DEEPRUN 路线口令", code))
+            val clip = ClipData.newPlainText("DEEPRUN 路线口令", code)
+            // 口令内含完整路线坐标（位置历史），API 33+ 标记为敏感内容，避免被剪贴板读取方顺带收割
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                clip.description.extras = android.os.PersistableBundle(1).apply {
+                    putBoolean(android.content.ClipDescription.EXTRA_IS_SENSITIVE, true)
+                }
+            }
+            cm.setPrimaryClip(clip)
             toast("口令已复制，发给室友即可零服务器导入")
         }.onFailure { toast("口令生成失败") }
     }
@@ -458,9 +465,11 @@ class RouteListFragment : Fragment() {
             Snackbar.make(requireView(), "已删除「${route.name}」", 5000)
                 .setAction("撤销") {
                     viewLifecycleOwner.lifecycleScope.launch {
-                        repository.saveRoute(route)
-                        removedSchedules.forEach { repository.saveSchedule(it) }
-                        selectedRouteId = route.id
+                        // saveRoute 是重新插入、会生成新 id：撤销时必须把关联的
+                        // 定时计划回写到新 routeId，否则计划永久指向已删除的路线
+                        val restoredId = repository.saveRoute(route)
+                        removedSchedules.forEach { repository.saveSchedule(it.copy(routeId = restoredId)) }
+                        selectedRouteId = restoredId
                         persistSelection()
                         toast("已恢复「${route.name}」")
                     }

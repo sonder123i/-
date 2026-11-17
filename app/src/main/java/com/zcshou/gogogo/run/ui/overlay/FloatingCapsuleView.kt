@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.WindowManager
 import android.view.animation.OvershootInterpolator
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -273,7 +274,21 @@ class FloatingCapsuleView @JvmOverloads constructor(
             }
             .setNegativeButton("取消", null)
             .setOnDismissListener { host?.setOverlayHidden(false) }
-            .show()
+            .showOverlaid()
+    }
+
+    /**
+     * 悬浮窗模式下（本视图为 TYPE_APPLICATION_OVERLAY 窗口）对话框必须提升窗口层级，
+     * 否则会被 overlay 层压住不可见/不可交互；在页面内嵌模式下保持普通窗口。
+     * 同款处理见 RoamHubView。
+     */
+    private fun AlertDialog.Builder.showOverlaid() {
+        val dialog = create()
+        val lp = layoutParams as? WindowManager.LayoutParams
+        if (lp?.type == WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY) {
+            dialog.window?.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
+        }
+        dialog.show()
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
@@ -476,7 +491,7 @@ class FloatingCapsuleView @JvmOverloads constructor(
             .setPositiveButton("结束并关闭") { _, _ -> host?.stopSimulation() }
             .setNegativeButton("取消") { _, _ -> host?.setOverlayHidden(false) }
             .setOnCancelListener { host?.setOverlayHidden(false) }
-            .show()
+            .showOverlaid()
     }
 
     // ---------------- 闲置半隐 / 长按隐身 ----------------
