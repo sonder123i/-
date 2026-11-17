@@ -23,7 +23,7 @@
 | `pf_volt` | `#C8FF00` | `#007A94` | 兼容色板主色 |
 | 光纤渐变（代码） | `#EAFCFE → #9EF2F6 → #5CE1E6` | `#CFEFF4 → #5FCBDA → #007A94` | 激活态线条 / 主按钮 / 摇杆球 |
 
-> Token 文件：`res/values/colors_deeprun.xml`、`res/values-night/colors_deeprun.xml`、`res/values/colors_paceflow.xml`、`res/values-night/colors_paceflow.xml`。
+> Token 文件：`res/values/colors_deeprun.xml`、`res/values-night/colors_deeprun.xml`、`res/values/colors.xml`（浅色 PaceFlow 值并入主色板）、`res/values-night/colors_paceflow.xml`。
 > 主题切换必须同步 `AppCompatDelegate.setDefaultNightMode()`，见 `ThemeHelper.applyGlobalNightMode()`。
 
 ## 3. 渲染分级（`DeepRunGlassManager`）
