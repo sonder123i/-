@@ -79,7 +79,14 @@ class RoamService : Service() {
                 return START_NOT_STICKY
             }
 
-            ACTION_SHOW -> showHub()
+            ACTION_SHOW -> {
+                // 巡航中从通知点「显示摇杆」会叠出漫游摇杆与巡航胶囊并存，拒之
+                if (RunSessionHolder.sessionActive) {
+                    toast("巡航进行中，请用巡航胶囊的「临时手动接管」")
+                } else {
+                    showHub()
+                }
+            }
 
             ACTION_HIDE -> {
                 hideHub()
@@ -89,6 +96,12 @@ class RoamService : Service() {
             else -> {
                 if (RunSessionHolder.sessionActive) {
                     toast("自动跑圈进行中，请用巡航胶囊的「临时手动接管」")
+                    stopSelf()
+                    return START_NOT_STICKY
+                }
+                // 未授予悬浮窗权限时服务只会空转（通知挂着、无任何 UI）：提示后直接收尾
+                if (!Settings.canDrawOverlays(this)) {
+                    toast("未授予悬浮窗权限，请先在设置中开启后再使用漫游")
                     stopSelf()
                     return START_NOT_STICKY
                 }

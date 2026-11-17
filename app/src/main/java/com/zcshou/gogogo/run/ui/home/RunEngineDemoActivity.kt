@@ -144,8 +144,8 @@ class RunEngineDemoActivity : AppCompatActivity() {
         }
         pendingStart = begin
         val intent = Intent(this, ServiceGo::class.java)
+        // 仅绑定：不 startForegroundService，避免 ServiceGo 的 DEFAULT 前台通知与演示页并存
         bindService(intent, connection, Context.BIND_AUTO_CREATE)
-        startForegroundService(intent)
     }
 
     private fun togglePause() {

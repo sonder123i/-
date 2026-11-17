@@ -90,11 +90,18 @@ public class ServiceGo extends Service implements ILocationInjector {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null) {
+        // 仅当 intent 携带显式坐标时才重置位置并驱动旧注入循环；
+        // 无坐标的启动（巡航/漫游绑定接管前）不允许把位置重置为默认济南值再注入，
+        // 否则用户位置会先闪跳济南再跳回目标点。
+        if (intent != null
+                && intent.hasExtra(MainActivity.LNG_MSG_ID)
+                && intent.hasExtra(MainActivity.LAT_MSG_ID)) {
             mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
             mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
             mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
             mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+            mLocHandler.removeMessages(HANDLER_MSG_ID);
+            mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
         }
         // 仅在被显式 start 时挂前台通知；漫游绑定模式由 RoamService 承担前台
         if (!mNotificationShown) {
@@ -194,8 +201,8 @@ public class ServiceGo extends Service implements ILocationInjector {
                 }
             }
         };
-
-        mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
+        // 不在 onCreate 自启动注入循环：等待显式坐标（onStartCommand / setPosition）
+        // 或引擎 setEngineDriven 接管后再驱动，避免以默认坐标空注
     }
 
     private void removeTestProviderGPS() {
@@ -406,7 +413,7 @@ public class ServiceGo extends Service implements ILocationInjector {
             mLocHandler.removeMessages(HANDLER_MSG_ID);
             mJoyStick.hide();
         } else {
-            mJoyStick.show();
+            // 旧摇杆浮窗已整体停用（漫游摇杆/悬浮胶囊接管），false 分支只恢复注入循环
             mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
         }
     }

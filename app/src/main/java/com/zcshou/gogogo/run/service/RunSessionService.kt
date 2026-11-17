@@ -18,7 +18,6 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
 import com.zcshou.gogogo.R
 import com.zcshou.gogogo.run.data.prefs.AdvancedPrefs
 import com.zcshou.gogogo.run.data.repository.RunRepository
@@ -37,6 +36,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 /**
@@ -184,7 +184,6 @@ class RunSessionService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> {
-                RoamService.stop(this)
                 val routeId = intent.getLongExtra(EXTRA_ROUTE_ID, 0L)
                 if (routeId > 0) {
                     pendingStart = StartConfig(
@@ -196,7 +195,11 @@ class RunSessionService : Service() {
                         linkedPkg = intent.getStringExtra(EXTRA_LINKED_PKG),
                         reverseDirection = intent.getBooleanExtra(EXTRA_REVERSE, false)
                     )
+                    // 先绑定 ServiceGo 拿到所有权，再停漫游服务：
+                    // RoamService.onDestroy → FreeRoamController.release() 会 stopService(ServiceGo)，
+                    // 本服务的绑定在先即可保证 ServiceGo 存活（先绑先得）
                     ensureServiceGo()
+                    RoamService.stop(this)
                     maybeStartEngine()
                 }
             }
@@ -236,6 +239,9 @@ class RunSessionService : Service() {
         DeepRunGlassManager.setRenderSuppressed(false)
         if (serviceGoRequested) {
             runCatching { unbindService(connection) }
+            // ServiceGo 可能曾被旧入口 startService 拉起（started 状态），
+            // 仅解绑不会销毁它：显式 stopService 兜底，避免前台通知/注入循环残留
+            runCatching { stopService(Intent(this, ServiceGo::class.java)) }
         }
         stopForeground(STOP_FOREGROUND_REMOVE)
         super.onDestroy()
@@ -244,9 +250,9 @@ class RunSessionService : Service() {
     private fun ensureServiceGo() {
         if (serviceGoRequested) return
         serviceGoRequested = true
-        val intent = Intent(this, ServiceGo::class.java)
-        bindService(intent, connection, Context.BIND_AUTO_CREATE)
-        ContextCompat.startForegroundService(this, intent)
+        // 仅绑定：前台通知由本服务（NOTIFICATION_ID=2）独占，
+        // 不再 startForegroundService 拉起 ServiceGo，避免双前台通知并存且 DEFAULT 通道发声
+        bindService(Intent(this, ServiceGo::class.java), connection, Context.BIND_AUTO_CREATE)
     }
 
     private fun maybeStartEngine() {
@@ -265,11 +271,14 @@ class RunSessionService : Service() {
             if (AdvancedPrefs.isShizukuAutoWifiEnabled(this@RunSessionService) &&
                 EnvGuardManager.isShizukuReady()
             ) {
-                if (EnvGuardManager.isWifiActivelyConnected(this@RunSessionService)) {
-                    wifiDisabledByUs = ShizukuWifiHelper.setWifiEnabled(false)
-                }
-                if (EnvGuardManager.isWifiScanAlwaysAvailable(this@RunSessionService)) {
-                    scanDisabledByUs = ShizukuWifiHelper.setWifiScanAlwaysEnabled(false)
+                // Shizuku newProcess/waitFor 是进程阻塞调用，必须移出主线程防 ANR
+                withContext(Dispatchers.IO) {
+                    if (EnvGuardManager.isWifiActivelyConnected(this@RunSessionService)) {
+                        wifiDisabledByUs = ShizukuWifiHelper.setWifiEnabled(false)
+                    }
+                    if (EnvGuardManager.isWifiScanAlwaysAvailable(this@RunSessionService)) {
+                        scanDisabledByUs = ShizukuWifiHelper.setWifiScanAlwaysEnabled(false)
+                    }
                 }
             }
             launchLinkedTargetApp()
@@ -291,15 +300,19 @@ class RunSessionService : Service() {
         finishHandled = true
         stepGuard?.stop()
         releaseWakeLock()
-        if (wifiDisabledByUs) {
-            ShizukuWifiHelper.setWifiEnabled(true)
-            wifiDisabledByUs = false
-        }
-        if (scanDisabledByUs) {
-            ShizukuWifiHelper.setWifiScanAlwaysEnabled(true)
-            scanDisabledByUs = false
-        }
         scope.launch {
+            if (wifiDisabledByUs || scanDisabledByUs) {
+                withContext(Dispatchers.IO) {
+                    if (wifiDisabledByUs) {
+                        ShizukuWifiHelper.setWifiEnabled(true)
+                        wifiDisabledByUs = false
+                    }
+                    if (scanDisabledByUs) {
+                        ShizukuWifiHelper.setWifiScanAlwaysEnabled(true)
+                        scanDisabledByUs = false
+                    }
+                }
+            }
             delay(1500)
             stopSelf()
         }
@@ -322,6 +335,9 @@ class RunSessionService : Service() {
     private fun registerInjectionAlarm() {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
+                // 广播仅接受本应用发送（ServiceGo.notifyInjectionLost 已 setPackage），
+                // 防 API<33 下默认导出的 receiver 被三方应用伪造触发长震+强制暂停
+                if (intent?.getPackage() != packageName) return
                 vibrate(longArrayOf(0, 700, 200, 700))
                 engine?.pause()
                 getSystemService(NotificationManager::class.java)

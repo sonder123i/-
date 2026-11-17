@@ -10,6 +10,7 @@ import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import com.zcshou.gogogo.run.bridge.ILocationInjector
 import com.zcshou.gogogo.run.engine.TrackMathUtils
+import com.zcshou.gogogo.run.service.RunSessionHolder
 import com.zcshou.service.ServiceGo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,7 +55,7 @@ object FreeRoamController {
     private var motionSpeed = 0.0
     private var lastBeforePause: TrackMathUtils.LatLng? = null
 
-    private val connection = object : ServiceConnection {
+    private val connection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as? ServiceGo.ServiceGoBinder ?: return
             val inj = binder.injector
@@ -75,6 +76,12 @@ object FreeRoamController {
 
         override fun onServiceDisconnected(name: ComponentName?) {
             injector = null
+            // 断连后旧绑定已死：清理绑定标志并解绑，让下次 attach() 能干净地重新绑定，
+            // 否则 bindRequested 永久为 true，attach 永久 early-return，漫游静默失效
+            if (bindRequested) {
+                runCatching { appContext?.unbindService(connection) }
+            }
+            bindRequested = false
             _state.value = _state.value.copy(attached = false)
         }
     }
@@ -105,7 +112,8 @@ object FreeRoamController {
             appendTrail(target)
             return
         }
-        scope.launch {
+        // 赋给 glideJob：drive()/stopMotion() 才能取消进行中的空降，避免两路注入交错
+        glideJob = scope.launch {
             val total = TrackMathUtils.distanceMeters(from, target)
             val steps = 14
             val bearing = TrackMathUtils.bearingDegrees(from, target)
@@ -235,7 +243,11 @@ object FreeRoamController {
             runCatching { ctx.unbindService(connection) }
         }
         bindRequested = false
-        ctx?.let { runCatching { it.stopService(Intent(it, ServiceGo::class.java)) } }
+        // 巡航会话进行中不杀 ServiceGo：它的生命周期归 RunSessionService 收尾；
+        // 启动竞态由 RunSessionService「先绑先得」兜底（绑定在先即可在 stopService 下存活）
+        if (!RunSessionHolder.sessionActive && ctx != null) {
+            runCatching { ctx.stopService(Intent(ctx, ServiceGo::class.java)) }
+        }
         _state.value = RoamState()
     }
 
