@@ -2,57 +2,35 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Android Q 新增的权限。允许用户授予对两个不同范围的位置访问权限：在使用中（仅限前景）或始终（前景和后台） -->
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-    <!-- 允许一个程序访问CellID或WiFi热点来获取粗略的位置 -->
+    <!-- 仅在使用地图「定位真实位置」时按需申请前台定位 -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- 通过GPS得到精确位置 -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <!-- 允许程序访问Wi-Fi网络状态信息 -->
+    <!-- 网络与 Wi-Fi 状态（地图/联网；不含后台定位/扫描） -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <!-- 允许程序访问有关GSM网络信息 -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- 允许程序改变Wi-Fi连接状态 -->
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
-
-    <uses-permission android:name="android.permission.REPLACE_EXISTING_PACKAGE"/>
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
-
-    <!-- 允许程序打开网络套接字 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- 允许挂载和反挂载文件系统可移动存储 -->
-    <uses-permission
-        android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"
-        tools:ignore="ProtectedPermissions" />
-    <!-- 允许程序读取底层系统日志文件 -->
-    <uses-permission
-        android:name="android.permission.READ_LOGS"
-        tools:ignore="ProtectedPermissions" />
-    <!-- 允许访问振动设备 -->
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!-- 允许使用PowerManager的 WakeLocks保持进程在休眠时从屏幕消失 -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!-- 允许程序读取或写入系统设置 -->
-    <uses-permission
-        android:name="android.permission.WRITE_SETTINGS"
-        tools:ignore="ProtectedPermissions" />
-    <!-- 允许程序创建模拟位置提供用于测试 -->
+    <!-- 定时通知（首次开跑时按需申请） -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- 可选 Shizuku 联动 -->
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
+    <!-- 悬浮控制胶囊（向导第一步） -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- 模拟位置应用（开发者选项内选择，不再读取设备识别码） -->
     <uses-permission
         android:name="android.permission.ACCESS_MOCK_LOCATION"
         tools:ignore="MockLocation,ProtectedPermissions" />
-    <!-- 允许一个程序打开窗口使用 TYPE_SYSTEM_ALERT，显示在其他所有程序的顶层 -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
         android:name=".GoApplication"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:launchMode="singleInstance"
-        android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
@@ -72,6 +50,44 @@
             android:exported="false"
             android:name="com.zcshou.service.ServiceGo" />
 
+        <!-- run 模块 Phase 5：巡航会话前台服务（托管引擎，定时/后台可跑） -->
+        <service
+            android:name=".run.service.RunSessionService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- run 模块 V3.2：自由漫游前台服务（常驻悬浮摇杆，跨 App 可控） -->
+        <service
+            android:name=".run.service.RoamService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- run 模块 V3.4：下拉控制中心快捷磁贴 -->
+        <service
+            android:name=".run.service.DeepRunTileService"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- run 模块 Phase 5：定时闹钟广播 -->
+        <receiver
+            android:name=".run.guard.RunScheduleAlarmReceiver"
+            android:exported="false" />
+
+        <!-- 可选 Shizuku 联动 Provider -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:enabled="true"
+            android:exported="true"
+            android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileProvider"
@@ -85,12 +101,15 @@
         <activity
             android:name=".WelcomeActivity"
             android:exported="true"
-            android:theme="@style/AppTheme.NoActionBar"
+            android:theme="@style/Theme.PaceFlow"
             >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
         <activity
@@ -98,6 +117,48 @@
             android:launchMode="singleInstance"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
+
+        <!-- run 模块：Phase 4 新版双 Tab 首页（欢迎页同意协议后进入；exported 便于 adb 调试） -->
+        <activity
+            android:name=".run.ui.home.RunHomeActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.PaceFlow" />
+
+        <!-- run 模块：关于页（唯一开源许可与致谢处） -->
+        <activity
+            android:name=".run.ui.home.AboutActivity"
+            android:exported="false"
+            android:label="关于"
+            android:theme="@style/Theme.PaceFlow" />
+
+        <!-- run 模块 V3.2：10 秒模拟跑圈预览（无需任何权限） -->
+        <activity
+            android:name=".run.ui.home.DemoPreviewActivity"
+            android:exported="false"
+            android:label="模拟预览"
+            android:theme="@style/Theme.PaceFlow" />
+
+        <!-- run 模块 V3.2：3 步新手配置向导 -->
+        <activity
+            android:name=".run.ui.home.SetupWizardActivity"
+            android:exported="false"
+            android:label="基础配置"
+            android:theme="@style/Theme.PaceFlow" />
+
+        <!-- run 模块：Phase 2 引擎演示驱动页（Phase 4 由 RunHomeActivity 正式替代；exported 便于 adb 调试拉起） -->
+        <activity
+            android:name=".run.ui.home.RunEngineDemoActivity"
+            android:exported="true"
+            android:label="跑步引擎演示"
+            android:theme="@style/AppTheme" />
+
+        <!-- run 模块：Phase 3 无地图建圈编辑器（exported 便于 adb 调试拉起） -->
+        <activity
+            android:name=".run.ui.editor.RouteEditorActivity"
+            android:exported="true"
+            android:label="建圈器"
+            android:theme="@style/Theme.PaceFlow" />
 
         <activity
             android:name=".SettingsActivity"

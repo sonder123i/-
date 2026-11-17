@@ -1,11 +1,9 @@
 package com.zcshou.gogogo;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -25,33 +23,39 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 
+import com.zcshou.gogogo.run.ui.home.RunHomeActivity;
 import com.zcshou.utils.GoUtils;
-
-import java.util.ArrayList;
 
 public class WelcomeActivity extends AppCompatActivity {
     private static SharedPreferences preferences;
     private static final String KEY_ACCEPT_AGREEMENT = "KEY_ACCEPT_AGREEMENT";
     private static final String KEY_ACCEPT_PRIVACY = "KEY_ACCEPT_PRIVACY";
-
-    private static boolean isPermission = false;
-    private static final int SDK_PERMISSION_REQUEST = 127;
-    private static final ArrayList<String> ReqPermissions = new ArrayList<>();
+    private static final String KEY_ONBOARDED = "KEY_ONBOARDED";
 
     private CheckBox checkBox;
-    private Boolean mAgreement;
-    private Boolean mPrivacy;
+    private Boolean mAgreement = false;
+    private Boolean mPrivacy = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 已同意过协议的老用户：不再重复展示欢迎页
+        preferences = getSharedPreferences(KEY_ACCEPT_AGREEMENT, MODE_PRIVATE);
+        boolean onboarded = preferences.getBoolean(KEY_ONBOARDED, false)
+                || (preferences.getBoolean(KEY_ACCEPT_AGREEMENT, false)
+                && preferences.getBoolean(KEY_ACCEPT_PRIVACY, false));
+        if (onboarded) {
+            goHome();
+            return;
+        }
 
         setContentView(R.layout.activity_welcome);
 
         // 生成默认参数的值（一定要尽可能早的调用，因为后续有些界面可能需要使用参数）
         PreferenceManager.setDefaultValues(this, R.xml.preferences_main, false);
 
-        Button startBtn = findViewById(R.id.startButton);
+        TextView startBtn = findViewById(R.id.startButton);
         startBtn.setOnClickListener(v -> startMainActivity());
 
         checkAgreementAndPrivacy();
@@ -79,77 +83,52 @@ public class WelcomeActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == SDK_PERMISSION_REQUEST) {
-            for (int i = 0; i < ReqPermissions.size(); i++) {
-                if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
-                    GoUtils.DisplayToast(this, getResources().getString(R.string.app_error_permission));
-                    return;
-                }
-            }
-            isPermission = true;
-        }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
-    private void checkDefaultPermissions() {
-        // 定位精确位置
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ReqPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
-        }
-
-        if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ReqPermissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
-        }
-
-        /*
-         * 读写权限和电话状态权限非必要权限(建议授予)只会申请一次，用户同意或者禁止，只会弹一次
-         */
-        // 读写权限
-        if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ReqPermissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-        }
-
-        // 读取电话状态权限
-        if (checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-            ReqPermissions.add(Manifest.permission.READ_PHONE_STATE);
-        }
-
-        if (ReqPermissions.isEmpty()) {
-            isPermission = true;
-        } else {
-            requestPermissions(ReqPermissions.toArray(new String[0]), SDK_PERMISSION_REQUEST);
-        }
     }
 
     private void startMainActivity() {
         if (!checkBox.isChecked()) {
-            GoUtils.DisplayToast(this, getResources().getString(R.string.app_error_agreement));
+            // 不勾选也能继续：直接弹一次同意确认，避免用户卡在这一页
+            showConsentConfirm();
             return;
         }
+        acceptAndEnter();
+    }
 
-        if (!GoUtils.isNetworkAvailable(this)) {
-            GoUtils.DisplayToast(this, getResources().getString(R.string.app_error_network));
-            return;
-        }
+    private void showConsentConfirm() {
+        new AlertDialog.Builder(this)
+                .setTitle("用户协议与隐私政策")
+                .setMessage("为提供模拟位置服务，需要你同意《用户协议》和《隐私政策》。\n\n"
+                        + "我们零读取通讯录与相册、零获取设备串号，轨迹仅存本机。")
+                .setPositiveButton("同意并进入", (d, w) -> {
+                    checkBox.setChecked(true);
+                    acceptAndEnter();
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
 
-        if (!GoUtils.isGpsOpened(this)) {
-            GoUtils.DisplayToast(this, getResources().getString(R.string.app_error_gps));
-            return;
-        }
+    private void acceptAndEnter() {
+        // 勾选即视为已阅读并同意，无需逐个点开协议
+        preferences.edit()
+                .putBoolean(KEY_ACCEPT_AGREEMENT, true)
+                .putBoolean(KEY_ACCEPT_PRIVACY, true)
+                .putBoolean(KEY_ONBOARDED, true)
+                .apply();
+        goHome();
+    }
 
-        if (isPermission) {
-            Intent intent = new Intent(WelcomeActivity.this, MainActivity.class);
-            startActivity(intent);
-            WelcomeActivity.this.finish();
-        } else {
-            checkDefaultPermissions();
-        }
+    /** 冷启动不申请任何系统权限，直接进入干净的主界面 */
+    private void goHome() {
+        Intent intent = new Intent(WelcomeActivity.this, RunHomeActivity.class);
+        startActivity(intent);
+        finish();
+        overridePendingTransition(0, 0);
     }
 
     private void doAcceptation() {
         if (mAgreement && mPrivacy) {
             checkBox.setChecked(true);
-            checkDefaultPermissions();
         } else {
             checkBox.setChecked(false);
         }
@@ -234,86 +213,53 @@ public class WelcomeActivity extends AppCompatActivity {
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     private void checkAgreementAndPrivacy() {
-        preferences = getSharedPreferences(KEY_ACCEPT_AGREEMENT, MODE_PRIVATE);
-        mPrivacy = preferences.getBoolean(KEY_ACCEPT_PRIVACY, false);
-        mAgreement = preferences.getBoolean(KEY_ACCEPT_AGREEMENT, false);
-
         checkBox = findViewById(R.id.check_agreement);
-        // 拦截 CheckBox 的点击事件
-        checkBox.setOnTouchListener((v, event) -> {
-            if (v instanceof TextView) {
-                TextView text = (TextView) v;
-                MovementMethod method = text.getMovementMethod();
-                if (method != null && text.getText() instanceof Spannable
-                        && event.getAction() == MotionEvent.ACTION_UP) {
-                    if (method.onTouchEvent(text, (Spannable) text.getText(), event)) {
-                        event.setAction(MotionEvent.ACTION_CANCEL);
-                    }
-                }
-            }
-            return false;
-        });
-        checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                if (!mPrivacy || !mAgreement) {
-                    GoUtils.DisplayToast(this, getResources().getString(R.string.app_error_read));
-                    checkBox.setChecked(false);
-                }
-            } else {
-                mPrivacy = false;
-                mAgreement = false;
-            }
-        });
+        checkBox.setChecked(false);
 
-        String str = getString(R.string.app_agreement_privacy);
-        SpannableStringBuilder builder = getSpannableStringBuilder(str);
-
-        checkBox.setText(builder);
-        checkBox.setMovementMethod(LinkMovementMethod.getInstance());
-
-        if (mPrivacy && mAgreement) {
-            checkBox.setChecked(true);
-            checkDefaultPermissions();
-        } else {
-            checkBox.setChecked(false);
-        }
+        // 协议链接独立成行，避免链接的触摸处理吞掉勾选框点击
+        TextView links = findViewById(R.id.tvAgreementLinks);
+        links.setText(getAgreementLinks());
+        links.setMovementMethod(LinkMovementMethod.getInstance());
+        links.setHighlightColor(0x00000000);
     }
 
     @NonNull
-    private SpannableStringBuilder getSpannableStringBuilder(String str) {
-        SpannableStringBuilder builder = new SpannableStringBuilder(str);
-        ClickableSpan clickSpanAgreement = new ClickableSpan() {
-            @Override
-            public void onClick(@NonNull View widget) {
-                showAgreementDialog();
-            }
+    private CharSequence getAgreementLinks() {
+        String text = "《用户协议》 · 《隐私政策》";
+        SpannableStringBuilder builder = new SpannableStringBuilder(text);
+        int agreementEnd = text.indexOf("》") + 1;
+        builder.setSpan(
+                new ClickableSpan() {
+                    @Override
+                    public void onClick(@NonNull View widget) {
+                        showAgreementDialog();
+                    }
 
-            @Override
-            public void updateDrawState(TextPaint ds) {
-                ds.setColor(getResources().getColor(R.color.colorPrimary, WelcomeActivity.this.getTheme()));
-                ds.setUnderlineText(false);
-            }
-        };
-        int agreement_start = str.indexOf("《");
-        int agreement_end = str.indexOf("》") + 1;
-        builder.setSpan(clickSpanAgreement, agreement_start,agreement_end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        ClickableSpan clickSpanPrivacy = new ClickableSpan() {
-            @Override
-            public void onClick(@NonNull View widget) {
-                showPrivacyDialog();
-            }
+                    @Override
+                    public void updateDrawState(TextPaint ds) {
+                        ds.setColor(getResources().getColor(R.color.pf_volt, getTheme()));
+                        ds.setUnderlineText(false);
+                    }
+                },
+                0, agreementEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        int privacyStart = text.indexOf("《", agreementEnd);
+        builder.setSpan(
+                new ClickableSpan() {
+                    @Override
+                    public void onClick(@NonNull View widget) {
+                        showPrivacyDialog();
+                    }
 
-            @Override
-            public void updateDrawState(TextPaint ds) {
-                ds.setColor(getResources().getColor(R.color.colorPrimary, WelcomeActivity.this.getTheme()));
-                ds.setUnderlineText(false);
-            }
-        };
-        int privacy_start = str.indexOf("《", agreement_end);
-        int privacy_end = str.indexOf("》", agreement_end) + 1;
-        builder.setSpan(clickSpanPrivacy, privacy_start, privacy_end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    @Override
+                    public void updateDrawState(TextPaint ds) {
+                        ds.setColor(getResources().getColor(R.color.pf_volt, getTheme()));
+                        ds.setUnderlineText(false);
+                    }
+                },
+                privacyStart, text.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
         return builder;
     }
 }

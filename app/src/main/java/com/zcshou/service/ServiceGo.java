@@ -30,14 +30,19 @@ import androidx.core.app.NotificationCompat;
 import com.elvishew.xlog.XLog;
 import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.R;
+import com.zcshou.gogogo.run.bridge.ILocationInjector;
+import com.zcshou.gogogo.run.ui.home.RunHomeActivity;
 import com.zcshou.joystick.JoyStick;
 
-public class ServiceGo extends Service {
+public class ServiceGo extends Service implements ILocationInjector {
     // 定位相关变量
     public static final double DEFAULT_LAT = 36.667662;
     public static final double DEFAULT_LNG = 117.027707;
     public static final double DEFAULT_ALT = 55.0D;
     public static final float DEFAULT_BEA = 0.0F;
+    public static final String ACTION_INJECTION_LOST = "com.zcshou.gogogo.run.ACTION_INJECTION_LOST";
+    private final java.util.Random mRandom = new java.util.Random();
+    private long mLastInjectionLostAt = 0L;
     private double mCurLat = DEFAULT_LAT;
     private double mCurLng = DEFAULT_LNG;
     private double mCurAlt = DEFAULT_ALT;
@@ -49,13 +54,13 @@ public class ServiceGo extends Service {
     private HandlerThread mLocHandlerThread;
     private Handler mLocHandler;
     private boolean isStop = false;
+    // run 引擎接管标志：true 时原版摇杆注入循环停摆，坐标由 ILocationInjector.injectLocation 驱动
+    private volatile boolean mEngineDriven = false;
+    private volatile boolean mNotificationShown = false;
     // 通知栏消息
     private static final int SERVICE_GO_NOTE_ID = 1;
-    private static final String SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW = "ShowJoyStick";
-    private static final String SERVICE_GO_NOTE_ACTION_JOYSTICK_HIDE = "HideJoyStick";
     private static final String SERVICE_GO_NOTE_CHANNEL_ID = "SERVICE_GO_NOTE";
     private static final String SERVICE_GO_NOTE_CHANNEL_NAME = "SERVICE_GO_NOTE";
-    private NoteActionReceiver mActReceiver;
     // 摇杆相关
     private JoyStick mJoyStick;
 
@@ -80,19 +85,22 @@ public class ServiceGo extends Service {
 
         initGoLocation();
 
-        initNotification();
-
         initJoyStick();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
-        mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
-        mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
-
-        mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
-
+        if (intent != null) {
+            mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
+            mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
+            mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
+            mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+        }
+        // 仅在被显式 start 时挂前台通知；漫游绑定模式由 RoamService 承担前台
+        if (!mNotificationShown) {
+            initNotification();
+            mNotificationShown = true;
+        }
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -107,19 +115,12 @@ public class ServiceGo extends Service {
         removeTestProviderNetwork();
         removeTestProviderGPS();
 
-        unregisterReceiver(mActReceiver);
         stopForeground(STOP_FOREGROUND_REMOVE);
 
         super.onDestroy();
     }
 
     private void initNotification() {
-        mActReceiver = new NoteActionReceiver();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW);
-        filter.addAction(SERVICE_GO_NOTE_ACTION_JOYSTICK_HIDE);
-        registerReceiver(mActReceiver, filter);
-
         NotificationChannel mChannel = new NotificationChannel(SERVICE_GO_NOTE_CHANNEL_ID, SERVICE_GO_NOTE_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
@@ -127,21 +128,16 @@ public class ServiceGo extends Service {
             notificationManager.createNotificationChannel(mChannel);
         }
 
-        //准备intent
-        Intent clickIntent = new Intent(this, MainActivity.class);
+        // 点击通知回到统一首页（旧版手动界面已停用）
+        Intent clickIntent = new Intent(this, RunHomeActivity.class);
+        clickIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent clickPI = PendingIntent.getActivity(this, 1, clickIntent, PendingIntent.FLAG_IMMUTABLE);
-        Intent showIntent = new Intent(SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW);
-        PendingIntent showPendingPI = PendingIntent.getBroadcast(this, 0, showIntent, PendingIntent.FLAG_IMMUTABLE);
-        Intent hideIntent = new Intent(SERVICE_GO_NOTE_ACTION_JOYSTICK_HIDE);
-        PendingIntent hidePendingPI = PendingIntent.getBroadcast(this, 0, hideIntent, PendingIntent.FLAG_IMMUTABLE);
 
         Notification notification = new NotificationCompat.Builder(this, SERVICE_GO_NOTE_CHANNEL_ID)
                 .setChannelId(SERVICE_GO_NOTE_CHANNEL_ID)
                 .setContentTitle(getResources().getString(R.string.app_name))
                 .setContentText(getResources().getString(R.string.app_service_tips))
                 .setContentIntent(clickPI)
-                .addAction(new NotificationCompat.Action(null, getResources().getString(R.string.note_show), showPendingPI))
-                .addAction(new NotificationCompat.Action(null, getResources().getString(R.string.note_hide), hidePendingPI))
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .build();
 
@@ -170,7 +166,7 @@ public class ServiceGo extends Service {
                 mCurAlt = alt;
             }
         });
-        mJoyStick.show();
+        // 旧版摇杆浮窗停用：由新的自由漫游页 / 统一悬浮窗接管
     }
 
     private void initGoLocation() {
@@ -186,7 +182,7 @@ public class ServiceGo extends Service {
                 try {
                     Thread.sleep(100);
 
-                    if (!isStop) {
+                    if (!isStop && !mEngineDriven) {
                         setLocationNetwork();
                         setLocationGPS();
 
@@ -237,7 +233,7 @@ public class ServiceGo extends Service {
         try {
             // 尽可能模拟真实的 GPS 数据
             Location loc = new Location(LocationManager.GPS_PROVIDER);
-            loc.setAccuracy(Criteria.ACCURACY_FINE);    // 设定此位置的估计水平精度，以米为单位。
+            loc.setAccuracy(noisyAccuracy());          // 3.5~10.5m 正态波动，避免固定精度穿帮
             loc.setAltitude(mCurAlt);                     // 设置高度，在 WGS 84 参考坐标系中的米
             loc.setBearing(mCurBea);                       // 方向（度）
             loc.setLatitude(mCurLat);                   // 纬度（度）
@@ -246,10 +242,13 @@ public class ServiceGo extends Service {
             loc.setSpeed((float) mSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
             Bundle bundle = new Bundle();
-            bundle.putInt("satellites", 7);
+            bundle.putInt("satellites", 12 + mRandom.nextInt(8));
             loc.setExtras(bundle);
 
             mLocManager.setTestProviderLocation(LocationManager.GPS_PROVIDER, loc);
+        } catch (SecurityException e) {
+            notifyInjectionLost();
+            XLog.e("SERVICEGO: ERROR - setLocationGPS permission");
         } catch (Exception e) {
             XLog.e("SERVICEGO: ERROR - setLocationGPS");
         }
@@ -292,7 +291,7 @@ public class ServiceGo extends Service {
         try {
             // 尽可能模拟真实的 NETWORK 数据
             Location loc = new Location(LocationManager.NETWORK_PROVIDER);
-            loc.setAccuracy(Criteria.ACCURACY_COARSE);  // 设定此位置的估计水平精度，以米为单位。
+            loc.setAccuracy(noisyNetworkAccuracy());    // 基站/Wi-Fi 精度略粗
             loc.setAltitude(mCurAlt);                     // 设置高度，在 WGS 84 参考坐标系中的米
             loc.setBearing(mCurBea);                       // 方向（度）
             loc.setLatitude(mCurLat);                   // 纬度（度）
@@ -300,31 +299,136 @@ public class ServiceGo extends Service {
             loc.setTime(System.currentTimeMillis());    // 本地时间
             loc.setSpeed((float) mSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+            Bundle bundle = new Bundle();
+            bundle.putInt("satellites", 12 + mRandom.nextInt(8));
+            loc.setExtras(bundle);
 
             mLocManager.setTestProviderLocation(LocationManager.NETWORK_PROVIDER, loc);
+        } catch (SecurityException e) {
+            notifyInjectionLost();
+            XLog.e("SERVICEGO: ERROR - setLocationNetwork permission");
         } catch (Exception e) {
             XLog.e("SERVICEGO: ERROR - setLocationNetwork");
         }
     }
 
-    public class NoteActionReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (action != null) {
-                if (action.equals(SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW)) {
-                    mJoyStick.show();
-                }
+    // ==================== ILocationInjector 桥梁实现（run 引擎专用） ====================
 
-                if (action.equals(SERVICE_GO_NOTE_ACTION_JOYSTICK_HIDE)) {
-                    mJoyStick.hide();
-                }
+    @Override
+    public void injectLocation(double latitude, double longitude, double altitude,
+                               float speedMps, float bearingDegrees, float accuracyMeters,
+                               float verticalAccuracyMeters, float speedAccuracyMps,
+                               float bearingAccuracyDegrees) {
+        mCurLat = latitude;
+        mCurLng = longitude;
+        mCurAlt = altitude;
+        mCurBea = bearingDegrees;
+        mSpeed = speedMps;
+        try {
+            long wallTime = System.currentTimeMillis();
+            long elapsedNanos = SystemClock.elapsedRealtimeNanos();
+
+            Location gps = buildEngineLocation(LocationManager.GPS_PROVIDER, latitude, longitude,
+                    altitude, speedMps, bearingDegrees, accuracyMeters, verticalAccuracyMeters,
+                    speedAccuracyMps, bearingAccuracyDegrees, wallTime, elapsedNanos);
+            mLocManager.setTestProviderLocation(LocationManager.GPS_PROVIDER, gps);
+
+            if (mLocManager.getAllProviders().contains(LocationManager.NETWORK_PROVIDER)) {
+                Location network = new Location(gps);
+                network.setProvider(LocationManager.NETWORK_PROVIDER);
+                mLocManager.setTestProviderLocation(LocationManager.NETWORK_PROVIDER, network);
             }
+        } catch (SecurityException e) {
+            notifyInjectionLost();
+            XLog.e("SERVICEGO: ERROR - injectLocation permission");
+        } catch (Exception e) {
+            XLog.e("SERVICEGO: ERROR - injectLocation");
         }
     }
 
+    private Location buildEngineLocation(String provider, double latitude, double longitude,
+                                         double altitude, float speedMps, float bearingDegrees,
+                                         float accuracyMeters, float verticalAccuracyMeters,
+                                         float speedAccuracyMps, float bearingAccuracyDegrees,
+                                         long wallTime, long elapsedNanos) {
+        Location loc = new Location(provider);
+        loc.setLatitude(latitude);
+        loc.setLongitude(longitude);
+        loc.setAltitude(altitude);
+        loc.setSpeed(speedMps);
+        loc.setBearing(bearingDegrees);
+        loc.setAccuracy(noisyAccuracy());
+        loc.setVerticalAccuracyMeters(verticalAccuracyMeters);
+        loc.setSpeedAccuracyMetersPerSecond(speedAccuracyMps);
+        loc.setBearingAccuracyDegrees(bearingAccuracyDegrees);
+        loc.setTime(wallTime);
+        loc.setElapsedRealtimeNanos(elapsedNanos);
+        Bundle bundle = new Bundle();
+        bundle.putInt("satellites", 12 + mRandom.nextInt(8));
+        loc.setExtras(bundle);
+        return loc;
+    }
+
+    /** 3.5~10.5m 的正态波动水平精度，避免每次固定 1.0m 被识别为模拟信号 */
+    private float noisyAccuracy() {
+        float value = 6.5f + (float) mRandom.nextGaussian() * 1.5f;
+        return Math.max(3.5f, Math.min(10.5f, value));
+    }
+
+    /** NETWORK Provider 的精度略粗：8~18m */
+    private float noisyNetworkAccuracy() {
+        float value = 12.5f + (float) mRandom.nextGaussian() * 2.5f;
+        return Math.max(8f, Math.min(18f, value));
+    }
+
+    private void notifyInjectionLost() {
+        long now = SystemClock.elapsedRealtime();
+        if (now - mLastInjectionLostAt < 5000L) return;
+        mLastInjectionLostAt = now;
+        try {
+            Intent intent = new Intent(ACTION_INJECTION_LOST);
+            intent.setPackage(getPackageName());
+            sendBroadcast(intent);
+        } catch (Exception e) {
+            XLog.e("SERVICEGO: ERROR - notifyInjectionLost");
+        }
+    }
+
+    @Override
+    public void setEngineDriven(boolean enabled) {
+        mEngineDriven = enabled;
+        if (enabled) {
+            // 上一轮 releaseInjection 已移除测试 Provider，同一 Service 实例再次接管前需幂等重建
+            removeTestProviderNetwork();
+            addTestProviderNetwork();
+            removeTestProviderGPS();
+            addTestProviderGPS();
+            mLocHandler.removeMessages(HANDLER_MSG_ID);
+            mJoyStick.hide();
+        } else {
+            mJoyStick.show();
+            mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
+        }
+    }
+
+    @Override
+    public void releaseInjection() {
+        mEngineDriven = false;
+        mLocHandler.removeMessages(HANDLER_MSG_ID);
+        removeTestProviderNetwork();
+        removeTestProviderGPS();
+    }
+
     public class ServiceGoBinder extends Binder {
+        /** run 引擎通过 Binder 拿到注入桥梁实例 */
+        public ILocationInjector getInjector() {
+            return ServiceGo.this;
+        }
+
         public void setPosition(double lng, double lat, double alt) {
+            if (mEngineDriven) {
+                return;
+            }
             mLocHandler.removeMessages(HANDLER_MSG_ID);
             mCurLng = lng;
             mCurLat = lat;

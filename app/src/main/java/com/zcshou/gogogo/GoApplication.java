@@ -15,6 +15,7 @@ import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.backup.NeverBackupStrategy;
 import com.elvishew.xlog.printer.file.clean.FileLastModifiedCleanStrategy;
 import com.elvishew.xlog.printer.file.naming.ChangelessFileNameGenerator;
+import com.zcshou.gogogo.run.ui.theme.ThemeHelper;
 
 import java.io.File;
 
@@ -28,6 +29,10 @@ public class GoApplication extends Application {
         super.onCreate();
 
         initXlog();
+
+        // V4.0：把用户选择的主题同步为 AppCompat 全局夜间模式，
+        // 保证 res/values-night 的深海光学 Token 与手动 setTheme 的选择一致。
+        ThemeHelper.INSTANCE.applyGlobalNightMode(this);
 
         // 百度地图 7.5 开始，要求必须同意隐私政策，默认为false
         SDKInitializer.setAgreePrivacy(this, true);
