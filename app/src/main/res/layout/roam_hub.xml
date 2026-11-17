@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/hubPanel"
+    android:layout_width="210dp"
+    android:layout_height="250dp"
+    android:background="@drawable/bg_hub_panel_glass"
+    android:orientation="vertical"
+    android:paddingStart="10dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="10dp"
+    android:paddingBottom="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/roamDragBar"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:text="≡ 拖动位置"
+            android:textColor="@color/pf_text_secondary"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/btnRoamHubLock"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/bg_round_dark"
+            android:gravity="center"
+            android:text="🔓"
+            android:textColor="@color/pf_text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/btnRoamHubLocate"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_round_dark"
+            android:gravity="center"
+            android:text="⌖"
+            android:textColor="@color/pf_cyan"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/btnRoamHubHide"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_round_dark"
+            android:gravity="center"
+            android:text="✕"
+            android:textColor="@color/pf_text_secondary"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <com.zcshou.gogogo.run.ui.overlay.TacticalJoystickView
+        android:id="@+id/roamHubJoystick"
+        android:layout_width="110dp"
+        android:layout_height="110dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="2dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/roamGearWalk"
+            android:layout_width="0dp"
+            android:layout_height="30dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_round_dark"
+            android:gravity="center"
+            android:text="步"
+            android:textColor="@color/pf_text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/roamGearRun"
+            android:layout_width="0dp"
+            android:layout_height="30dp"
+            android:layout_marginStart="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_tab_selected"
+            android:gravity="center"
+            android:text="跑"
+            android:textColor="@color/pf_volt"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/roamGearBike"
+            android:layout_width="0dp"
+            android:layout_height="30dp"
+            android:layout_marginStart="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_round_dark"
+            android:gravity="center"
+            android:text="骑"
+            android:textColor="@color/pf_text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/roamGearCar"
+            android:layout_width="0dp"
+            android:layout_height="30dp"
+            android:layout_marginStart="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_round_dark"
+            android:gravity="center"
+            android:text="车"
+            android:textColor="@color/pf_text_secondary"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:layout_marginTop="6dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/roamHubStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:fontFeatureSettings="tnum"
+            android:maxLines="1"
+            android:text="待命 · 3.6 m/s"
+            android:textColor="@color/pf_text_secondary"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/btnRoamHubStop"
+            android:layout_width="wrap_content"
+            android:layout_height="30dp"
+            android:background="@drawable/bg_danger_button"
+            android:gravity="center"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:text="结束"
+            android:textColor="@color/pf_bad"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

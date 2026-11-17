@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/aboutRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/pf_canvas">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:id="@+id/aboutBrand"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="@color/pf_volt"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/aboutVersion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFeatureSettings="tnum"
+            android:textColor="@color/pf_text_secondary"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="预设剧本式自动化跑步引擎：一次建圈永久复用，按目标公里数与配速自动巡航，每圈自动横向变道防重叠，支持定时窗口自动开跑。"
+            android:textColor="@color/pf_text_primary"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/aboutLicense"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:background="@color/pf_card"
+            android:padding="16dp"
+            android:textColor="@color/pf_text_secondary"
+            android:textSize="12sp" />
+    </LinearLayout>
+</ScrollView>

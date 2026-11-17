@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardBackgroundColor="@color/pf_card"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp"
+    app:cardUseCompatPadding="true"
+    app:strokeColor="@color/pf_stroke"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.zcshou.gogogo.run.ui.overlay.RouteThumbnailView
+                android:id="@+id/routeThumb"
+                android:layout_width="64dp"
+                android:layout_height="64dp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/routeName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/pf_text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/routeMeta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFeatureSettings="tnum"
+                    android:textColor="@color/pf_text_secondary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/routeSchedule"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:fontFeatureSettings="tnum"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:text="定时：未配置（点击设置）"
+                    android:textColor="@color/pf_text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/routeMenu"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="路线管理"
+                android:gravity="center"
+                android:text="⋮"
+                android:textColor="@color/pf_text_secondary"
+                android:textSize="20sp" />
+        </LinearLayout>
+
+        <!-- 拆分主按钮：左侧记忆参数 1 步直达，右侧 ⚙ 微调 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btnQuickStart"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_primary_button"
+                android:fontFeatureSettings="tnum"
+                android:gravity="center"
+                android:text="▶ 3.0km · 5'40&quot;"
+                android:textColor="@color/pf_canvas"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnTune"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_secondary_button"
+                android:gravity="center"
+                android:text="⚙"
+                android:textColor="@color/pf_text_primary"
+                android:textSize="18sp" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

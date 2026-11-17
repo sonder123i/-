@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    V4.0 视觉 Token · 深海光学（Abyssal Optics · 暗色）
+    与 res/values/colors_deeprun.xml 成对存在，名称必须完全一致。
+-->
+<resources>
+    <!-- 基底与背光 -->
+    <color name="dr_bg_canvas_base">#06080B</color>       <!-- 深渊曜石黑 -->
+    <color name="dr_bg_ambient_glow">#29102A43</color>    <!-- Pelagic 深海蓝 -->
+
+    <!-- 液态玻璃 -->
+    <color name="dr_glass_surface_tint">#B8111822</color>   <!-- 深海半透磨砂 -->
+    <color name="dr_glass_rim_highlight">#337CE8F4</color>  <!-- 冷青微光亮边 -->
+    <color name="dr_glass_rim_shadow">#1A000000</color>     <!-- 深渊微暗边 -->
+
+    <!-- 哑光实体卡片 -->
+    <color name="dr_matte_card_surface">#E60F151E</color>   <!-- 哑光深岩板 -->
+
+    <!-- 强调色 -->
+    <color name="dr_accent_primary">#5CE1E6</color>         <!-- 荧光冰川青 -->
+    <color name="dr_accent_halo">#245CE1E6</color>          <!-- 14% 冰青漫反射 -->
+
+    <!-- 遥测文字 -->
+    <color name="dr_text_telemetry_primary">#F2F7FA</color>   <!-- 冷调光学白 -->
+    <color name="dr_text_telemetry_secondary">#7E8E9F</color> <!-- 深海岩灰 -->
+    <color name="dr_semantic_warning">#FFB020</color>         <!-- 琥珀警示黄 -->
+
+    <!-- 复杂背景文字对比度投影（暗色用深渊黑投影） -->
+    <color name="dr_text_shadow">#CC000000</color>
+</resources>

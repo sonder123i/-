@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    V4.0 视觉 Token · 冰川棱镜（Glacial Prism · 浅色）
+    与 res/values-night/colors_deeprun.xml 成对存在，名称必须完全一致。
+
+    注意：本工程主题由 ThemeHelper 手动切换，必须同时调用
+    AppCompatDelegate.setDefaultNightMode()，否则「手动选浅色 + 系统深色」会错误命中 -night。
+    详见 ThemeHelper.applyGlobalNightMode()。
+-->
+<resources>
+    <!-- 基底与背光 -->
+    <color name="dr_bg_canvas_base">#F3F6FA</color>       <!-- 冷调云母雪白 -->
+    <color name="dr_bg_ambient_glow">#40D5EEF5</color>    <!-- 极光冰蓝光斑 -->
+
+    <!-- 液态玻璃 -->
+    <color name="dr_glass_surface_tint">#CCFFFFFF</color>   <!-- 80% 高透纯白水滴 -->
+    <color name="dr_glass_rim_highlight">#FFFFFF</color>    <!-- 纯白顶边高光 -->
+    <color name="dr_glass_rim_shadow">#140B131E</color>     <!-- 冷调环境闭塞边 -->
+
+    <!-- 哑光实体卡片（与玻璃拉开虚实层次） -->
+    <color name="dr_matte_card_surface">#EBFFFFFF</color>   <!-- 哑光云母白卡 -->
+
+    <!-- 强调色 -->
+    <color name="dr_accent_primary">#007A94</color>         <!-- 深海钴青 -->
+    <color name="dr_accent_halo">#1F0088A3</color>          <!-- 12% 冰蓝水彩晕 -->
+
+    <!-- 遥测文字 -->
+    <color name="dr_text_telemetry_primary">#0B131E</color>   <!-- 深渊墨黑 -->
+    <color name="dr_text_telemetry_secondary">#5A687A</color> <!-- 冰川板岩灰 -->
+    <color name="dr_semantic_warning">#D97706</color>         <!-- 深琥珀橙 -->
+
+    <!-- 复杂背景文字对比度投影（浅色用纯白微投影） -->
+    <color name="dr_text_shadow">#B3FFFFFF</color>
+</resources>

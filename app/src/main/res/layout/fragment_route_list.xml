@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- V4.0 深海光学空间背景：径向环境背光 + 3% 等深线暗纹 -->
+    <com.zcshou.gogogo.run.ui.overlay.BathymetricBackdropView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="6dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:letterSpacing="0.02"
+            android:text="@string/app_name"
+            android:textColor="@color/pf_volt"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/routeCountLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_capsule"
+            android:fontFeatureSettings="tnum"
+            android:paddingStart="10dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="4dp"
+            android:text="0 条路线"
+            android:textColor="@color/pf_text_secondary"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="112dp">
+
+            <TextView
+                android:id="@+id/setupBanner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_hub_panel"
+                android:padding="12dp"
+                android:text="首次使用需完成 3 项基础授权 · 立即配置 >"
+                android:textColor="@color/pf_amber"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <!-- 本周里程概览卡（V4.0 液态玻璃主遥测卡，陀螺仪随动高光） -->
+            <com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer
+                android:id="@+id/weekCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                app:lgBevelWidth="6dp"
+                app:lgCaustics="true"
+                app:lgCornerRadius="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="本周已跑"
+                        android:textColor="@color/pf_text_secondary"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/weekKm"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFeatureSettings="tnum"
+                        android:text="0.00 km"
+                        android:textColor="@color/pf_volt"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/weekCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFeatureSettings="tnum"
+                        android:text="0 次"
+                        android:textColor="@color/pf_cyan"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="完成任务"
+                        android:textColor="@color/pf_text_secondary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+                </LinearLayout>
+            </com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer>
+
+            <!-- 已保存路线胶囊切换条 -->
+            <HorizontalScrollView
+                android:id="@+id/routeChipScroll"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:scrollbars="none"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/routeChipRow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal" />
+            </HorizontalScrollView>
+
+            <!-- 当前主路线卡 -->
+            <include
+                android:id="@+id/routeMainCard"
+                layout="@layout/item_route_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <!-- 空状态：首次建圈引导卡 -->
+            <LinearLayout
+                android:id="@+id/routeEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_capsule"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingTop="22dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="20dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="112dp"
+                    android:layout_height="84dp"
+                    android:contentDescription="大肥鱼跑道剪影"
+                    android:src="@drawable/ic_fish_track" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="第一次建圈？"
+                    android:textColor="@color/pf_text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:text="一键套模 400m 标准田径场\n也可以手绘你的校园环线"
+                    android:textColor="@color/pf_text_secondary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/btnEmptyCreate"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_primary_button"
+                    android:gravity="center"
+                    android:text="🏟️ 从操场套模开始"
+                    android:textColor="@color/pf_canvas"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- 路线工坊 -->
+            <LinearLayout
+                android:id="@+id/workshopCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_matte_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="14dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.65"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/btnNewRoute"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:background="@drawable/bg_primary_button"
+                        android:gravity="center"
+                        android:text="+ 新建跑圈路线"
+                        android:textColor="@color/pf_canvas"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:text="支持操场一键套模 / 校园自定义画线"
+                        android:textColor="@color/pf_text_secondary"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="0.35"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/btnQuickPreset"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:background="@drawable/bg_secondary_button"
+                        android:gravity="center"
+                        android:text="🏟️ 操场套模"
+                        android:textColor="@color/pf_text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btnQuickFree"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_secondary_button"
+                        android:gravity="center"
+                        android:text="✏️ 自由手绘"
+                        android:textColor="@color/pf_text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/btnImportShare"
+                android:layout_width="match_parent"
+                android:layout_height="34dp"
+                android:layout_marginTop="8dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:gravity="center"
+                android:text="🔗 从 DEEPRUN:// 口令导入路线"
+                android:textColor="@color/pf_cyan"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
+</FrameLayout>

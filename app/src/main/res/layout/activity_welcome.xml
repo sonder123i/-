@@ -1,34 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/pf_canvas"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingStart="32dp"
+    android:paddingTop="72dp"
+    android:paddingEnd="32dp"
+    android:paddingBottom="28dp">
 
-    <ImageView
+    <Space
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:srcCompat="@drawable/welcome"
-        android:contentDescription="@null" />
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
-    <Button
-        android:id="@+id/startButton"
-        android:layout_width="match_parent"
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:letterSpacing="0.04"
+        android:text="@string/app_name"
+        android:textColor="@color/pf_volt"
+        android:textSize="46sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:letterSpacing="0.25"
+        android:text="PACEFLOW · 自动跑圈"
+        android:textColor="@color/pf_text_secondary"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="36dp"
         android:gravity="center"
-        android:text="@string/welcome_btn_txt"
-        android:textAlignment="center"
-        android:layout_gravity="bottom|center"
-        android:layout_margin="100dp" />
+        android:lineSpacingExtra="6dp"
+        android:text="无感防穿帮 · 拟真巡航 · 自由漫游"
+        android:textColor="@color/pf_text_secondary"
+        android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:text="✓ 零读取通讯录与相册\n✓ 零获取设备串号\n✓ 轨迹仅存本机\n✓ 停止即恢复真实 GPS"
+        android:textColor="@color/pf_text_secondary"
+        android:textSize="11sp" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
     <CheckBox
         android:id="@+id/check_agreement"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center"
-        android:layout_margin="20dp"
+        android:buttonTint="@color/pf_volt"
+        android:padding="8dp"
+        android:text="我已阅读并同意"
+        android:textColor="@color/pf_text_secondary"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/tvAgreementLinks"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingStart="8dp"
+        android:paddingTop="2dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="12dp"
+        android:textColor="@color/pf_text_secondary"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/startButton"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/bg_primary_button"
         android:gravity="center"
-        android:clickable="false"
-        android:focusable="false"
-        android:focusableInTouchMode="false"
-        android:text="@string/app_agreement_privacy" />
-</merge>
+        android:text="@string/welcome_btn_txt"
+        android:textColor="@color/pf_canvas"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+</LinearLayout>

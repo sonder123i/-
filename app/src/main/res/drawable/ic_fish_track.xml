@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="90dp"
+    android:viewportWidth="120"
+    android:viewportHeight="90">
+    <!-- 跑道外圈 -->
+    <path
+        android:pathData="M36,14 L84,14 A22,22 0 0 1 84,58 L36,58 A22,22 0 0 1 36,14 Z"
+        android:strokeColor="#C8FF00"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000" />
+    <!-- 跑道内圈 -->
+    <path
+        android:pathData="M40,20 L80,20 A16,16 0 0 1 80,52 L40,52 A16,16 0 0 1 40,20 Z"
+        android:strokeColor="#66C8FF00"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000" />
+    <!-- 大肥鱼身体 -->
+    <path
+        android:pathData="M48,34 C56,30 66,30 72,36 C66,42 56,42 48,38 Z"
+        android:fillColor="#C8FF00" />
+    <!-- 鱼尾 -->
+    <path
+        android:pathData="M46,32 L38,27 L38,41 L46,38 Z"
+        android:fillColor="#C8FF00" />
+    <!-- 鱼眼 -->
+    <path
+        android:pathData="M65,35 m-1.6,0 a1.6,1.6 0 1,0 3.2,0 a1.6,1.6 0 1,0 -3.2,0"
+        android:fillColor="#0B0E11" />
+</vector>

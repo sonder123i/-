@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 悬浮摇杆盘常态底板：70% 半透，配合跨窗模糊呈现玻璃；模糊被禁时切 bg_hub_panel_solid -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#B3151A22" />
+    <stroke
+        android:width="0.5dp"
+        android:color="@color/pf_panel_stroke" />
+    <corners android:radius="18dp" />
+</shape>

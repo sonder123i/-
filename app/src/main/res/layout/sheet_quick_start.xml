@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/pf_card"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/sheetTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/pf_text_primary"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/kmLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:fontFeatureSettings="tnum"
+        android:text="目标公里数：3.0 km"
+        android:textColor="@color/pf_text_primary"
+        android:textSize="14sp" />
+
+    <SeekBar
+        android:id="@+id/seekKm"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="95"
+        android:progress="25"
+        android:progressTint="@color/pf_volt"
+        android:thumbTint="@color/pf_volt" />
+
+    <TextView
+        android:id="@+id/paceLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:fontFeatureSettings="tnum"
+        android:text="目标配速：5'40&quot; /km"
+        android:textColor="@color/pf_text_primary"
+        android:textSize="14sp" />
+
+    <SeekBar
+        android:id="@+id/seekPace"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="48"
+        android:progress="20"
+        android:progressTint="@color/pf_volt"
+        android:thumbTint="@color/pf_volt" />
+
+    <Switch
+        android:id="@+id/switchDrift"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:checked="true"
+        android:text="智能拟真浮动（每圈变道防重叠）"
+        android:textColor="@color/pf_text_primary"
+        android:textSize="14sp" />
+
+    <Switch
+        android:id="@+id/switchReverse"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:checked="false"
+        android:text="🔄 反向跑（与已保存方向相反）"
+        android:textColor="@color/pf_text_primary"
+        android:textSize="14sp" />
+
+    <Switch
+        android:id="@+id/switchCooldown"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:text="达标后慢走缓冲"
+        android:textColor="@color/pf_text_primary"
+        android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="提示：免 Root 无法篡改硬件计步传感器，请随身携带手机走动或使用摇步器以同步步频。"
+        android:textColor="@color/pf_text_secondary"
+        android:textSize="11sp" />
+
+    <Button
+        android:id="@+id/btnStartRun"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:backgroundTint="@color/pf_volt"
+        android:text="开始跑"
+        android:textColor="@color/pf_canvas"
+        android:textStyle="bold" />
+</LinearLayout>

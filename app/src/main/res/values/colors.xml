@@ -4,6 +4,41 @@
     <color name="colorPrimaryDark">#ff008577</color>
     <color name="colorAccent">#ff00897B</color>
 
+    <!-- Kinetic Athletic 设计系统（步频流 PaceFlow）· 冰川棱镜浅色
+         深色值在 res/values-night/colors_paceflow.xml 成对定义；
+         由 ThemeHelper.applyGlobalNightMode 同步 uiMode，保证手动换主题不串色。 -->
+    <color name="pf_canvas">#F3F6FA</color>
+    <color name="pf_card">#FFFFFF</color>
+    <color name="pf_card_98">#FAFFFFFF</color>
+    <color name="pf_card_pill">#F2FFFFFF</color>
+    <color name="pf_card_solid">#F0FFFFFF</color>
+    <color name="pf_capsule_surface">#E6FFFFFF</color>
+
+    <color name="pf_stroke">#E2E8F0</color>
+    <color name="pf_panel_stroke">#D8E0EA</color>
+
+    <color name="pf_volt">#007A94</color>
+    <color name="pf_volt_a60">#99007A94</color>
+    <color name="pf_volt_a70">#B3007A94</color>
+    <color name="pf_volt_a18">#2E007A94</color>
+
+    <color name="pf_cyan">#0E7490</color>
+    <color name="pf_amber">#D97706</color>
+    <color name="pf_amber_a20">#33D97706</color>
+
+    <color name="pf_text_primary">#0B131E</color>
+    <color name="pf_text_secondary">#5A687A</color>
+    <color name="pf_ok">#15803D</color>
+    <color name="pf_bad">#DC2626</color>
+    <color name="pf_danger_bg">#FEF2F2</color>
+
+    <!-- 清透日光（与浅色 pf_* 同值，兼容旧引用） -->
+    <color name="pf_light_canvas">#F3F6FA</color>
+    <color name="pf_light_card">#FFFFFF</color>
+    <color name="pf_light_accent">#007A94</color>
+    <color name="pf_light_text_primary">#0B131E</color>
+    <color name="pf_light_text_secondary">#5A687A</color>
+
     <color name="white">#ffffff</color> <!-- 白色 -->
     <color name="ivory">#fffff0</color> <!-- 象牙色 -->
     <color name="lightyellow">#ffffe0</color> <!-- 亮黄色 -->

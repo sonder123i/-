@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 跨窗模糊被系统禁用时的胶囊兜底：94% 高密度磨砂，杜绝透字 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/pf_card_solid" />
+    <corners android:radius="22dp" />
+</shape>

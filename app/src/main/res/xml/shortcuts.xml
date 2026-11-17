@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 动态快捷方式由 RunShortcutManager 按路线写入；以下为 V3.4 固定三连 -->
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="quick_run"
+        android:shortcutLongLabel="@string/shortcut_quick_run"
+        android:shortcutShortLabel="@string/shortcut_quick_run">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.zcshou.gogogo.run.ui.home.RunHomeActivity"
+            android:targetPackage="com.zcshou.gogogo">
+            <extra
+                android:name="shortcut_action"
+                android:value="default_run" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="open_roam"
+        android:shortcutLongLabel="@string/shortcut_roam"
+        android:shortcutShortLabel="@string/shortcut_roam">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.zcshou.gogogo.run.ui.home.RunHomeActivity"
+            android:targetPackage="com.zcshou.gogogo">
+            <extra
+                android:name="shortcut_action"
+                android:value="roam" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="stop_run"
+        android:shortcutLongLabel="@string/shortcut_stop"
+        android:shortcutShortLabel="@string/shortcut_stop">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.zcshou.gogogo.run.ui.home.RunHomeActivity"
+            android:targetPackage="com.zcshou.gogogo">
+            <extra
+                android:name="shortcut_action"
+                android:value="stop" />
+        </intent>
+    </shortcut>
+</shortcuts>

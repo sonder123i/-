@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- V4.0：深海光学空间背景（环境背光 + 3% 等深线） -->
+    <com.zcshou.gogogo.run.ui.overlay.BathymetricBackdropView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="104dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/bg_hub_panel"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="本地安全运行承诺"
+                android:textColor="@color/pf_volt"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:lineSpacingExtra="3dp"
+                android:text="✓ 零读取通讯录与相册\n✓ 零获取手机识别码 (IMEI)\n✓ 轨迹数据 100% 仅存手机本地\n✓ 停止运行即刻恢复真实 GPS"
+                android:textColor="@color/pf_text_secondary"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="4dp"
+            android:text="开跑前请确保以下环境就绪，红灯项点击可跳转设置"
+            android:textColor="@color/pf_text_secondary"
+            android:textSize="12sp" />
+
+        <include
+            android:id="@+id/rowMock"
+            layout="@layout/item_env_row" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/pf_stroke" />
+
+        <include
+            android:id="@+id/rowOverlay"
+            layout="@layout/item_env_row" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/pf_stroke" />
+
+        <include
+            android:id="@+id/rowBattery"
+            layout="@layout/item_env_row" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/pf_stroke" />
+
+        <include
+            android:id="@+id/rowWifi"
+            layout="@layout/item_env_row" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/pf_stroke" />
+
+        <include
+            android:id="@+id/rowTargetApp"
+            layout="@layout/item_env_row" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/pf_stroke" />
+
+        <include
+            android:id="@+id/rowTheme"
+            layout="@layout/item_env_row" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/pf_stroke" />
+
+        <include
+            android:id="@+id/rowRenderQuality"
+            layout="@layout/item_env_row" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/pf_stroke" />
+
+        <include
+            android:id="@+id/rowAbout"
+            layout="@layout/item_env_row" />
+
+        <TextView
+            android:id="@+id/btnAdvancedToggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:padding="14dp"
+            android:text="高级与极客选项 ⌄"
+            android:textColor="@color/pf_text_secondary"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:id="@+id/advancedGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/pf_stroke" />
+
+            <include
+                android:id="@+id/rowWifiScan"
+                layout="@layout/item_env_row" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/pf_stroke" />
+
+            <include
+                android:id="@+id/rowInjectInterval"
+                layout="@layout/item_env_row" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/pf_stroke" />
+
+            <include
+                android:id="@+id/rowShizuku"
+                layout="@layout/item_env_switch" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnRefreshEnv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:backgroundTint="@color/pf_volt"
+            android:text="重新检测"
+            android:textColor="@color/pf_canvas"
+            android:textStyle="bold" />
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>

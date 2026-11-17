@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="20dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="20dp">
+
+    <Switch
+        android:id="@+id/swEnable"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="启用定时开跑"
+        android:textColor="@color/pf_text_primary"
+        android:textSize="15sp" />
+
+    <Switch
+        android:id="@+id/swDaily"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:text="每天执行（忽略重复日）"
+        android:textColor="@color/pf_text_primary"
+        android:textSize="14sp" />
+
+    <TimePicker
+        android:id="@+id/timePicker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:timePickerMode="spinner" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="随机延迟窗口（分钟，防每天分秒不差）"
+        android:textColor="@color/pf_text_secondary"
+        android:textSize="12sp" />
+
+    <EditText
+        android:id="@+id/etJitter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:text="8"
+        android:textColor="@color/pf_text_primary"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/tvLinkedApp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:text="关联跑步 App：未选择（点击选择）"
+        android:textColor="@color/pf_text_primary"
+        android:textSize="13sp" />
+
+    <Switch
+        android:id="@+id/swWifiIsolate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="开跑前提示关闭 Wi-Fi"
+        android:textColor="@color/pf_text_primary"
+        android:textSize="14sp" />
+</LinearLayout>

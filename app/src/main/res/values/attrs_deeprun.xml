@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    V4.0 液态玻璃自定义属性。
+    所有尺寸默认值由 LiquidGlassContainer 在运行时按 dp 计算，这里只声明可覆盖项。
+-->
+<resources>
+    <declare-styleable name="LiquidGlassContainer">
+        <!-- 圆角半径，默认 28dp（主遥测卡片规格） -->
+        <attr name="lgCornerRadius" format="dimension" />
+        <!-- 玻璃底色 tint，缺省取当前昼夜 Token dr_glass_surface_tint -->
+        <attr name="lgTint" format="color" />
+        <!-- 边缘折射斜坡厚度，运行时会被 < 40% * min(w, h) / 2 截断 -->
+        <attr name="lgBevelWidth" format="dimension" />
+        <!-- 折射强度 0..1，默认 0.55 -->
+        <attr name="lgRefraction" format="float" />
+        <!-- 是否开启 Liquid Press 按压形变与陀螺仪随动高光 -->
+        <attr name="lgInteractive" format="boolean" />
+        <!-- 强制哑光实体模式（不使用任何采样与折射） -->
+        <attr name="lgMatte" format="boolean" />
+        <!-- 镜头焦散微光：玻璃内部缓慢流动的极低对比度水波光斑（省电冻结时自动停） -->
+        <attr name="lgCaustics" format="boolean" />
+    </declare-styleable>
+</resources>

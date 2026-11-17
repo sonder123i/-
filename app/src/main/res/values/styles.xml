@@ -7,6 +7,7 @@
         <item name="colorAccent">@color/colorAccent</item>
         <item name="buttonStyle">@style/AppTheme.Button</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:forceDarkAllowed">false</item>
     </style>
 
     <!-- 无ActionBar -->
@@ -37,6 +38,41 @@
     <!-- Button -->
     <style name="AppTheme.Button" parent="Widget.AppCompat.Button.Colored">
         <item name="colorButtonNormal">@color/colorAccent</item>
+    </style>
+
+    <!-- ============ 步频流 PaceFlow · Kinetic Athletic 主题（默认动能暗夜） ============ -->
+    <style name="Theme.PaceFlow" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimary">@color/pf_volt</item>
+        <item name="colorPrimaryDark">@color/pf_canvas</item>
+        <item name="colorAccent">@color/pf_volt</item>
+        <item name="android:windowBackground">@color/pf_canvas</item>
+        <item name="android:textColorPrimary">@color/pf_text_primary</item>
+        <item name="android:textColorSecondary">@color/pf_text_secondary</item>
+        <item name="android:statusBarColor">@color/pf_canvas</item>
+        <item name="android:navigationBarColor">@color/pf_canvas</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <!-- 明暗完全由 values-night + setDefaultNightMode 决定，禁止 OEM Force Dark 再染色 -->
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="alertDialogTheme">@style/Theme.PaceFlow.Dialog</item>
+    </style>
+
+    <style name="Theme.PaceFlow.Dialog" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="colorAccent">@color/pf_volt</item>
+    </style>
+
+    <!-- 清透日光 -->
+    <style name="Theme.PaceFlow.Light" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/pf_light_accent</item>
+        <item name="colorPrimaryDark">@color/pf_light_canvas</item>
+        <item name="colorAccent">@color/pf_light_accent</item>
+        <item name="android:windowBackground">@color/pf_light_canvas</item>
+        <item name="android:textColorPrimary">@color/pf_light_text_primary</item>
+        <item name="android:textColorSecondary">@color/pf_light_text_secondary</item>
+        <item name="android:statusBarColor">@color/pf_light_canvas</item>
+        <item name="android:navigationBarColor">@color/pf_light_canvas</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <!-- 明暗完全由 values-night + setDefaultNightMode 决定，禁止 OEM Force Dark 再染色 -->
+        <item name="android:forceDarkAllowed">false</item>
     </style>
 
 </resources>

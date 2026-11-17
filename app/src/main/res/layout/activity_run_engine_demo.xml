@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/pf_canvas">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="引擎演示"
+            android:textColor="@color/pf_volt"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/demoStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@color/pf_card"
+            android:fontFamily="monospace"
+            android:padding="12dp"
+            android:text="阶段: IDLE"
+            android:textColor="@color/pf_text_primary"
+            android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/btnStartShort"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="开跑（0.05 km 快速验证）" />
+
+        <Button
+            android:id="@+id/btnStart3km"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="开跑（3.0 km 正式）" />
+
+        <Button
+            android:id="@+id/btnPauseToggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="暂停 / 继续" />
+
+        <Button
+            android:id="@+id/btnDetour"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="临时插点（东侧 120m）" />
+
+        <Button
+            android:id="@+id/btnFinishEarly"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="提前慢走收尾" />
+
+        <Button
+            android:id="@+id/btnAbort"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="中止并释放定位" />
+
+        <Button
+            android:id="@+id/btnOpenEditor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="建圈编辑器（无地图）" />
+    </LinearLayout>
+</ScrollView>
