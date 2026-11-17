@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 仅 debug 变体：AGSL / 玻璃渲染真机探针，不影响 release。 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name=".run.ui.glass.GlassProbeActivity"
+            android:exported="true"
+            android:label="Glass Probe"
+            android:theme="@style/Theme.PaceFlow" />
+    </application>
+</manifest>

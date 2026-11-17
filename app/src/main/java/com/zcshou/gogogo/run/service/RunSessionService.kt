@@ -1,0 +1,530 @@
+package com.zcshou.gogogo.run.service
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.ServiceConnection
+import android.os.Build
+import android.os.IBinder
+import android.os.PowerManager
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import com.zcshou.gogogo.R
+import com.zcshou.gogogo.run.data.prefs.AdvancedPrefs
+import com.zcshou.gogogo.run.data.repository.RunRepository
+import com.zcshou.gogogo.run.engine.RunCruiseEngine
+import com.zcshou.gogogo.run.engine.RunPhase
+import com.zcshou.gogogo.run.engine.RunRuntimeState
+import com.zcshou.gogogo.run.guard.EnvGuardManager
+import com.zcshou.gogogo.run.guard.ShizukuWifiHelper
+import com.zcshou.gogogo.run.guard.StepGuard
+import com.zcshou.gogogo.run.ui.glass.DeepRunGlassManager
+import com.zcshou.gogogo.run.ui.home.RunHomeActivity
+import com.zcshou.service.ServiceGo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.util.Locale
+
+/**
+ * 巡航会话前台服务：托管 RunCruiseEngine，定时闹钟或首页指令均可拉起；
+ * 锁屏/退后台不中断，通知栏常驻进度与暂停动作。
+ */
+class RunSessionService : Service() {
+
+    companion object {
+        private const val CHANNEL_ID = "run_session"
+        private const val NOTIFICATION_ID = 2
+        private const val EXTRA_ROUTE_ID = "route_id"
+        private const val EXTRA_KM = "km"
+        private const val EXTRA_PACE = "pace"
+        private const val EXTRA_DRIFT = "drift"
+        private const val EXTRA_COOLDOWN = "cooldown"
+        private const val EXTRA_LINKED_PKG = "linked_pkg"
+        private const val EXTRA_REVERSE = "reverse_direction"
+
+        const val ACTION_START = "com.zcshou.gogogo.run.action.START"
+        const val ACTION_TOGGLE_PAUSE = "com.zcshou.gogogo.run.action.TOGGLE_PAUSE"
+        const val ACTION_DETOUR = "com.zcshou.gogogo.run.action.DETOUR"
+        const val ACTION_FINISH_EARLY = "com.zcshou.gogogo.run.action.FINISH_EARLY"
+        const val ACTION_ABORT = "com.zcshou.gogogo.run.action.ABORT"
+        const val ACTION_MANUAL_TAKEOVER = "com.zcshou.gogogo.run.action.MANUAL_TAKEOVER"
+        const val ACTION_MANUAL_RELEASE = "com.zcshou.gogogo.run.action.MANUAL_RELEASE"
+
+        fun startIntent(
+            context: Context,
+            routeId: Long,
+            targetKm: Float,
+            paceSecPerKm: Int,
+            laneDrift: Boolean,
+            cooldown: Boolean,
+            linkedPkg: String? = null,
+            reverseDirection: Boolean = false
+        ): Intent = Intent(context, RunSessionService::class.java).apply {
+            action = ACTION_START
+            putExtra(EXTRA_ROUTE_ID, routeId)
+            putExtra(EXTRA_KM, targetKm)
+            putExtra(EXTRA_PACE, paceSecPerKm)
+            putExtra(EXTRA_DRIFT, laneDrift)
+            putExtra(EXTRA_COOLDOWN, cooldown)
+            putExtra(EXTRA_REVERSE, reverseDirection)
+            if (linkedPkg != null) putExtra(EXTRA_LINKED_PKG, linkedPkg)
+        }
+
+        fun commandIntent(context: Context, action: String): Intent =
+            Intent(context, RunSessionService::class.java).setAction(action)
+
+        fun detourIntent(context: Context, lat: Double, lng: Double): Intent =
+            Intent(context, RunSessionService::class.java).apply {
+                action = ACTION_DETOUR
+                putExtra("lat", lat)
+                putExtra("lng", lng)
+            }
+    }
+
+    private data class StartConfig(
+        val routeId: Long,
+        val targetKm: Float,
+        val pace: Int,
+        val drift: Boolean,
+        val cooldown: Boolean,
+        val linkedPkg: String?,
+        val reverseDirection: Boolean
+    )
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private lateinit var repository: RunRepository
+
+    private var engine: RunCruiseEngine? = null
+    private var serviceGoRequested = false
+    private var pendingStart: StartConfig? = null
+    private var runStarted = false
+    private var finishHandled = false
+    private var wifiDisabledByUs = false
+    private var scanDisabledByUs = false
+    private var linkedAppLaunched = false
+    private var linkedTargetAppPkg: String? = null
+    private var lastNotifyMs = 0L
+    private var lastPhase: RunPhase? = null
+    private var stepGuard: StepGuard? = null
+    private var wakeLock: PowerManager.WakeLock? = null
+    private var lastHapticPhase: RunPhase? = null
+    private var halfHapticDone = false
+    private var lastStepWarningAt = 0L
+    private var injectionReceiver: BroadcastReceiver? = null
+    private var screenReceiver: BroadcastReceiver? = null
+    private var screenOff = false
+    private var cruiseIsRunning = false
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as? ServiceGo.ServiceGoBinder ?: return
+            val cruise = RunCruiseEngine(
+                applicationContext,
+                binder.injector,
+                repository,
+                tickMillis = AdvancedPrefs.injectionIntervalMs(applicationContext),
+                overshootMeters = 15..65
+            )
+            engine = cruise
+            scope.launch {
+                cruise.state.collect { state ->
+                    val warn = stepGuard?.update(state.accumulatedMeters) == true
+                    if (warn) {
+                        val now = android.os.SystemClock.elapsedRealtime()
+                        if (now - lastStepWarningAt > 15_000) {
+                            lastStepWarningAt = now
+                            vibrate(longArrayOf(0, 90, 120, 90))
+                        }
+                    } else {
+                        lastStepWarningAt = 0L
+                    }
+                    val merged = state.copy(stepsWarning = warn)
+                    RunSessionHolder.publish(merged)
+                    cruiseIsRunning = merged.phase == RunPhase.RUNNING ||
+                        merged.phase == RunPhase.DETOUR_POINT
+                    updateRenderSuppression()
+                    updateNotification(merged)
+                    handleHaptics(merged)
+                    handleWakeLock(merged)
+                    if (merged.phase == RunPhase.FINISHED) onRunFinished()
+                }
+            }
+            maybeStartEngine()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            engine = null
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        repository = RunRepository(applicationContext)
+        createChannel()
+        startForeground(NOTIFICATION_ID, buildNotification(RunRuntimeState(), "准备中…"))
+        stepGuard = StepGuard(this)
+        registerInjectionAlarm()
+        registerScreenState()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        when (intent?.action) {
+            ACTION_START -> {
+                RoamService.stop(this)
+                val routeId = intent.getLongExtra(EXTRA_ROUTE_ID, 0L)
+                if (routeId > 0) {
+                    pendingStart = StartConfig(
+                        routeId = routeId,
+                        targetKm = intent.getFloatExtra(EXTRA_KM, 3.0f),
+                        pace = intent.getIntExtra(EXTRA_PACE, 340),
+                        drift = intent.getBooleanExtra(EXTRA_DRIFT, true),
+                        cooldown = intent.getBooleanExtra(EXTRA_COOLDOWN, true),
+                        linkedPkg = intent.getStringExtra(EXTRA_LINKED_PKG),
+                        reverseDirection = intent.getBooleanExtra(EXTRA_REVERSE, false)
+                    )
+                    ensureServiceGo()
+                    maybeStartEngine()
+                }
+            }
+
+            ACTION_TOGGLE_PAUSE -> {
+                val phase = engine?.state?.value?.phase
+                if (phase == RunPhase.PAUSED) engine?.resume() else engine?.pause()
+            }
+
+            ACTION_DETOUR -> engine?.insertDetour(
+                intent.getDoubleExtra("lat", 0.0),
+                intent.getDoubleExtra("lng", 0.0)
+            )
+
+            ACTION_FINISH_EARLY -> engine?.finishEarly()
+
+            ACTION_ABORT -> engine?.abort()
+
+            ACTION_MANUAL_TAKEOVER -> engine?.setManualOverride(true)
+
+            ACTION_MANUAL_RELEASE -> engine?.setManualOverride(false)
+        }
+        return START_NOT_STICKY
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onDestroy() {
+        scope.cancel()
+        engine?.release()
+        stepGuard?.stop()
+        releaseWakeLock()
+        injectionReceiver?.let { runCatching { unregisterReceiver(it) } }
+        injectionReceiver = null
+        screenReceiver?.let { runCatching { unregisterReceiver(it) } }
+        screenReceiver = null
+        DeepRunGlassManager.setRenderSuppressed(false)
+        if (serviceGoRequested) {
+            runCatching { unbindService(connection) }
+        }
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        super.onDestroy()
+    }
+
+    private fun ensureServiceGo() {
+        if (serviceGoRequested) return
+        serviceGoRequested = true
+        val intent = Intent(this, ServiceGo::class.java)
+        bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        ContextCompat.startForegroundService(this, intent)
+    }
+
+    private fun maybeStartEngine() {
+        val config = pendingStart ?: return
+        if (runStarted) return
+        linkedTargetAppPkg = config.linkedPkg
+        val cruise = engine ?: return
+        runStarted = true
+        scope.launch {
+            val route = repository.getRoute(config.routeId)
+            if (route == null) {
+                stopSelf()
+                return@launch
+            }
+            // 实验性能力：仅在高级选项里显式开启且 Shizuku 就绪时才自动断 Wi-Fi
+            if (AdvancedPrefs.isShizukuAutoWifiEnabled(this@RunSessionService) &&
+                EnvGuardManager.isShizukuReady()
+            ) {
+                if (EnvGuardManager.isWifiActivelyConnected(this@RunSessionService)) {
+                    wifiDisabledByUs = ShizukuWifiHelper.setWifiEnabled(false)
+                }
+                if (EnvGuardManager.isWifiScanAlwaysAvailable(this@RunSessionService)) {
+                    scanDisabledByUs = ShizukuWifiHelper.setWifiScanAlwaysEnabled(false)
+                }
+            }
+            launchLinkedTargetApp()
+            stepGuard?.start()
+            cruise.start(
+                route = route,
+                targetKm = config.targetKm,
+                targetPaceSecPerKm = config.pace,
+                distanceJitterMeters = 150,
+                enableLaneDrift = config.drift,
+                enableCooldownWalk = config.cooldown,
+                reverseDirection = config.reverseDirection
+            )
+        }
+    }
+
+    private fun onRunFinished() {
+        if (finishHandled) return
+        finishHandled = true
+        stepGuard?.stop()
+        releaseWakeLock()
+        if (wifiDisabledByUs) {
+            ShizukuWifiHelper.setWifiEnabled(true)
+            wifiDisabledByUs = false
+        }
+        if (scanDisabledByUs) {
+            ShizukuWifiHelper.setWifiScanAlwaysEnabled(true)
+            scanDisabledByUs = false
+        }
+        scope.launch {
+            delay(1500)
+            stopSelf()
+        }
+    }
+
+    /** 定时任务绑定目标跑步 App 时，开跑瞬间自动拉起 */
+    private fun launchLinkedTargetApp() {
+        if (linkedAppLaunched) return
+        val pkg = linkedTargetAppPkg ?: return
+        linkedAppLaunched = true
+        runCatching {
+            packageManager.getLaunchIntentForPackage(pkg)?.let {
+                it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(it)
+            }
+        }
+    }
+
+    /** 模拟注入被系统抢占/拦截时：紧急长震并自动暂停，避免轨迹飞线 */
+    private fun registerInjectionAlarm() {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                vibrate(longArrayOf(0, 700, 200, 700))
+                engine?.pause()
+                getSystemService(NotificationManager::class.java)
+                    .notify(NOTIFICATION_ID, buildNotification(engine?.state?.value ?: RunRuntimeState(), "⚠️ 注入被系统中断，已自动暂停"))
+            }
+        }
+        injectionReceiver = receiver
+        val filter = IntentFilter(ServiceGo.ACTION_INJECTION_LOST)
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                @Suppress("DEPRECATION")
+                registerReceiver(receiver, filter)
+            }
+        }
+    }
+
+    /** 锁屏监听：锁屏期间冻结玻璃渲染（注销传感器高光、停止连续重绘）。 */
+    private fun registerScreenState() {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    Intent.ACTION_SCREEN_OFF -> screenOff = true
+                    Intent.ACTION_SCREEN_ON -> screenOff = false
+                }
+                updateRenderSuppression()
+            }
+        }
+        screenReceiver = receiver
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_SCREEN_ON)
+        }
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                @Suppress("DEPRECATION")
+                registerReceiver(receiver, filter)
+            }
+        }
+    }
+
+    /** V4.0 巡航零额外耗电：RUNNING / 锁屏时冻结所有玻璃卡片的渲染。 */
+    private fun updateRenderSuppression() {
+        if (screenOff) {
+            DeepRunGlassManager.setRenderSuppressed(true, "锁屏")
+        } else {
+            DeepRunGlassManager.setRenderSuppressed(cruiseIsRunning, "巡航中")
+        }
+    }
+
+    private fun handleHaptics(state: RunRuntimeState) {
+        val previous = lastHapticPhase
+        if (state.phase != previous) {
+            when {
+                previous == RunPhase.PRE_START_SETTLE && state.phase == RunPhase.RUNNING ->
+                    vibrate(longArrayOf(0, 120))
+                (previous == RunPhase.RUNNING || previous == RunPhase.DETOUR_POINT) &&
+                    state.phase == RunPhase.COOLDOWN_WALK ->
+                    vibrate(longArrayOf(0, 600))
+                previous == RunPhase.COOLDOWN_WALK && state.phase == RunPhase.FINISHED ->
+                    vibrate(longArrayOf(0, 600, 250, 600))
+            }
+            lastHapticPhase = state.phase
+        }
+        if (!halfHapticDone && state.targetMeters > 0 &&
+            state.accumulatedMeters >= state.targetMeters / 2.0 &&
+            (state.phase == RunPhase.RUNNING || state.phase == RunPhase.DETOUR_POINT)
+        ) {
+            halfHapticDone = true
+            vibrate(longArrayOf(0, 100, 140, 100))
+        }
+    }
+
+    private fun handleWakeLock(state: RunRuntimeState) {
+        val keepAlive = state.phase == RunPhase.PRE_START_SETTLE ||
+            state.phase == RunPhase.RUNNING ||
+            state.phase == RunPhase.DETOUR_POINT ||
+            state.phase == RunPhase.PAUSED ||
+            state.phase == RunPhase.COOLDOWN_WALK
+        if (keepAlive) acquireWakeLock() else releaseWakeLock()
+    }
+
+    private fun acquireWakeLock() {
+        if (wakeLock?.isHeld == true) return
+        runCatching {
+            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+            wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DeepRun:run").apply {
+                setReferenceCounted(false)
+                acquire(3 * 60 * 60 * 1000L)
+            }
+        }
+    }
+
+    private fun releaseWakeLock() {
+        runCatching { wakeLock?.takeIf { it.isHeld }?.release() }
+        wakeLock = null
+    }
+
+    private fun vibrate(pattern: LongArray) {
+        runCatching {
+            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(pattern, -1)
+            }
+        }
+    }
+
+    private fun createChannel() {
+        val manager = getSystemService(NotificationManager::class.java)
+        if (manager.getNotificationChannel(CHANNEL_ID) == null) {
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    CHANNEL_ID,
+                    "跑步巡航",
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply { description = "跑圈进度与暂停控制" }
+            )
+        }
+    }
+
+    private fun updateNotification(state: RunRuntimeState) {
+        val now = android.os.SystemClock.elapsedRealtime()
+        val phaseChanged = state.phase != lastPhase
+        if (!phaseChanged && now - lastNotifyMs < 3000) return
+        lastNotifyMs = now
+        lastPhase = state.phase
+        getSystemService(NotificationManager::class.java)
+            .notify(NOTIFICATION_ID, buildNotification(state, null))
+    }
+
+    private fun buildNotification(state: RunRuntimeState, overrideText: String?): Notification {
+        val contentIntent = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, RunHomeActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val toggleIntent = PendingIntent.getService(
+            this,
+            1,
+            commandIntent(this, ACTION_TOGGLE_PAUSE),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val finishIntent = PendingIntent.getService(
+            this,
+            2,
+            commandIntent(this, ACTION_FINISH_EARLY),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val pace = if (state.paceSecPerKm > 0) {
+            String.format(Locale.US, "%d'%02d\"", state.paceSecPerKm / 60, state.paceSecPerKm % 60)
+        } else {
+            "--"
+        }
+        val text = overrideText ?: if (state.stepsWarning) {
+            "⚠️ 未检测到步数，请把手机放进裤子口袋"
+        } else if (state.phase == RunPhase.PRE_START_SETTLE) {
+            String.format(
+                Locale.US,
+                "预热 %d s · 请切到跑步 App，手机放口袋同步计步",
+                state.settleRemainSec
+            )
+        } else {
+            String.format(
+                Locale.US,
+                "%.2f / %.2f km · 配速 %s · 第 %d 圈",
+                state.accumulatedKm,
+                state.targetKm,
+                pace,
+                state.currentLapIndex
+            )
+        }
+        val brand = getString(R.string.app_name)
+        val title = when (state.phase) {
+            RunPhase.FINISHED -> "$brand · 已结束"
+            RunPhase.PAUSED -> "$brand · 已暂停"
+            RunPhase.PRE_START_SETTLE -> "$brand · 预热中"
+            else -> "$brand · 跑圈中"
+        }
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setSubText("随身携带手机走动，同步硬件计步")            .setOngoing(state.phase != RunPhase.FINISHED)
+            .setOnlyAlertOnce(true)
+            .setContentIntent(contentIntent)
+            .addAction(
+                0,
+                if (state.phase == RunPhase.PAUSED) "继续" else "暂停",
+                toggleIntent
+            )
+            .addAction(0, "收尾", finishIntent)
+            .build()
+    }
+}

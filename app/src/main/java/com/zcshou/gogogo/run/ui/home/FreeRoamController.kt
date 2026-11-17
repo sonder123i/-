@@ -1,0 +1,289 @@
+package com.zcshou.gogogo.run.ui.home
+
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.location.LocationManager
+import android.os.IBinder
+import android.os.SystemClock
+import androidx.core.content.ContextCompat
+import com.zcshou.gogogo.run.bridge.ILocationInjector
+import com.zcshou.gogogo.run.engine.TrackMathUtils
+import com.zcshou.service.ServiceGo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlin.math.sin
+
+/**
+ * 自由漫游控制器：复用 ServiceGo 的注入通道，自行以 2Hz 驱动坐标；
+ * 无 UI，地图页只订阅 [state] 绘制位置与尾迹。
+ */
+object FreeRoamController {
+
+    private const val TICK_MS = 100L
+    private const val TRAIL_EVERY_TICKS = 2
+    private const val MAX_TRAIL = 1200
+
+    data class RoamState(
+        val position: TrackMathUtils.LatLng? = null,
+        val baseAltitude: Double = 50.0,
+        val trail: List<TrackMathUtils.LatLng> = emptyList(),
+        val attached: Boolean = false,
+        val speedMps: Double = 0.0
+    )
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val _state = MutableStateFlow(RoamState())
+    val state: StateFlow<RoamState> = _state.asStateFlow()
+
+    private var appContext: Context? = null
+    private var injector: ILocationInjector? = null
+    private var bindRequested = false
+    private var ticker: Job? = null
+    private var glideJob: Job? = null
+    private var motionBearing = 0.0
+    private var motionSpeed = 0.0
+    private var lastBeforePause: TrackMathUtils.LatLng? = null
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as? ServiceGo.ServiceGoBinder ?: return
+            val inj = binder.injector
+            injector = inj
+            inj.setEngineDriven(true)
+            val ctx = appContext ?: return
+            val real = lastDeviceLocation(ctx)
+            val base = real?.takeIf { it.hasAltitude() }?.altitude ?: 50.0
+            val start = real?.let { TrackMathUtils.LatLng(it.latitude, it.longitude) }
+                ?: TrackMathUtils.LatLng(39.9087, 116.3975)
+            _state.value = _state.value.copy(
+                position = _state.value.position ?: start,
+                baseAltitude = base,
+                attached = true
+            )
+            injectFrame(_state.value.position ?: start, 0.0, 0.0)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            injector = null
+            _state.value = _state.value.copy(attached = false)
+        }
+    }
+
+    fun attach(context: Context) {
+        if (injector != null || bindRequested) return
+        val ctx = context.applicationContext
+        appContext = ctx
+        bindRequested = true
+        val intent = Intent(ctx, ServiceGo::class.java)
+        runCatching {
+            // 仅绑定：前台通知由 RoamService / RunSessionService 承担，避免双通知
+            ctx.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        }.onFailure { bindRequested = false }
+    }
+
+    fun isAttached(): Boolean = injector != null
+
+    /** 平滑空降：约 0.8 秒内分段注入，尾迹连续 */
+    fun teleport(lat: Double, lng: Double) {
+        glideJob?.cancel()
+        glideJob = null
+        injector?.setEngineDriven(true)
+        val target = TrackMathUtils.LatLng(lat, lng)
+        val from = _state.value.position
+        if (from == null) {
+            injectFrame(target, 0.0, 0.0)
+            appendTrail(target)
+            return
+        }
+        scope.launch {
+            val total = TrackMathUtils.distanceMeters(from, target)
+            val steps = 14
+            val bearing = TrackMathUtils.bearingDegrees(from, target)
+            for (i in 1..steps) {
+                delay(55)
+                val f = i / steps.toDouble()
+                val p = TrackMathUtils.LatLng(
+                    from.lat + (target.lat - from.lat) * f,
+                    from.lng + (target.lng - from.lng) * f
+                )
+                injectFrame(p, total / (steps * 0.055), bearing)
+                appendTrail(p)
+            }
+        }
+    }
+
+    /** 摇杆驱动：speedMps <= 0 即停止；bearingDeg 为正北顺时针角度 */
+    fun drive(bearingDeg: Double, speedMps: Double) {
+        glideJob?.cancel()
+        glideJob = null
+        motionBearing = bearingDeg
+        motionSpeed = speedMps.coerceIn(0.0, 15.0)
+        if (motionSpeed <= 0.01) {
+            ticker?.cancel()
+            ticker = null
+            _state.value = _state.value.copy(speedMps = 0.0)
+            return
+        }
+        if (ticker?.isActive == true) return
+        injector?.setEngineDriven(true)
+        ticker = scope.launch {
+            var tick = 0
+            while (isActive) {
+                delay(TICK_MS)
+                val cur = _state.value.position ?: continue
+                val next = TrackMathUtils.destinationPoint(
+                    cur, motionBearing, motionSpeed * TICK_MS / 1000.0
+                )
+                injectFrame(next, motionSpeed, motionBearing)
+                tick++
+                if (tick % TRAIL_EVERY_TICKS == 0) appendTrail(next)
+            }
+        }
+    }
+
+    /** 300m 内的短距离平滑走过去：按给定速度匀速推进，不瞬移 */
+    fun glideTo(lat: Double, lng: Double, speedMps: Double) {
+        glideJob?.cancel()
+        ticker?.cancel()
+        ticker = null
+        injector?.setEngineDriven(true)
+        val target = TrackMathUtils.LatLng(lat, lng)
+        val from = _state.value.position
+        if (from == null) {
+            injectFrame(target, 0.0, 0.0)
+            appendTrail(target)
+            return
+        }
+        val distance = TrackMathUtils.distanceMeters(from, target)
+        val speed = speedMps.coerceIn(0.5, 8.0)
+        if (distance < 0.8) {
+            injectFrame(target, 0.0, 0.0)
+            appendTrail(target)
+            return
+        }
+        val bearing = TrackMathUtils.bearingDegrees(from, target)
+        val durationMs = (distance / speed * 1000.0).toLong().coerceAtLeast(200L)
+        glideJob = scope.launch {
+            val started = SystemClock.elapsedRealtime()
+            try {
+                while (isActive) {
+                    val elapsed = (SystemClock.elapsedRealtime() - started).toDouble()
+                    val f = (elapsed / durationMs).coerceIn(0.0, 1.0)
+                    val point = TrackMathUtils.LatLng(
+                        from.lat + (target.lat - from.lat) * f,
+                        from.lng + (target.lng - from.lng) * f
+                    )
+                    injectFrame(point, if (f < 1.0) speed else 0.0, bearing)
+                    appendTrail(point)
+                    if (f >= 1.0) break
+                    delay(100)
+                }
+            } finally {
+                glideJob = null
+            }
+        }
+    }
+
+    fun stopMotion() {
+        glideJob?.cancel()
+        glideJob = null
+        ticker?.cancel()
+        ticker = null
+        // 补一帧零速，避免系统里残留上一帧的高速度
+        _state.value.position?.let { injectFrame(it, 0.0, motionBearing) }
+        _state.value = _state.value.copy(speedMps = 0.0)
+    }
+
+    fun clearTrail() {
+        _state.value = _state.value.copy(trail = emptyList())
+    }
+
+    /** 采真实定位前暂停注入：移除测试 Provider，让系统返回真实基站/Wi-Fi 位置 */
+    fun pauseInjection() {
+        lastBeforePause = _state.value.position
+        runCatching { injector?.releaseInjection() }
+    }
+
+    /** 采样结束后恢复注入与接管 */
+    fun resumeInjection() {
+        val inj = injector ?: return
+        runCatching { inj.setEngineDriven(true) }
+        lastBeforePause?.let { injectFrame(it, 0.0, 0.0) }
+    }
+
+    fun updateBaseAltitude(altitudeMeters: Double) {
+        _state.value = _state.value.copy(baseAltitude = altitudeMeters)
+    }
+
+    /** 彻底结束漫游：停止驱动、移除测试 Provider、解绑并关闭 ServiceGo */
+    fun release() {
+        stopMotion()
+        runCatching { injector?.releaseInjection() }
+        injector = null
+        val ctx = appContext
+        if (bindRequested && ctx != null) {
+            runCatching { ctx.unbindService(connection) }
+        }
+        bindRequested = false
+        ctx?.let { runCatching { it.stopService(Intent(it, ServiceGo::class.java)) } }
+        _state.value = RoamState()
+    }
+
+    private fun injectFrame(p: TrackMathUtils.LatLng, speed: Double, bearing: Double) {
+        val inj = injector
+        if (inj == null) {
+            _state.value = _state.value.copy(position = p)
+            return
+        }
+        val seconds = SystemClock.elapsedRealtime() / 1000.0
+        val alt = _state.value.baseAltitude + 1.2 * sin(seconds / 20.0)
+        inj.injectLocation(
+            p.lat, p.lng, alt,
+            speed.toFloat(), bearing.toFloat(),
+            4.0f, 6.0f, 0.5f, 8.0f
+        )
+        _state.value = _state.value.copy(position = p, speedMps = speed)
+    }
+
+    private fun appendTrail(p: TrackMathUtils.LatLng) {
+        val trail = _state.value.trail.toMutableList()
+        trail.add(p)
+        while (trail.size > MAX_TRAIL) trail.removeAt(0)
+        _state.value = _state.value.copy(trail = trail)
+    }
+
+    private fun lastDeviceLocation(context: Context): android.location.Location? {
+        val granted = ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!granted) return null
+        return runCatching {
+            val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val candidates = listOf(
+                lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER),
+                lm.getLastKnownLocation(LocationManager.GPS_PROVIDER),
+                lm.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER)
+            )
+            candidates.filterNotNull().firstOrNull { !isMockLocation(it) }
+                ?: candidates.filterNotNull().maxByOrNull { it.time }
+        }.getOrNull()
+    }
+
+    private fun isMockLocation(location: android.location.Location): Boolean =
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            location.isMock
+        } else {
+            @Suppress("DEPRECATION")
+            location.isFromMockProvider
+        }
+}
