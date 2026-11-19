@@ -27,11 +27,11 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # 官网源码在独立仓库；Vite 会按当前仓库名自动设置 base=/CloudTrace/
       - name: Checkout site source
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: sonder123i/new
           path: site
