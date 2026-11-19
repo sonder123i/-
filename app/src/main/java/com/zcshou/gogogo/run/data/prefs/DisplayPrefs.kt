@@ -3,16 +3,16 @@ package com.zcshou.gogogo.run.data.prefs
 import android.content.Context
 
 /**
- * V4.0 视觉偏好：渲染质量（极致光学 / 省电平衡）。
+ * V4.0 视觉偏好：渲染质量（液态玻璃 / 省电平衡）。
  * 与主题模式（ThemeHelper）分开存放，避免两套开关互相覆盖。
  */
 object DisplayPrefs {
 
     enum class RenderQuality {
-        /** 极致光学：API 33+ 走 AGSL 折射。 */
+        /** 液态玻璃：V4.1 静态磨砂材质（零采样、零实时模糊，恒定开销）。 */
         OPTICAL,
 
-        /** 省电平衡：最多降到硬件毛玻璃，绝不启用 AGSL。 */
+        /** 省电平衡：保留同一静态磨砂材质，仅记录省电偏好。 */
         BALANCED
     }
 

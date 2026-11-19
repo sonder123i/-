@@ -6,20 +6,31 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
 import android.view.MotionEvent
+import android.view.View
 import android.view.WindowManager
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.TextViewCompat
+import androidx.dynamicanimation.animation.FloatValueHolder
+import androidx.dynamicanimation.animation.SpringAnimation
+import androidx.dynamicanimation.animation.SpringForce
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.zcshou.gogogo.R
 import com.zcshou.gogogo.run.data.db.RunRouteEntity
 import com.zcshou.gogogo.run.data.repository.RunRepository
@@ -35,6 +46,13 @@ import com.zcshou.gogogo.run.service.RoamService
 import com.zcshou.gogogo.run.ui.glass.OverlayGlassStyle
 import com.zcshou.gogogo.run.ui.overlay.FloatingCapsuleView
 import com.zcshou.gogogo.run.ui.theme.ThemeHelper
+import com.zcshou.gogogo.run.ui.widget.LiquidTabBar
+import com.zcshou.gogogo.run.ui.widget.NavGlyphDrawable
+import com.zcshou.gogogo.run.ui.widget.NavTabView
+import com.zcshou.gogogo.run.update.UpdateConfig
+import com.zcshou.gogogo.run.update.UpdateDialog
+import com.zcshou.gogogo.run.update.UpdateManager
+import com.zcshou.gogogo.run.update.UpdatePrefs
 import com.zcshou.service.ServiceGo
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -52,6 +70,9 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         private const val TAB_AUTO = "tab_auto"
         private const val TAB_ROAM = "tab_roam"
         private const val TAB_ENV = "tab_env"
+        /** 自动弹出引导的次数上限：未配置也不会每次开 App 都弹。 */
+        private const val MAX_AUTO_GUIDE_SHOWS = 3
+        private const val KEY_GUIDE_SHOWN_COUNT = "auto_guide_count"
         const val EXTRA_SHORTCUT_ACTION = "shortcut_action"
         private const val ACTION_QUICK_RUN = "default_run"
         private const val ACTION_ROAM = "roam"
@@ -66,13 +87,24 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
 
     private lateinit var repository: RunRepository
     private lateinit var homeStatus: TextView
-    private lateinit var tabRoutes: TextView
-    private lateinit var tabRoam: TextView
-    private lateinit var tabEnv: TextView
+    private lateinit var tabRoutes: NavTabView
+    private lateinit var tabRoam: NavTabView
+    private lateinit var tabEnv: NavTabView
+    private lateinit var bottomTabs: View
+    private lateinit var tabBar: LiquidTabBar
+    private lateinit var navGlassView: com.example.liquidglass.LiquidGlassView
+    private lateinit var navContainerView: FrameLayout
+    private lateinit var navShadowView: com.zcshou.gogogo.run.ui.widget.NavShadowView
+    private lateinit var navMiniGlass: com.example.liquidglass.LiquidGlassView
+    private lateinit var navMini: TextView
+    private var navMinimized = false
+    private var navMinimizeFraction = 0f
+    private var navFractionSpring: androidx.dynamicanimation.animation.SpringAnimation? = null
     private var selectedTab = 0
     private var lastState = RunRuntimeState()
 
     private var latestState = RunRuntimeState()
+    private var updateDialog: AlertDialog? = null
     private var pendingLaunchAfterWifi: (() -> Unit)? = null
 
     private var capsule: FloatingCapsuleView? = null
@@ -114,16 +146,99 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
             .apply()
         ThemeHelper.enableEdgeToEdge(this)
         setContentView(R.layout.activity_run_home)
-        ThemeHelper.padForSystemBars(findViewById(R.id.homeRoot))
+        // 不再给整页加 systemBars padding：地图需要真正铺到四边，
+        // 顶部 inset 由各页面自己消化，底部 inset 只抬高悬浮导航胶囊。
         repository = RunRepository(applicationContext)
         homeStatus = findViewById(R.id.homeStatus)
         tabRoutes = findViewById(R.id.tabRoutes)
         tabRoam = findViewById(R.id.tabRoam)
         tabEnv = findViewById(R.id.tabEnv)
+        bottomTabs = findViewById(R.id.bottomTabs)
+        navContainerView = findViewById(R.id.bottomTabs)
+        navGlassView = findViewById<com.example.liquidglass.LiquidGlassView>(R.id.navGlass)
+        navShadowView =
+            findViewById<com.zcshou.gogogo.run.ui.widget.NavShadowView>(R.id.navShadow)
+        navMiniGlass =
+            findViewById<com.example.liquidglass.LiquidGlassView>(R.id.navMiniGlass)
+        navMini = findViewById(R.id.navMini)
+        navMini.setOnClickListener { expandNav() }
+        navMiniGlass.setOnClickListener { expandNav() }
+        navMiniGlass.apply {
+            backdropSource = findViewById(R.id.fragmentContainer)
+            com.zcshou.gogogo.run.ui.glass.GlassRenderGate.register(this)
+            com.zcshou.gogogo.run.ui.glass.OpticalGlassTuning.apply(
+                this,
+                bevelDp = com.zcshou.gogogo.run.ui.glass.OpticalGlassTuning.NAV_BEVEL_DP,
+                refractionDp = com.zcshou.gogogo.run.ui.glass.OpticalGlassTuning.NAV_REFRACTION_DP
+            )
+            enablePressEffect = false
+            enableShadow = false
+            enableAdaptiveTint = false
+        }
+        navGlassView.apply {
+            // 导航胶囊折射底层页面：与旧版保持同一父级/同一 source 关系
+            backdropSource = findViewById(R.id.fragmentContainer)
+            com.zcshou.gogogo.run.ui.glass.GlassRenderGate.register(this)
+            // 小尺寸胶囊单独收窄折射带，避免整块都是边缘
+            com.zcshou.gogogo.run.ui.glass.OpticalGlassTuning.apply(
+                this,
+                bevelDp = com.zcshou.gogogo.run.ui.glass.OpticalGlassTuning.NAV_BEVEL_DP,
+                refractionDp = com.zcshou.gogogo.run.ui.glass.OpticalGlassTuning.NAV_REFRACTION_DP
+            )
+            // 按压/抬起由 LiquidTabBar 驱动，玻璃本身不再缩放，避免与透镜分层错位
+            enablePressEffect = false
+        }
+        tabBar = LiquidTabBar(
+            container = navContainerView,
+            glass = navGlassView,
+            tabHost = findViewById(R.id.tabHost),
+            tabs = listOf(tabRoutes, tabRoam, tabEnv)
+        ) { index -> selectTab(index) }
+        applyBottomBarInsets()
+
+        // 锁屏时停掉悬浮胶囊的边缘流光（跨应用悬浮窗不受本页前后台影响）
+        runCatching {
+            ContextCompat.registerReceiver(
+                this,
+                screenReceiver,
+                android.content.IntentFilter().apply {
+                    addAction(Intent.ACTION_SCREEN_OFF)
+                    addAction(Intent.ACTION_SCREEN_ON)
+                },
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+        }
 
         tabRoutes.setOnClickListener { selectTab(0) }
         tabRoam.setOnClickListener { selectTab(1) }
         tabEnv.setOnClickListener { selectTab(2) }
+        applyNavTabTints()
+
+        // 独立导航投影：跟随玻璃宽度、底边距与 Tab 行高度
+        val homeRootView = findViewById<View>(R.id.homeRoot)
+        fun updateNavShadow() {
+            val glassHeight = if (navGlassView.height > 0) {
+                navGlassView.height
+            } else {
+                (LiquidTabBar.NavMetrics.TRACK_DP * resources.displayMetrics.density).toInt()
+            }
+            val bottomInset = (homeRootView.height - navContainerView.bottom).coerceAtLeast(0)
+            // 圆角与玻璃一致（36dp），否则挖掉的轮廓和实际轨道对不上，边缘会留一圈灰
+            navShadowView.update(
+                navContainerView.width,
+                glassHeight,
+                bottomInset,
+                (36f * resources.displayMetrics.density).toInt()
+            )
+        }
+        navContainerView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            updateNavShadow()
+        }
+        homeRootView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            updateNavShadow()
+        }
+        navContainerView.post { updateNavShadow() }
+        updateNavMiniContent()
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
@@ -143,13 +258,55 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         handleShortcutIntent(intent)
         handleQuickActionShortcut(intent)
         maybeShowSetupGuide()
+        observeUpdates()
+        handleUpdateIntent(intent)
+        findViewById<View>(R.id.homeRoot).postDelayed({
+            if (!isFinishing && !isDestroyed && UpdateConfig.enabled &&
+                UpdatePrefs.autoCheck(this)
+            ) {
+                UpdateManager.getInstance(this).checkForUpdate(manual = false)
+            }
+        }, 1500)
+    }
+
+    /**
+     * 自动检查只负责“有更新时提示”；手动入口（体检页/关于页）会带 manualRequest，
+     * 即使配置引导还没完成也允许弹窗。
+     */
+    private fun observeUpdates() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                UpdateManager.getInstance(this@RunHomeActivity).state.collect { state ->
+                    if (!state.showDialog || updateDialog != null) return@collect
+                    val canShow = state.manualRequest || SetupGuard.isReady(this@RunHomeActivity)
+                    if (canShow) {
+                        updateDialog = UpdateDialog.show(this@RunHomeActivity) {
+                            updateDialog = null
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleUpdateIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(UpdateManager.EXTRA_SHOW_UPDATE, false) == true) {
+            intent.removeExtra(UpdateManager.EXTRA_SHOW_UPDATE)
+            UpdateManager.getInstance(this).showDownload()
+        }
     }
 
     private fun maybeShowSetupGuide() {
         if (SetupGuard.isReady(this)) return
         val prefs = getSharedPreferences("pf_guide", MODE_PRIVATE)
-        if (prefs.getBoolean("auto_guide_shown", false)) return
-        prefs.edit().putBoolean("auto_guide_shown", true).apply()
+        // 曾经是「弹过一次就永不再弹」：用户随手关掉 X 之后，除非自己发现首页那条
+        // 红条，否则再也见不到引导，开跑时才被挡回来 —— 那时上下文已经丢了。
+        //
+        // 现在改成「未配置就每次启动都提醒」，但设上限：提醒 3 次仍未配置就停，
+        // 避免变成每次开 App 都弹的骚扰。首页红条始终保留作为入口。
+        val shown = prefs.getInt(KEY_GUIDE_SHOWN_COUNT, 0)
+        if (shown >= MAX_AUTO_GUIDE_SHOWS) return
+        prefs.edit().putInt(KEY_GUIDE_SHOWN_COUNT, shown + 1).apply()
         window.decorView.postDelayed({
             if (isFinishing || isDestroyed) return@postDelayed
             if (!SetupGuard.isReady(this)) {
@@ -169,6 +326,7 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         handleAutoStartIntent(intent)
         handleShortcutIntent(intent)
         handleQuickActionShortcut(intent)
+        handleUpdateIntent(intent)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -187,6 +345,10 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
 
     override fun onResume() {
         super.onResume()
+        com.zcshou.gogogo.run.ui.glass.GlassRenderGate.setActive(true)
+        // 悬浮胶囊主要显示在别的 App 之上，所以「本页在前台」并不是流光该跑的条件，
+        // 只要没锁屏就继续跑（见下面的 screenReceiver）。
+        setCapsuleBeamPaused(false)
         val pending = pendingLaunchAfterWifi
         if (pending != null && !EnvGuardManager.isWifiActivelyConnected(this)) {
             pendingLaunchAfterWifi = null
@@ -194,7 +356,34 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         }
     }
 
+    /**
+     * 锁屏 / 亮屏：锁屏后流光没有任何观众，必须停掉帧循环。
+     * 注意这里只监听 SCREEN_OFF/ON——不能拿 Activity 的 onPause 当条件，
+     * 因为胶囊是跨应用悬浮窗，App 退到后台时它恰恰还在屏幕上。
+     */
+    private val screenReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                Intent.ACTION_SCREEN_OFF -> setCapsuleBeamPaused(true)
+                Intent.ACTION_SCREEN_ON -> setCapsuleBeamPaused(false)
+            }
+        }
+    }
+
+    private fun setCapsuleBeamPaused(paused: Boolean) {
+        capsule?.setBeamPaused(paused)
+    }
+
+    override fun onPause() {
+        // 锁屏 / 切后台 / 跨应用巡航：立即停掉玻璃着色器刷新
+        com.zcshou.gogogo.run.ui.glass.GlassRenderGate.setActive(false)
+        super.onPause()
+    }
+
     override fun onDestroy() {
+        runCatching { updateDialog?.dismiss() }
+        updateDialog = null
+        runCatching { unregisterReceiver(screenReceiver) }
         hideCapsule()
         super.onDestroy()
     }
@@ -242,7 +431,7 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
             Unit
         }
         if (EnvGuardManager.isWifiActivelyConnected(this)) {
-            AlertDialog.Builder(this)
+            com.zcshou.gogogo.run.ui.glass.GlassDialogs.builder(this)
                 .setTitle("当前已连接 Wi-Fi")
                 .setMessage("Wi-Fi 可能让定位闪回真实位置，建议暂时关闭后再开跑。")
                 .setPositiveButton("去关闭 Wi-Fi") { _, _ ->
@@ -259,6 +448,22 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
 
     override fun pauseResume() {
         sendCommand(RunSessionService.ACTION_TOGGLE_PAUSE)
+    }
+
+    override fun adjustPace(paceSecPerKm: Int) {
+        if (!RunSessionHolder.sessionActive) return
+        ContextCompat.startForegroundService(
+            this,
+            RunSessionService.adjustPaceIntent(this, paceSecPerKm)
+        )
+    }
+
+    override fun adjustTargetKm(km: Float) {
+        if (!RunSessionHolder.sessionActive) return
+        ContextCompat.startForegroundService(
+            this,
+            RunSessionService.adjustTargetIntent(this, km * 1000.0)
+        )
     }
 
     override fun pickDetour() {
@@ -363,10 +568,10 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
             val manager = getSystemService(NotificationManager::class.java)
             val channelId = "pf_notice"
             manager.createNotificationChannel(
-                NotificationChannel(channelId, "步频流提示", NotificationManager.IMPORTANCE_LOW)
+                NotificationChannel(channelId, "${getString(R.string.app_name)}提示", NotificationManager.IMPORTANCE_LOW)
             )
             val notification = NotificationCompat.Builder(this, channelId)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_cloudtrace)
                 .setContentTitle("模拟定位已停止")
                 .setContentText("真实 GPS 已恢复")
                 .setAutoCancel(true)
@@ -474,6 +679,59 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         }
     }
 
+    private fun applyBottomBarInsets() {
+        // 与 LiquidTabBar.NavMetrics 同源：轨道 72 + 上下各 8dp 留白。
+        // 迷你胶囊 48dp 高，落在同一条轨道的中线上，所以它的底距要多 12dp。
+        val barBase = dp(LiquidTabBar.NavMetrics.BLOCK_PADDING_DP.toInt())
+        val miniBase = barBase + dp(((LiquidTabBar.NavMetrics.TRACK_DP - 48f) / 2f).toInt())
+        val statusBase = dp((LiquidTabBar.NavMetrics.BLOCK_PADDING_DP * 2 +
+            LiquidTabBar.NavMetrics.TRACK_DP).toInt())
+        ViewCompat.setOnApplyWindowInsetsListener(bottomTabs) { target, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            (target.layoutParams as? FrameLayout.LayoutParams)?.let { lp ->
+                lp.bottomMargin = barBase + bars.bottom
+                target.layoutParams = lp
+            }
+            // 玻璃背景、导航容器与迷你胶囊共用同一个底边距
+            findViewById<View>(R.id.navGlass)?.let { glassView ->
+                (glassView.layoutParams as? FrameLayout.LayoutParams)?.let { lp ->
+                    lp.bottomMargin = barBase + bars.bottom
+                    glassView.layoutParams = lp
+                }
+            }
+            findViewById<View>(R.id.navMiniGlass)?.let { mini ->
+                (mini.layoutParams as? FrameLayout.LayoutParams)?.let { lp ->
+                    lp.bottomMargin = miniBase + bars.bottom
+                    mini.layoutParams = lp
+                }
+            }
+            (homeStatus.layoutParams as? FrameLayout.LayoutParams)?.let { lp ->
+                lp.bottomMargin = statusBase + bars.bottom
+                homeStatus.layoutParams = lp
+            }
+            insets
+        }
+        ViewCompat.requestApplyInsets(bottomTabs)
+    }
+
+    /**
+     * 底栏三格取色。未选中态是 `dr_text_unselected` 再乘 50% 透明 —— 与 capybara
+     * 的 `onSurfaceVariant.copy(alpha = 0.5f)` 同一档，透镜滑过去时才"点亮"。
+     * 选中态图标取强调色、文字取中性前景（文字比图标更沉，避免整格发亮）。
+     */
+    private fun applyNavTabTints() {
+        val unselected = androidx.core.graphics.ColorUtils.setAlphaComponent(
+            getColor(R.color.dr_text_unselected), 128
+        )
+        val accent = getColor(R.color.pf_volt)
+        val labelSelected = getColor(R.color.pf_text_primary)
+        listOf(tabRoutes, tabRoam, tabEnv).forEach { tab ->
+            tab.tintUnselected = unselected
+            tab.tintAccent = accent
+            tab.tintLabelSelected = labelSelected
+        }
+    }
+
     private fun selectTab(index: Int) {
         selectedTab = index
         val tags = arrayOf(TAB_AUTO, TAB_ROAM, TAB_ENV)
@@ -485,18 +743,98 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
             }
             commit()
         }
-        listOf(tabRoutes, tabRoam, tabEnv).forEachIndexed { i, tab ->
-            val selected = i == index
-            tab.setTextColor(
-                getColor(if (selected) R.color.pf_volt else R.color.pf_text_secondary)
-            )
-            tab.setTypeface(
-                null,
-                if (selected) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL
-            )
-            tab.setBackgroundResource(if (selected) R.drawable.bg_tab_selected else 0)
-        }
+        // 图标/文字的点亮与字重交叉淡入由 NavTabView 按透镜权重逐帧插值，
+        // 这里只把透镜推过去；Tab 自身不携带任何实心底托。
+        tabBar.select(index)
         renderHeader(lastState)
+        updateNavMiniContent()
+        if (navMinimized) expandNav()
+        com.zcshou.gogogo.run.ui.glass.GlassRenderGate.requestRefresh(320L)
+    }
+
+    /** 首页列表滚动：向下收成迷你胶囊，向上展开。 */
+    fun onHomeScrolled(dy: Int, scrollY: Int) {
+        if (selectedTab != 0) return
+        if (navMinimized) {
+            if (dy < -6) expandNav()
+        } else if (dy > 6 && scrollY > dp(40)) {
+            minimizeNav()
+        }
+    }
+
+    private fun minimizeNav() {
+        if (navMinimized) return
+        navMinimized = true
+        animateNavFraction(1f)
+    }
+
+    fun expandNav() {
+        if (!navMinimized) return
+        navMinimized = false
+        animateNavFraction(0f)
+    }
+
+    private fun animateNavFraction(target: Float) {
+        navFractionSpring?.cancel()
+        navFractionSpring = SpringAnimation(FloatValueHolder(navMinimizeFraction)).apply {
+            setSpring(
+                SpringForce(target).apply {
+                    dampingRatio = 0.82f
+                    stiffness = 320f
+                }
+            )
+            addUpdateListener { _, value, _ -> applyNavFraction(value) }
+            start()
+        }
+    }
+
+    private fun applyNavFraction(raw: Float) {
+        if (!::navContainerView.isInitialized || !::navMiniGlass.isInitialized) return
+        val f = raw.coerceIn(0f, 1f)
+        navMinimizeFraction = f
+        val alpha = (1f - f * 1.6f).coerceIn(0f, 1f)
+        val scaleX = 1f - 0.82f * f
+        val scaleY = 1f - 0.30f * f
+        listOf(navContainerView, navGlassView).forEach { view ->
+            view.pivotX = view.width / 2f
+            view.pivotY = view.height / 2f
+            view.scaleX = scaleX
+            view.scaleY = scaleY
+            view.alpha = alpha
+            view.visibility = if (alpha <= 0.02f) View.INVISIBLE else View.VISIBLE
+        }
+        navShadowView.alpha = (1f - f).coerceIn(0f, 1f)
+        val miniAlpha = ((f - 0.35f) / 0.65f).coerceIn(0f, 1f)
+        val showMini = miniAlpha > 0.01f
+        if (showMini && navMiniGlass.visibility != View.VISIBLE) {
+            // 迷你胶囊从透明里浮出时重拍一次背景，保证第一帧就是真实折射而不是空白
+            com.zcshou.gogogo.run.ui.glass.GlassRenderGate.requestRefresh(320L)
+        }
+        navMiniGlass.alpha = miniAlpha
+        navMiniGlass.scaleX = 0.55f + 0.45f * f
+        navMiniGlass.scaleY = 0.55f + 0.45f * f
+        navMiniGlass.visibility = if (showMini) View.VISIBLE else View.GONE
+    }
+
+    private fun updateNavMiniContent() {
+        if (!::navMini.isInitialized) return
+        val tab = when (selectedTab) {
+            0 -> tabRoutes
+            1 -> tabRoam
+            else -> tabEnv
+        }
+        navMini.text = tab.label
+        // 迷你胶囊的图标与格子同源：把同一份 NavGlyph 画成 20dp 的 Drawable。
+        // compound drawable 的 tintList 对自绘 Drawable 不生效，直接设色。
+        val color = getColor(R.color.pf_volt)
+        val glyph = NavGlyphDrawable(resources.displayMetrics.density, tab.spec, dp(20))
+        glyph.setGlyphTint(color)
+        navMini.setCompoundDrawablesRelativeWithIntrinsicBounds(glyph, null, null, null)
+        navMini.setTextColor(color)
+        TextViewCompat.setCompoundDrawableTintList(navMini, ColorStateList.valueOf(color))
+        if (::navMiniGlass.isInitialized && navMiniGlass.isShown) {
+            com.zcshou.gogogo.run.ui.glass.GlassRenderGate.requestRefresh(160L)
+        }
     }
 
     private fun renderHeader(state: RunRuntimeState) {
@@ -571,9 +909,14 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
             runCatching { wm.updateViewLayout(view, params) }
             if (end) snapToEdge(view, wm, params)
         }
-        // 悬浮窗禁用跨窗模糊：Android 12+ 会为 blurBehindRadius 创建全屏 Dim Layer，
-        // 输入分发器据此把窗外触摸全部判为 untrusted 丢弃，导致下层页面无法操作。
-        view.setCrossWindowBlurEnabled(false)
+        // 悬浮窗不主动开启 blurBehindRadius（Android 12+ 的 Dim Layer 会吞掉窗外触摸），
+        // 但监听系统跨窗模糊可用性：不可用时胶囊自动切到 94% 高密度磨砂，杜绝透字。
+        val crossWindowBlur = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            runCatching { wm.isCrossWindowBlurEnabled }.getOrDefault(false)
+        } else {
+            false
+        }
+        view.setCrossWindowBlurEnabled(crossWindowBlur)
         runCatching { wm.addView(view, params) }.onSuccess {
             capsule = view
             windowManager = wm
@@ -624,7 +967,8 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         resources.getIdentifier("navigation_bar_height", "dimen", "android")
             .takeIf { it > 0 }?.let { resources.getDimensionPixelSize(it) } ?: dp(48)
 
-    private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    private fun toast(message: String) =
+        com.zcshou.gogogo.run.ui.glass.GlassFeedback.toast(this, message)
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }

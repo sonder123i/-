@@ -1,25 +1,22 @@
 package com.zcshou.gogogo.run.ui.editor
 
-import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.RectF
+import android.view.HapticFeedbackConstants
 import android.view.View
-import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
-import com.zcshou.gogogo.R
-import com.zcshou.gogogo.run.ui.theme.FiberStyle
+import androidx.dynamicanimation.animation.FloatValueHolder
+import androidx.dynamicanimation.animation.SpringAnimation
+import androidx.dynamicanimation.animation.SpringForce
+import com.zcshou.gogogo.run.ui.glass.GlassLensRenderer
 import kotlin.math.max
 
 /**
- * V4.0 水银液滴分段器。
+ * V5.0 水银液滴分段器。
  *
- * 在现有分段行下方插入一枚圆角指示器，切换时以过冲弹簧插值在标签之间滑动，
- * 滑动瞬间产生轻微拉伸（果冻感），并给目标标签一次微放大反馈。
- *
- * 不依赖任何第三方库；指示器是自绘 View，避免每帧 requestLayout。
+ * 选中胶囊由左右两条独立弹簧（阻尼 0.72 / 刚度 380）驱动：
+ * 两侧起止位移不同，滑动中自然产生水平拉伸，到位回弹成果冻感。
  */
 class MercuryTabStrip(
     private val host: FrameLayout,
@@ -29,7 +26,8 @@ class MercuryTabStrip(
 
     private val density = host.resources.displayMetrics.density
     private val indicator = PillIndicatorView(host.context)
-    private var animator: ValueAnimator? = null
+    private var leftSpring: SpringAnimation? = null
+    private var rightSpring: SpringAnimation? = null
     private var selected = 0
 
     init {
@@ -76,20 +74,25 @@ class MercuryTabStrip(
 
         val startLeft = indicator.leftEdge
         val startRight = indicator.rightEdge
-        animator?.cancel()
-        animator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 320L
-            interpolator = OvershootInterpolator(0.9f)
-            addUpdateListener { va ->
-                val t = va.animatedValue as Float
-                indicator.setBounds(
-                    startLeft + (targetLeft - startLeft) * t,
-                    startRight + (targetRight - startRight) * t
-                )
-            }
+        leftSpring?.cancel()
+        rightSpring?.cancel()
+        leftSpring = springTo(startLeft, targetLeft) { indicator.setLeftEdge(it) }
+        rightSpring = springTo(startRight, targetRight) { indicator.setRightEdge(it) }
+        host.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        pulse(tab)
+    }
+
+    private fun springTo(from: Float, to: Float, apply: (Float) -> Unit): SpringAnimation {
+        return SpringAnimation(FloatValueHolder(from)).apply {
+            setSpring(
+                SpringForce(to).apply {
+                    dampingRatio = 0.72f
+                    stiffness = 380f
+                }
+            )
+            addUpdateListener { _, value, _ -> apply(value) }
             start()
         }
-        pulse(tab)
     }
 
     private fun pulse(tab: View) {
@@ -110,7 +113,10 @@ class MercuryTabStrip(
             .start()
     }
 
-    /** 圆角液滴指示器：18% 强调色填充 + 顶部一道冷白高光。 */
+    /**
+     * 内层同心玻璃透镜：高透玻璃渐变 + 1.5dp 纯白镜面外圈。
+     * V5.2 起彻底移除原先 pf_volt 120α 的深色描边（浅色下呈生硬黑框）。
+     */
     private inner class PillIndicatorView(context: Context) : View(context) {
 
         var leftEdge = 0f
@@ -118,26 +124,17 @@ class MercuryTabStrip(
         var rightEdge = 0f
             private set
 
-        private val dp = { v: Float -> v * density }
-        private val radius = dp(17f)
-        private val rect = RectF()
+        fun setLeftEdge(value: Float) {
+            leftEdge = value
+            invalidate()
+        }
 
-        private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = context.getColor(R.color.pf_volt)
-            alpha = 90
+        fun setRightEdge(value: Float) {
+            rightEdge = value
+            invalidate()
         }
-        private val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = dp(0.8f)
-            color = context.getColor(R.color.pf_volt)
-            alpha = 120
-        }
-        private val sheenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = dp(0.7f)
-            color = context.getColor(R.color.dr_glass_rim_highlight)
-            alpha = 160
-        }
+
+        private val dp = { v: Float -> v * density }
 
         fun setBounds(left: Float, right: Float) {
             leftEdge = left
@@ -147,21 +144,20 @@ class MercuryTabStrip(
 
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
-            val l = leftEdge + dp(1f)
-            val r = max(l + dp(12f), rightEdge - dp(1f))
+            val l = leftEdge + dp(1.5f)
+            val r = max(l + dp(12f), rightEdge - dp(1.5f))
             val t = dp(1f)
             val b = height - dp(1f)
-            rect.set(l, t, r, b)
-            // V4.0 光纤渐变：中心近白、边缘泛冰青
-            fillPaint.shader = FiberStyle.linear(context, width, height, vertical = true)
-            fillPaint.alpha = 90
-            canvas.drawRoundRect(rect, radius, radius, fillPaint)
-            canvas.drawRoundRect(rect, radius, radius, rimPaint)
-
-            // 顶部高光弧：只画上沿 60% 宽度，模拟液滴受光
-            val inset = dp(6f)
-            rect.set(l + inset, t + dp(1.2f), r - inset, t + dp(1.2f))
-            canvas.drawLine(rect.left, rect.top, rect.right, rect.top, sheenPaint)
+            GlassLensRenderer.drawInnerLens(
+                canvas = canvas,
+                context = context,
+                left = l,
+                top = t,
+                right = r,
+                bottom = b,
+                radius = (b - t) / 2f,
+                density = density
+            )
         }
     }
 }

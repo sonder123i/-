@@ -145,7 +145,7 @@ public class ServiceGo extends Service implements ILocationInjector {
                 .setContentTitle(getResources().getString(R.string.app_name))
                 .setContentText(getResources().getString(R.string.app_service_tips))
                 .setContentIntent(clickPI)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_cloudtrace)
                 .build();
 
         startForeground(SERVICE_GO_NOTE_ID, notification);

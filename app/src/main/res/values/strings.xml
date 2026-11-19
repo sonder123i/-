@@ -1,28 +1,35 @@
 <resources>
-    <string name="app_name">步频流</string>
+    <string name="app_name">云迹</string>
+    <!-- 品牌口令协议前缀（展示用；解析侧以 BrandConfig.SHARE_PREFIX 为准） -->
+    <string name="route_share_scheme" translatable="false">CLOUDTRACE</string>
+    <string name="route_import_hint">从 %1$s:// 口令导入路线</string>
+    <string name="route_share_copy">复制 %1$s:// 分享口令</string>
+    <string name="setup_mock_app_hint">开发者选项 → 选择模拟位置信息应用 → 选择「%1$s」</string>
+    <string name="route_import_label">从 CLOUDTRACE:// 口令导入路线</string>
     <string name="app_settings">设置</string>
     <string name="app_history">历史记录</string>
     <string name="app_author">ZCShou</string>
     <string name="app_email">zcsexp@gmail.com</string>
     <string name="app_statement">仅供学习使用，否则后果自负！</string>
-    <string name="app_service_tips">步频流服务正在运行中</string>
+    <string name="app_service_tips">云迹服务正在运行中</string>
     <string name="app_agreement">用户协议</string>
     <string name="app_agreement_content">"1. 本软件专为学习 Android 开发使用，不会收集任何用户数据。"
     "严禁利用本软件侵犯他人隐私权或者用于游戏牟利，如软件使用者不能遵守此规定， 请立即删除。"
     "对于因用户使用本软件而造成自身或他人隐私泄露等任何不良后果，均由用户自行承担，软件作者不负任何责任。\n"
-    "2. 用户不得对本软件产品进行反向工程（reverse engineer）、反向编译（decompile）或反汇编（disassemble）， 违者属于侵权行为，并自行承担由此产生的不利后果。\n"
+    "2. 本软件以 GNU General Public License v3.0 发布，源代码可从项目仓库获取；您有权依照该协议使用、修改与再分发本软件，并须遵守协议条款。\n"
     "3. 软件保证不含任何病毒，木马，等破坏用户数据的恶意代码，但是由于本软件产品可以通过网络等途径下载、传播，对于从非软件作者指定站点下载的本软件产品软件作者无法保证该软件是否感染计算机病毒、是否隐藏有伪装的特洛伊木马程序或者黑客软件，不承担由此引起的直接和间接损害责任。\n"
     "4. 软件会不断更新，以便及时为用户提供新功能和修正软件中的BUG。 同时软件作者保证本软件在升级过程中也不含有任何旨在破坏用户计算机数据的恶意代码。\n"
     "5. 由于用户计算机软硬件环境的差异性和复杂性，本软件所提供的各项功能并不能保证在任何情况下都能正常执行或达到用户所期望的结果。 用户使用本软件所产生的一切后果，软件作者不承担任何责任。\n"
     "6. 如果用户自行安装本软件，即表明用户信任软件作者，自愿选择安装本软件，并接受本协议所有条款。 如果用户不接受本协议，请立即删除。\n"
     </string>
     <string name="app_privacy">隐私政策</string>
-    <string name="app_privacy_content">"1. 本软件专为学习 Android 开发使用，不会收集任何用户数据。\n"
-    "2. 用户不得对本软件产品进行反向工程（reverse engineer）、反向编译（decompile）或反汇编（disassemble）， 违者属于侵权行为，并自行承担由此产生的不利后果。\n"
-    "3. 软件保证不含任何病毒，木马，等破坏用户数据的恶意代码，但是由于本软件产品可以通过网络等途径下载、传播，对于从非软件作者指定站点下载的本软件产品软件作者无法保证该软件是否感染计算机病毒、是否隐藏有伪装的特洛伊木马程序或者黑客软件，不承担由此引起的直接和间接损害责任。\n"
-    "4. 软件会不断更新，以便及时为用户提供新功能和修正软件中的BUG。 同时软件作者保证本软件在升级过程中也不含有任何旨在破坏用户计算机数据的恶意代码。\n"
-    "5. 由于用户计算机软硬件环境的差异性和复杂性，本软件所提供的各项功能并不能保证在任何情况下都能正常执行或达到用户所期望的结果。 用户使用本软件所产生的一切后果，软件作者不承担任何责任。\n"
-    "6. 如果用户自行安装本软件，即表明用户信任软件作者，自愿选择安装本软件，并接受本协议所有条款。 如果用户不接受本协议，请立即删除。\n"
+    <string name="app_privacy_content">"1. 本软件不收集、不上传任何用户数据；位置、线路与设置仅保存在本机。\n"
+    "2. 启动后应用会访问 GitHub / Gitee 检查是否有新版本，该请求只包含当前版本号与网络 IP，不包含位置或其他个人信息；可在“关于”页关闭自动检查。\n"
+    "3. 使用地点搜索、地图显示等百度地图功能时，相关请求由百度地图 SDK 按其隐私政策处理。\n"
+    "4. 软件保证不含任何病毒，木马，等破坏用户数据的恶意代码，但是由于本软件产品可以通过网络等途径下载、传播，对于从非软件作者指定站点下载的本软件产品软件作者无法保证该软件是否感染计算机病毒、是否隐藏有伪装的特洛伊木马程序或者黑客软件，不承担由此引起的直接和间接损害责任。\n"
+    "5. 软件会不断更新，以便及时为用户提供新功能和修正软件中的BUG。 同时软件作者保证本软件在升级过程中也不含有任何旨在破坏用户计算机数据的恶意代码。\n"
+    "6. 由于用户计算机软硬件环境的差异性和复杂性，本软件所提供的各项功能并不能保证在任何情况下都能正常执行或达到用户所期望的结果。 用户使用本软件所产生的一切后果，软件作者不承担任何责任。\n"
+    "7. 如果用户自行安装本软件，即表明用户信任软件作者，自愿选择安装本软件，并接受本协议所有条款。 如果用户不接受本协议，请立即删除。\n"
     </string>
     <string name="app_agreement_privacy">已阅读《用户协议》和《隐私政策》</string>
     <string name="app_error_agreement">必须先接受\n《用户协议》和《隐私政策》</string>
@@ -46,9 +53,9 @@
     <string name="app_location_ok">位置已传送</string>
     <string name="app_location_copy">位置已复制到剪切板</string>
     <string name="app_location_save">位置已保存</string>
-    <string name="shortcut_quick_run">⚡ 一键发车</string>
-    <string name="shortcut_roam">🕹️ 自由漫游</string>
-    <string name="shortcut_stop">⏹️ 停止模拟</string>
+    <string name="shortcut_quick_run">一键发车</string>
+    <string name="shortcut_roam">自由漫游</string>
+    <string name="shortcut_stop">停止模拟</string>
 
     <!-- 欢迎页 -->
     <string name="welcome_btn_txt">进入应用</string>
@@ -135,7 +142,7 @@
     <!-- 更新 -->
     <string name="update_title">新版本可用</string>
     <string name="update_downloading">升级文件下载中。。。</string>
-    <string name="update_last">恭喜，步频流已是最新版</string>
+    <string name="update_last">恭喜，云迹已是最新版</string>
     <string name="update_download">立即下载</string>
     <string name="update_ignore">忽略一次</string>
     <string name="update_time">更新时间：</string>
@@ -144,7 +151,8 @@
     <!-- 关于页 -->
     <string name="about_version_format">版本 %1$s · Kinetic Athletic</string>
     <string name="about_license_title">开源许可与致谢</string>
-    <string name="about_license_body">本应用底层的模拟定位架构基于开源项目 ZCShou/GoGoGo（影梭）构建，遵循 GPLv3 开源协议发布。感谢原作者的开源贡献。\n\n一键配置的界面选择器引擎源自 GKD（gkd-kit/gkd），遵循 GPL-3.0 协议，版权归其贡献者所有。</string>
+    <string name="about_license_body">本应用底层的模拟定位架构基于开源项目 ZCShou/GoGoGo（影梭）构建，遵循 GPLv3 开源协议发布。感谢原作者的开源贡献。\n\n一键配置的界面选择器引擎源自 GKD（gkd-kit/gkd），遵循 GPL-3.0 协议，版权归其贡献者所有。\n\n百度地图 Android SDK 为专有组件，适用百度地图开放平台服务条款，不属于 GPLv3 授权范围；Shizuku、Liquid Glass、AndroidX 等组件的许可与版权归各自作者所有。完整清单见仓库 THIRD_PARTY_NOTICES.md。</string>
     <string name="about_license_link_label">项目地址：</string>
+    <string name="about_auto_check">启动时自动检查更新</string>
 
 </resources>

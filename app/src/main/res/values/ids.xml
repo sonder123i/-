@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- View tag 键：用独立 id 挂载动画等临时对象，避免占用单一 tag -->
+    <item name="tab_tint_animator" type="id" />
+</resources>

@@ -1,8 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.example.liquidglass.LiquidGlassView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/pf_card"
+    app:adaptiveLensScale="true"
+    app:adaptiveTint="false"
+    app:bevelWidth="14dp"
+    app:cornerRadius="28dp"
+    app:dispersionStrength="0.08"
+    app:glassMaterial="regular"
+    app:glassTint="@color/dr_card_optical_tint"
+    app:refractionFalloff="2"
+    app:refractionHeight="8dp"
+    app:sensorHighlight="true">
+
+<androidx.core.widget.NestedScrollView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:fillViewport="true">
 
     <LinearLayout
@@ -32,28 +46,41 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="30 秒完成基础配置"
-            android:textColor="@color/pf_volt"
+            android:textColor="@color/pf_text_primary"
             android:textSize="19sp"
             android:textStyle="bold" />
 
-        <TextView
+        <ImageView
             android:id="@+id/btnGuideClose"
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:background="@drawable/bg_round_dark"
-            android:gravity="center"
-            android:text="✕"
-            android:textColor="@color/pf_text_secondary"
-            android:textSize="13sp" />
+            android:contentDescription="关闭"
+            android:padding="9dp"
+            android:src="@drawable/ic_xmark"
+            app:tint="@color/pf_text_secondary" />
     </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:text="只需开启 2 项能力，冷启动不会主动弹任何系统权限框"
+        android:text="2 项核心能力即可开跑，悬浮窗为可选增强，全部可随时关闭"
         android:textColor="@color/pf_text_secondary"
         android:textSize="12sp" />
+
+    <!-- 零成本的理解路径：完全没概念的人可以先看效果，再决定要不要配 -->
+    <TextView
+        android:id="@+id/guideSandbox"
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_secondary_button"
+        android:gravity="center"
+        android:text="先看 10 秒效果演示（不用配任何东西）"
+        android:textColor="@color/pf_cyan"
+        android:textSize="13sp"
+        android:textStyle="bold" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -69,13 +96,11 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <TextView
+            <View
                 android:id="@+id/guideOverlayDot"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="●"
-                android:textColor="@color/pf_text_secondary"
-                android:textSize="12sp" />
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:background="@drawable/bg_status_dot" />
 
             <TextView
                 android:layout_width="0dp"
@@ -92,7 +117,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="未开启"
-                android:textColor="@color/pf_amber"
+                android:textColor="@color/pf_bad"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -104,7 +129,7 @@
             android:background="@drawable/bg_tab_selected"
             android:gravity="center"
             android:text="一键前往授权"
-            android:textColor="@color/pf_volt"
+            android:textColor="@color/pf_text_primary"
             android:textSize="13sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -123,13 +148,11 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <TextView
+            <View
                 android:id="@+id/guideMockDot"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="●"
-                android:textColor="@color/pf_text_secondary"
-                android:textSize="12sp" />
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:background="@drawable/bg_status_dot" />
 
             <TextView
                 android:layout_width="0dp"
@@ -146,7 +169,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="未选择"
-                android:textColor="@color/pf_amber"
+                android:textColor="@color/pf_bad"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -173,7 +196,7 @@
                 android:background="@drawable/bg_tab_selected"
                 android:gravity="center"
                 android:text="去「关于手机」"
-                android:textColor="@color/pf_volt"
+                android:textColor="@color/pf_text_primary"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
@@ -196,9 +219,12 @@
             android:layout_height="34dp"
             android:layout_marginTop="6dp"
             android:background="@drawable/bg_secondary_button"
+            android:drawableStart="@drawable/ic_copy_line"
+            android:drawablePadding="6dp"
+            android:drawableTint="@color/pf_text_primary"
             android:gravity="center"
-            android:text="📋 复制「模拟位置」去设置里搜"
-            android:textColor="@color/pf_cyan"
+            android:text="复制「模拟位置」去设置里搜"
+            android:textColor="@color/pf_text_primary"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -210,7 +236,7 @@
         android:background="@drawable/bg_primary_button"
         android:gravity="center"
         android:text="刷新检测"
-        android:textColor="@color/pf_canvas"
+        android:textColor="@color/pf_on_primary"
         android:textSize="14sp"
         android:textStyle="bold" />
 
@@ -225,6 +251,17 @@
         android:textColor="@color/pf_text_secondary"
         android:textSize="12sp" />
 
+    <!-- 关掉之后会怎样：不写清楚，新手不敢点 X -->
+    <TextView
+        android:id="@+id/guideSkipHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:gravity="center"
+        android:text="也可以先跳过，开跑前会再提醒你"
+        android:textColor="@color/pf_text_secondary"
+        android:textSize="11sp" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -232,8 +269,9 @@
         android:background="@drawable/bg_capsule"
         android:lineSpacingExtra="2dp"
         android:padding="10dp"
-        android:text="本地安全承诺\n✓ 零读取通讯录/相册  ✓ 零获取设备识别码\n✓ 轨迹仅存本机  ✓ 停止即恢复真实 GPS"
+        android:text="本地安全承诺\n无通讯录 / 相册读取   ·   无设备识别码\n轨迹仅存本机   ·   停止即恢复真实 GPS"
         android:textColor="@color/pf_text_secondary"
         android:textSize="11sp" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
+</com.example.liquidglass.LiquidGlassView>

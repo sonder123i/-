@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- V5.0 弹窗内嵌圆角微灰凹槽输入框（无下划线） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/dr_input_recess" />
+    <corners android:radius="16dp" />
+</shape>

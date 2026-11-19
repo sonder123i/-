@@ -10,6 +10,7 @@ import android.view.WindowManager
 import android.widget.TextView
 import android.widget.Toast
 import com.zcshou.gogogo.R
+import com.zcshou.gogogo.run.ui.theme.ThemeHelper
 
 /**
  * 跳转系统设置期间的顶部迷你提示横幅（需悬浮窗权限；无权限降级 Toast）。
@@ -22,14 +23,14 @@ object SetupHintBanner {
     private val hideRunnable = Runnable { hide() }
 
     fun show(context: Context, text: String) {
-        val ctx = context.applicationContext
+        val ctx = ThemeHelper.themedContext(context.applicationContext)
         if (!Settings.canDrawOverlays(ctx)) {
             Toast.makeText(ctx, text, Toast.LENGTH_LONG).show()
             return
         }
         val wm = ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val tv = view ?: TextView(ctx).apply {
-            setBackgroundResource(R.drawable.bg_capsule)
+            setBackgroundResource(R.drawable.bg_capsule_solid)
             setTextColor(ctx.getColor(R.color.pf_text_primary))
             textSize = 12f
             setPadding(dp(ctx, 16), dp(ctx, 10), dp(ctx, 16), dp(ctx, 10))

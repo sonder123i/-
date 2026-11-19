@@ -2,6 +2,8 @@ package com.zcshou.gogogo.run.ui.overlay
 
 import android.animation.ObjectAnimator
 import android.content.Context
+import android.content.res.ColorStateList
+import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -11,6 +13,7 @@ import android.view.WindowManager
 import android.view.animation.OvershootInterpolator
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -40,21 +43,22 @@ class FloatingCapsuleView @JvmOverloads constructor(
         private const val GHOST_HIDE_MS = 5_000L
     }
 
+    private val capsuleShell: CapsuleShellView
     private val capsuleBar: LinearLayout
     private val ring: RingProgressView
     private val capsuleText: TextView
-    private val actions: LinearLayout
+    private val actions: CapsuleShellView
     private val paceText: TextView
     private val lapText: TextView
     private val pauseButton: TextView
     private val finishButton: TextView
     private val hubStatus: TextView
-    private val hubDot: TextView
+    private val hubDot: View
     private val hubHeader: LinearLayout
-    private val roamPanel: LinearLayout
+    private val roamPanel: CapsuleShellView
     private val hubDragBar: TextView
     private val joystick: TacticalJoystickView
-    private val roamLockButton: TextView
+    private val roamLockButton: ImageView
 
     /** 拖拽回调：(位移 dx, 位移 dy, 是否松手) */
     var dragHandler: ((Int, Int, Boolean) -> Unit)? = null
@@ -71,9 +75,122 @@ class FloatingCapsuleView @JvmOverloads constructor(
     private var stepsWarningState = false
     private var blurFallbackOn = false
 
+    /** 运行中微调用的本地镜像，避免每个 tick 被旧状态覆盖造成“点了没反应” */
+    private var lastTargetPace = 0
+    private var lastTargetKm = 0f
+    private var lastAccumulatedKm = 0f
+    private var lastAdjustAtMs = 0L
+
+    // ---------------------------------------------------------------- 边缘流光
+
+    /**
+     * 胶囊边缘流光。直接挂在外壳上而不是单独的 View：
+     * 独立 View 在 FrameLayout 里 wrap_content + AT_MOST 会拿到父容器可用宽度，
+     * 把外壳撑成整屏宽（胶囊凭空变大的根因）。这里在外壳的 dispatchDraw 里画，
+     * 天然贴合胶囊矩形，也不参与任何测量。
+     */
+    private val capsuleBeamDrawable by lazy {
+        BorderBeamDrawable(
+            context,
+            cornerRadiusPx = 22f * resources.displayMetrics.density,
+            borderWidthPx = 1.6f * resources.displayMetrics.density
+        )
+    }
+
+    /** 彗尾绕行一周耗时（ms）。太慢看不出流动，太快像故障灯。 */
+    private var beamLapMs = 3200L
+    /**
+     * 色散环自转一周耗时（ms）。必须和绕行周期不同，否则整圈色带会被彗尾「绑着一起转」，
+     * 少了薄膜在底下缓慢流动的层次感。取 7.9s：比绕行慢一倍多，两者长时间不同步。
+     */
+    private var ringLapMs = 7900L
+    /**
+     * 折叠态最小帧间隔：0 = 跟随屏幕刷新率满帧。
+     *
+     * 早期为了省电设成 50ms（20fps），但实测肉眼能明显看出卡顿——彗尾是连续位移，
+     * 20fps 下的跳步非常显眼。这套绘制的实际成本是每帧 26 次 drawBitmap，
+     * 远低于一次普通布局，没必要为它牺牲流畅度。
+     */
+    private var beamMinFrameMs = 0L
+    private var beamRunning = false
+    private var beamPaused = false
+    private var beamScheduled = false
+    private var beamStartAtMs = 0L
+    private var beamLastFrameMs = 0L
+
+    /**
+     * 呼吸：三条互质周期的正弦叠加（3.1s / 4.7s / 2.3s）。
+     *
+     * 单条正弦一眼就能看出「一呼一吸」的机械规律；三条周期互质且都不等于绕行周期
+     * （3.2s）时，合成波要过很久才重复一次，观感上就是「自然起伏」。
+     * 权重 0.5 / 0.3 / 0.2 让主周期主导、另两条只做扰动。
+     */
+    private fun breathAt(elapsedMs: Long): Float {
+        val t = elapsedMs / 1000.0
+        val a = kotlin.math.sin(t * 2.0 * Math.PI / 3.1)
+        val b = kotlin.math.sin(t * 2.0 * Math.PI / 4.7 + 1.7)
+        val c = kotlin.math.sin(t * 2.0 * Math.PI / 2.3 + 3.4)
+        val mixed = 0.5 * a + 0.3 * b + 0.2 * c
+        // mixed ∈ [-1, 1] → [0, 1]
+        return ((mixed + 1.0) / 2.0).toFloat().coerceIn(0f, 1f)
+    }
+
+    private val beamFrameCallback = object : android.view.Choreographer.FrameCallback {
+        override fun doFrame(frameTimeNanos: Long) {
+            beamScheduled = false
+            if (!beamRunning || beamPaused) return
+            val now = frameTimeNanos / 1_000_000L
+            if (beamStartAtMs == 0L) beamStartAtMs = now
+            val due = beamLastFrameMs == 0L || now - beamLastFrameMs >= beamMinFrameMs
+            if (due) {
+                beamLastFrameMs = now
+                val elapsed = now - beamStartAtMs
+                val phase = (elapsed % beamLapMs) / beamLapMs.toFloat()
+                val ringPhase = (elapsed % ringLapMs) / ringLapMs.toFloat()
+                val breath = breathAt(elapsed)
+                // 同屏三块面板共用同一相位与呼吸，读起来是同一束光在各自边缘走
+                panels().forEach { panel ->
+                    panel.beam?.let { beam ->
+                        beam.phase = phase
+                        beam.ringPhase = ringPhase
+                        beam.breath = breath
+                    }
+                    panel.invalidate()
+                }
+            }
+            scheduleBeamFrame()
+        }
+    }
+
+    /** 当前挂载了流光的面板（只取可见的，隐藏的不浪费重绘）。 */
+    private fun panels(): List<CapsuleShellView> =
+        listOf(capsuleShell, actions, roamPanel).filter { it.visibility == VISIBLE }
+
+    private fun scheduleBeamFrame() {
+        if (beamScheduled || !beamRunning || beamPaused) return
+        beamScheduled = true
+        android.view.Choreographer.getInstance().postFrameCallback(beamFrameCallback)
+    }
+
+    private fun startBeam() {
+        if (beamRunning) return
+        beamRunning = true
+        beamStartAtMs = 0L
+        beamLastFrameMs = 0L
+        scheduleBeamFrame()
+    }
+
+    private fun stopBeam() {
+        beamRunning = false
+        beamScheduled = false
+        android.view.Choreographer.getInstance().removeFrameCallback(beamFrameCallback)
+    }
+
     init {
         orientation = VERTICAL
         LayoutInflater.from(context).inflate(R.layout.floating_capsule, this, true)
+        capsuleShell = findViewById(R.id.capsuleShell)
+        capsuleShell.beam = capsuleBeamDrawable
         capsuleBar = findViewById(R.id.capsuleBar)
         ring = findViewById(R.id.capsuleRing)
         capsuleText = findViewById(R.id.capsuleText)
@@ -105,8 +222,8 @@ class FloatingCapsuleView @JvmOverloads constructor(
             ghostHide()
             true
         }
-        findViewById<TextView>(R.id.btnHubCollapse).setOnClickListener { collapseActions() }
-        findViewById<TextView>(R.id.btnRoamCollapse).setOnClickListener { collapseRoam() }
+        findViewById<View>(R.id.btnHubCollapse).setOnClickListener { collapseActions() }
+        findViewById<View>(R.id.btnRoamCollapse).setOnClickListener { collapseRoam() }
         roamLockButton.setOnClickListener {
             joystick.toggleLockFromButton()
             updateLockChip()
@@ -115,6 +232,10 @@ class FloatingCapsuleView @JvmOverloads constructor(
             host?.pauseResume()
             scheduleIdleDim()
         }
+        findViewById<View>(R.id.btnPaceMinus).setOnClickListener { nudgePace(-10) }
+        findViewById<View>(R.id.btnPacePlus).setOnClickListener { nudgePace(10) }
+        findViewById<View>(R.id.btnDistMinus).setOnClickListener { nudgeTargetKm(-0.5f) }
+        findViewById<View>(R.id.btnDistPlus).setOnClickListener { nudgeTargetKm(0.5f) }
         findViewById<TextView>(R.id.btnCapsuleDetour).setOnClickListener {
             host?.pickDetour()
             scheduleIdleDim()
@@ -152,9 +273,28 @@ class FloatingCapsuleView @JvmOverloads constructor(
         }
 
         updateLockChip()
+        applyPanelBackgrounds()
 
         startPulse()
         scheduleIdleDim()
+    }
+
+    /**
+     * 展开态控制岛 / 手动接管摇杆盘也换成棱镜玻璃。
+     * 与胶囊同一套材质，只是圆角更大（24dp）——悬浮窗里没有下层像素可折射，
+     * 三块面板必须共用同一套「薄膜 + 高光 + 细边」才读得出是同一块玻璃。
+     */
+    private fun applyPanelBackgrounds() {
+        val density = resources.displayMetrics.density
+        // 展开态控制岛 / 摇杆盘与胶囊共用同一套材质：磨砂底 + 边缘流光
+        listOf(actions, roamPanel).forEach { panel ->
+            panel.background = PrismGlassDrawable(context, 24f * density)
+            panel.beam = BorderBeamDrawable(
+                context,
+                cornerRadiusPx = 24f * density,
+                borderWidthPx = 1.6f * density
+            )
+        }
     }
 
     /** 窗口拖动只绑定在这些把手上，摇杆区域不受影响 */
@@ -223,13 +363,15 @@ class FloatingCapsuleView @JvmOverloads constructor(
             chips.forEach { chip ->
                 val on = chip.gear == selectedGear
                 chip.view.setTextColor(
-                    context.getColor(if (on) R.color.pf_volt else R.color.pf_text_secondary)
+                    context.getColor(if (on) R.color.dr_overlay_ice else R.color.dr_overlay_text_secondary)
                 )
                 chip.view.setTypeface(
                     null,
                     if (on) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL
                 )
-                chip.view.setBackgroundResource(if (on) R.drawable.bg_tab_selected else 0)
+                chip.view.setBackgroundResource(
+                    if (on) R.drawable.bg_overlay_chip_selected else 0
+                )
             }
         }
         chips.forEach { chip ->
@@ -255,6 +397,7 @@ class FloatingCapsuleView @JvmOverloads constructor(
         host?.setOverlayHidden(true)
         val current = RoamSpeeds.speed(context, gear)
         val input = EditText(context).apply {
+            com.zcshou.gogogo.run.ui.widget.DialogStyler.styleInput(this)
             setText(current.toString())
             setSelection(text.length)
             inputType = android.text.InputType.TYPE_CLASS_NUMBER or
@@ -294,13 +437,16 @@ class FloatingCapsuleView @JvmOverloads constructor(
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun updateLockChip() {
-        roamLockButton.text = if (joystick.isLocked) "🔒" else "🔓"
-        roamLockButton.setTextColor(
-            context.getColor(if (joystick.isLocked) R.color.pf_volt else R.color.pf_text_secondary)
+        roamLockButton.setImageResource(
+            if (joystick.isLocked) R.drawable.ic_lock_line else R.drawable.ic_lock_open_line
         )
+        val color = context.getColor(
+            if (joystick.isLocked) R.color.dr_overlay_ice else R.color.dr_overlay_text_secondary
+        )
+        roamLockButton.imageTintList = ColorStateList.valueOf(color)
     }
 
-    /** V4.0：跨窗模糊被 ROM 禁用时切换 94% 高密度磨砂，杜绝透字。 */
+    /** V6.6：跨窗模糊被 ROM 禁用时切换实体兜底，杜绝透字。 */
     fun setCrossWindowBlurEnabled(enabled: Boolean) {
         val fallback = !enabled
         if (blurFallbackOn == fallback) return
@@ -308,14 +454,23 @@ class FloatingCapsuleView @JvmOverloads constructor(
         applyCapsuleBackground()
     }
 
+    /** 上一次绘制的胶囊外观，避免每帧 update() 重建 Drawable。 */
+    private var capsuleLook: Pair<Boolean, Boolean>? = null
+
     private fun applyCapsuleBackground() {
-        capsuleBar.setBackgroundResource(
-            when {
-                stepsWarningState -> R.drawable.bg_capsule_warn
-                blurFallbackOn -> R.drawable.bg_capsule_solid
-                else -> R.drawable.bg_capsule
-            }
-        )
+        // 悬浮窗拿不到下层 App 的像素（FLAG_BLUR_BEHIND 会生成全屏 Dim Layer 吞掉窗外触摸），
+        // 玻璃厚度只能靠材质本身：顶部镜面高光 + 底部内阴影 + 冷银细边。
+        // 跨窗模糊可用时用半透版本，不可用时换成更实的兜底，避免文字压在壁纸上。
+        val look = stepsWarningState to blurFallbackOn
+        if (capsuleLook == look) return
+        capsuleLook = look
+        val density = resources.displayMetrics.density
+        // 背景挂在外壳上（不是 capsuleBar）：流光覆盖层是它的兄弟，需要同一块圆角区域
+        capsuleShell.background = PrismGlassDrawable(
+            context,
+            22f * density,
+            warn = stepsWarningState
+        ).also { it.alpha = if (blurFallbackOn) 255 else 236 }
     }
 
     fun update(state: RunRuntimeState) {
@@ -328,16 +483,18 @@ class FloatingCapsuleView @JvmOverloads constructor(
             stepsWarningState = state.stepsWarning
             applyCapsuleBackground()
             if (state.stepsWarning) {
-                capsuleText.text = "⚠️ 请放入口袋"
-                capsuleText.setTextColor(context.getColor(R.color.pf_amber))
-                hubStatus.text = "⚠️ 未检测到步数，请放入口袋"
-                hubDot.setTextColor(context.getColor(R.color.pf_amber))
+                capsuleText.text = "请放入口袋"
+                capsuleText.setTextColor(context.getColor(R.color.dr_overlay_ice))
+                hubStatus.text = "未检测到步数，请放入口袋"
+                hubDot.backgroundTintList = ColorStateList.valueOf(
+                    context.getColor(R.color.dr_overlay_ice)
+                )
             } else {
-                capsuleText.setTextColor(context.getColor(R.color.pf_text_primary))
+                capsuleText.setTextColor(context.getColor(R.color.dr_overlay_text_primary))
                 capsuleText.text = if (state.phase == RunPhase.PRE_START_SETTLE) {
                     String.format(Locale.US, "预热 %ds", state.settleRemainSec)
                 } else {
-                    String.format(Locale.US, "%.2f/%.2fkm %s", state.accumulatedKm, state.targetKm, pace)
+                    String.format(Locale.US, "%.2f/%.2fkm · %s", state.accumulatedKm, state.targetKm, pace)
                 }
                 hubStatus.text = when (state.phase) {
                     RunPhase.PRE_START_SETTLE -> "预热中 · 请切到跑步 App"
@@ -347,8 +504,8 @@ class FloatingCapsuleView @JvmOverloads constructor(
                     RunPhase.COOLDOWN_WALK -> "慢走收尾中"
                     else -> "模拟运行中"
                 }
-                hubDot.setTextColor(
-                    context.getColor(if (state.phase == RunPhase.PAUSED) R.color.pf_amber else R.color.pf_ok)
+                hubDot.backgroundTintList = ColorStateList.valueOf(
+                    context.getColor(if (state.phase == RunPhase.PAUSED) R.color.dr_overlay_ice else R.color.dr_overlay_ok)
                 )
             }
         }
@@ -357,11 +514,47 @@ class FloatingCapsuleView @JvmOverloads constructor(
         } else {
             0f
         })
-        paceText.text = pace
-        lapText.text = state.currentLapIndex.toString()
+        // 悬浮窗步进器显示“目标值”，折叠态仍显示实时配速
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastAdjustAtMs > 800L) {
+            lastTargetPace = state.targetPaceSecPerKm.takeIf { it > 0 } ?: state.paceSecPerKm
+            lastTargetKm = state.targetKm.toFloat()
+        }
+        lastAccumulatedKm = state.accumulatedKm.toFloat()
+        paceText.text = formatPace(lastTargetPace)
+        lapText.text = String.format(Locale.US, "%.1fkm", lastTargetKm)
         pauseButton.text = if (state.phase == RunPhase.PAUSED) "继续" else "暂停"
         finishButton.isEnabled = state.phase == RunPhase.RUNNING || state.phase == RunPhase.DETOUR_POINT
     }
+
+    /** 配速步进：±10s/km，限制在 3'00" ~ 15'00"。 */
+    private fun nudgePace(deltaSec: Int) {
+        if (lastTargetPace <= 0) lastTargetPace = 340
+        val next = (lastTargetPace + deltaSec).coerceIn(180, 900)
+        if (next == lastTargetPace) return
+        lastTargetPace = next
+        lastAdjustAtMs = SystemClock.elapsedRealtime()
+        paceText.text = formatPace(next)
+        host?.adjustPace(next)
+        scheduleIdleDim()
+    }
+
+    /** 目标距离步进：±0.5km，且不能低于已跑里程 + 0.1km。 */
+    private fun nudgeTargetKm(deltaKm: Float) {
+        val base = if (lastTargetKm > 0f) lastTargetKm else 3.0f
+        val minKm = (lastAccumulatedKm + 0.1f).coerceAtLeast(0.5f)
+        val next = (base + deltaKm).coerceIn(minKm, 100f)
+        if (kotlin.math.abs(next - lastTargetKm) < 0.01f) return
+        lastTargetKm = next
+        lastAdjustAtMs = SystemClock.elapsedRealtime()
+        lapText.text = String.format(Locale.US, "%.1fkm", next)
+        host?.adjustTargetKm(next)
+        scheduleIdleDim()
+    }
+
+    private fun formatPace(secPerKm: Int): String =
+        if (secPerKm <= 0) "--"
+        else String.format(Locale.US, "%d'%02d\"", secPerKm / 60, secPerKm % 60)
 
     // ---------------- 展开 / 收起 ----------------
 
@@ -374,17 +567,20 @@ class FloatingCapsuleView @JvmOverloads constructor(
         idleRunnable?.let { removeCallbacks(it) }
         animate().cancel()
         alpha = FULL_ALPHA
+        // 展开控制岛时彻底隐藏迷你药丸，杜绝左上角重叠
+        hideMiniPill()
         actions.visibility = VISIBLE
         actions.alpha = 0f
-        actions.scaleX = 0.9f
-        actions.scaleY = 0.9f
+        actions.scaleX = 0.94f
+        actions.scaleY = 0.94f
         actions.animate()
             .alpha(1f)
             .scaleX(1f)
             .scaleY(1f)
-            .setDuration(200)
-            .setInterpolator(OvershootInterpolator(1.4f))
+            .setDuration(220)
+            .setInterpolator(OvershootInterpolator(1.2f))
             .start()
+        morphHeight(actions, expand = true)
         post { host?.relayoutOverlay() }
         scheduleIdleDim()
     }
@@ -394,13 +590,100 @@ class FloatingCapsuleView @JvmOverloads constructor(
         expanded = false
         actions.animate()
             .alpha(0f)
-            .scaleX(0.9f)
-            .scaleY(0.9f)
+            .scaleX(0.94f)
+            .scaleY(0.94f)
             .setDuration(140)
-            .withEndAction { actions.visibility = GONE }
+            .withEndAction {
+                actions.visibility = GONE
+                // 点击 ✕ 收起后弹性变形回迷你药丸
+                showMiniPill(animate = true)
+                post { host?.relayoutOverlay() }
+            }
             .start()
+        morphHeight(actions, expand = false)
         post { host?.relayoutOverlay() }
         scheduleIdleDim()
+    }
+
+    /**
+     * 展开态：迷你药丸整体让位，避免与左上角控制岛叠字。
+     * 外壳一起隐藏——玻璃背景与流光都挂在它上面，只藏内层会留下一个空壳。
+     */
+    private fun hideMiniPill() {
+        capsuleShell.animate().cancel()
+        capsuleShell.visibility = GONE
+        capsuleShell.alpha = 1f
+        capsuleShell.scaleX = 1f
+        capsuleShell.scaleY = 1f
+    }
+
+    /** 收起态：迷你药丸带过冲回弹重新出现。 */
+    private fun showMiniPill(animate: Boolean) {
+        capsuleShell.animate().cancel()
+        capsuleShell.visibility = VISIBLE
+        if (!animate) {
+            capsuleShell.alpha = 1f
+            capsuleShell.scaleX = 1f
+            capsuleShell.scaleY = 1f
+            return
+        }
+        capsuleShell.alpha = 0f
+        capsuleShell.scaleX = 0.86f
+        capsuleShell.scaleY = 0.86f
+        capsuleShell.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(260L)
+            .setInterpolator(OvershootInterpolator(1.8f))
+            .start()
+    }
+
+    /**
+     * 迷你药丸 ↔ 展开控制岛的平滑尺寸过渡：
+     * 只对外层 actions 的高度做轻量 ValueAnimator，不触发整窗重新测量以外的开销。
+     */
+    private fun morphHeight(target: View, expand: Boolean) {
+        val lp = target.layoutParams ?: return
+        if (expand) {
+            val widthSpec = MeasureSpec.makeMeasureSpec(
+                (parent as? View)?.width ?: width,
+                MeasureSpec.AT_MOST
+            )
+            target.measure(widthSpec, MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED))
+            val targetHeight = target.measuredHeight
+            if (targetHeight <= 0) return
+            lp.height = 0
+            target.layoutParams = lp
+            android.animation.ValueAnimator.ofInt(0, targetHeight).apply {
+                duration = 240L
+                interpolator = android.view.animation.DecelerateInterpolator(1.4f)
+                addUpdateListener {
+                    lp.height = it.animatedValue as Int
+                    target.layoutParams = lp
+                    host?.relayoutOverlay()
+                }
+                start()
+            }
+        } else {
+            val from = target.height
+            if (from <= 0) return
+            android.animation.ValueAnimator.ofInt(from, 0).apply {
+                duration = 160L
+                addUpdateListener {
+                    lp.height = it.animatedValue as Int
+                    target.layoutParams = lp
+                    host?.relayoutOverlay()
+                }
+                addListener(object : android.animation.AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: android.animation.Animator) {
+                        lp.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                        target.layoutParams = lp
+                    }
+                })
+                start()
+            }
+        }
     }
 
     private fun expandRoam() {
@@ -449,6 +732,8 @@ class FloatingCapsuleView @JvmOverloads constructor(
         animate().cancel()
         alpha = FULL_ALPHA
         actions.visibility = GONE
+        // 从展开控制岛切到手动接管：迷你药丸重新出现作为摇杆盘标题
+        showMiniPill(animate = false)
         roamPanel.visibility = VISIBLE
         capsuleText.text = "手动接管 · ${selectedGear.label}"
         post { host?.relayoutOverlay() }
@@ -546,13 +831,32 @@ class FloatingCapsuleView @JvmOverloads constructor(
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         startPulse()
+        startBeam()
         scheduleIdleDim()
     }
 
     override fun onDetachedFromWindow() {
         pulseAnimator?.cancel()
+        stopBeam()
         idleRunnable?.let { removeCallbacks(it) }
         ghostRunnable?.let { removeCallbacks(it) }
         super.onDetachedFromWindow()
+    }
+
+    /**
+     * 锁屏 / 后台巡航：暂停边缘流光，不再申请任何帧。
+     * 与 GlassRenderGate 同一思路——看不见的时候一点电都不该花。
+     */
+    fun setBeamPaused(paused: Boolean) {
+        if (beamPaused == paused) return
+        beamPaused = paused
+        if (paused) {
+            beamScheduled = false
+            android.view.Choreographer.getInstance().removeFrameCallback(beamFrameCallback)
+        } else {
+            beamStartAtMs = 0L
+            beamLastFrameMs = 0L
+            scheduleBeamFrame()
+        }
     }
 }

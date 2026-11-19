@@ -13,7 +13,8 @@
         android:layout_height="wrap_content"
         android:text="启用定时开跑"
         android:textColor="@color/pf_text_primary"
-        android:textSize="15sp" />
+        android:textSize="15sp"
+        android:thumbTint="@color/pf_on_primary" />
 
     <Switch
         android:id="@+id/swDaily"
@@ -22,7 +23,8 @@
         android:checked="true"
         android:text="每天执行（忽略重复日）"
         android:textColor="@color/pf_text_primary"
-        android:textSize="14sp" />
+        android:textSize="14sp"
+        android:thumbTint="@color/pf_on_primary" />
 
     <TimePicker
         android:id="@+id/timePicker"
@@ -65,5 +67,6 @@
         android:layout_height="wrap_content"
         android:text="开跑前提示关闭 Wi-Fi"
         android:textColor="@color/pf_text_primary"
-        android:textSize="14sp" />
+        android:textSize="14sp"
+        android:thumbTint="@color/pf_on_primary" />
 </LinearLayout>

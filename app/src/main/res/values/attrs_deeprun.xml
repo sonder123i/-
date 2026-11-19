@@ -15,9 +15,23 @@
         <attr name="lgRefraction" format="float" />
         <!-- 是否开启 Liquid Press 按压形变与陀螺仪随动高光 -->
         <attr name="lgInteractive" format="boolean" />
-        <!-- 强制哑光实体模式（不使用任何采样与折射） -->
+        <!-- L1 哑光陶瓷模式：92% 高密度磨砂 + 0.5dp 极细内描边 -->
         <attr name="lgMatte" format="boolean" />
+        <!-- L2 棱镜液态玻璃：对角线微光泽 + 棱镜虹彩描边 + 顶部天光高光 -->
+        <attr name="lgPrism" format="boolean" />
+        <!-- L3 高透悬浮透镜：强制 90%~93% 底色，用于防穿帮导航/弹窗 -->
+        <attr name="lgLens" format="boolean" />
         <!-- 镜头焦散微光：玻璃内部缓慢流动的极低对比度水波光斑（省电冻结时自动停） -->
         <attr name="lgCaustics" format="boolean" />
+    </declare-styleable>
+
+    <!-- 底栏导航格：图标规格 + 文字 -->
+    <declare-styleable name="NavTabView">
+        <attr name="navGlyph" format="enum">
+            <enum name="route" value="0" />
+            <enum name="map" value="1" />
+            <enum name="shield" value="2" />
+        </attr>
+        <attr name="navLabel" format="string" />
     </declare-styleable>
 </resources>

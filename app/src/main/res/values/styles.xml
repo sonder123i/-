@@ -1,7 +1,7 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- 系统主题默认主题. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar" tools:targetApi="q">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimary</item>
         <item name="colorAccent">@color/colorAccent</item>
@@ -40,39 +40,156 @@
         <item name="colorButtonNormal">@color/colorAccent</item>
     </style>
 
-    <!-- ============ 步频流 PaceFlow · Kinetic Athletic 主题（默认动能暗夜） ============ -->
-    <style name="Theme.PaceFlow" parent="Theme.AppCompat.NoActionBar">
+    <!-- ============ Apple Obsidian Glass · 无色纯粹液态玻璃（深色） ============ -->
+    <style name="Theme.PaceFlow" parent="Theme.MaterialComponents.NoActionBar" tools:targetApi="q">
         <item name="colorPrimary">@color/pf_volt</item>
         <item name="colorPrimaryDark">@color/pf_canvas</item>
         <item name="colorAccent">@color/pf_volt</item>
+        <item name="colorOnPrimary">@color/pf_on_primary</item>
+        <item name="colorSecondary">@color/pf_volt</item>
+        <item name="colorOnSecondary">@color/pf_on_primary</item>
+        <item name="colorSurface">@color/pf_card_solid</item>
+        <item name="colorOnSurface">@color/pf_text_primary</item>
         <item name="android:windowBackground">@color/pf_canvas</item>
         <item name="android:textColorPrimary">@color/pf_text_primary</item>
         <item name="android:textColorSecondary">@color/pf_text_secondary</item>
-        <item name="android:statusBarColor">@color/pf_canvas</item>
-        <item name="android:navigationBarColor">@color/pf_canvas</item>
+        <item name="android:textColorHint">@color/pf_text_secondary</item>
+        <!-- 沉浸式：内容延伸到状态栏与导航栏下方，由页面自行消化 insets -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
         <!-- 明暗完全由 values-night + setDefaultNightMode 决定，禁止 OEM Force Dark 再染色 -->
         <item name="android:forceDarkAllowed">false</item>
         <item name="alertDialogTheme">@style/Theme.PaceFlow.Dialog</item>
     </style>
 
     <style name="Theme.PaceFlow.Dialog" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="colorPrimary">@color/pf_volt</item>
         <item name="colorAccent">@color/pf_volt</item>
+        <item name="colorOnPrimary">@color/pf_on_primary</item>
+        <item name="colorSurface">@color/pf_card_solid</item>
+        <item name="colorOnSurface">@color/pf_text_primary</item>
+        <item name="android:textColorPrimary">@color/pf_text_primary</item>
+        <item name="android:textColorSecondary">@color/pf_text_secondary</item>
+        <item name="android:windowBackground">@drawable/bg_dialog_panel</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.App.DialogButton.Positive</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.App.DialogButton</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.App.DialogButton</item>
     </style>
 
-    <!-- 清透日光 -->
-    <style name="Theme.PaceFlow.Light" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.PaceFlow.Dialog.Light" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="colorPrimary">@color/pf_volt</item>
+        <item name="colorAccent">@color/pf_volt</item>
+        <item name="colorOnPrimary">@color/pf_on_primary</item>
+        <item name="colorSurface">@color/pf_card_solid</item>
+        <item name="colorOnSurface">@color/pf_text_primary</item>
+        <item name="android:textColorPrimary">@color/pf_text_primary</item>
+        <item name="android:textColorSecondary">@color/pf_text_secondary</item>
+        <item name="android:windowBackground">@drawable/bg_dialog_panel</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.App.DialogButton.Positive</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.App.DialogButton</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.App.DialogButton</item>
+    </style>
+
+    <!-- ============ Apple Daylight Glass · 无色纯粹液态玻璃（浅色） ============ -->
+    <style name="Theme.PaceFlow.Light" parent="Theme.MaterialComponents.Light.NoActionBar" tools:targetApi="q">
         <item name="colorPrimary">@color/pf_light_accent</item>
         <item name="colorPrimaryDark">@color/pf_light_canvas</item>
         <item name="colorAccent">@color/pf_light_accent</item>
+        <item name="colorOnPrimary">@color/pf_on_primary</item>
+        <item name="colorSecondary">@color/pf_light_accent</item>
+        <item name="colorOnSecondary">@color/pf_on_primary</item>
+        <item name="colorSurface">@color/pf_card_solid</item>
+        <item name="colorOnSurface">@color/pf_text_primary</item>
         <item name="android:windowBackground">@color/pf_light_canvas</item>
         <item name="android:textColorPrimary">@color/pf_light_text_primary</item>
         <item name="android:textColorSecondary">@color/pf_light_text_secondary</item>
-        <item name="android:statusBarColor">@color/pf_light_canvas</item>
-        <item name="android:navigationBarColor">@color/pf_light_canvas</item>
+        <item name="android:textColorHint">@color/pf_light_text_secondary</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
         <!-- 明暗完全由 values-night + setDefaultNightMode 决定，禁止 OEM Force Dark 再染色 -->
         <item name="android:forceDarkAllowed">false</item>
+        <item name="alertDialogTheme">@style/Theme.PaceFlow.Dialog.Light</item>
+    </style>
+
+    <!-- ============ Apple 单色胶囊按钮（图标 + 文字整体居中） ============ -->
+    <!--
+        使用 MaterialButton 的 iconGravity=textStart + iconPadding，
+        让图标与文字作为一个整体居中，而不是图标贴在最左边缘。
+        通过 backgroundTint + cornerRadius 复刻曜石黑/半透灰胶囊。
+    -->
+    <style name="Widget.App.Button.Primary" parent="Widget.MaterialComponents.Button.UnelevatedButton">
+        <item name="android:minHeight">0dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textColor">@color/pf_on_primary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:elevation">0dp</item>
+        <item name="backgroundTint">@color/pf_volt</item>
+        <item name="iconTint">@color/pf_on_primary</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">8dp</item>
+        <item name="iconSize">20dp</item>
+        <item name="cornerRadius">100dp</item>
+        <item name="strokeWidth">0dp</item>
+    </style>
+
+    <style name="Widget.App.Button.Secondary" parent="Widget.App.Button.Primary">
+        <item name="android:textColor">@color/pf_text_primary</item>
+        <item name="android:textSize">12sp</item>
+        <item name="backgroundTint">@color/pf_secondary_surface</item>
+        <item name="iconTint">@color/pf_text_primary</item>
+    </style>
+
+    <style name="Widget.App.Button.Danger" parent="Widget.App.Button.Secondary">
+        <item name="android:textColor">@color/pf_danger_text</item>
+        <item name="backgroundTint">@color/pf_danger_bg</item>
+        <item name="iconTint">@color/pf_danger_text</item>
+    </style>
+
+    <!-- 漫游控制台等窄按钮：缩小左右内边距，保证图标 + 文字仍能整体居中 -->
+    <style name="Widget.App.Button.Compact" parent="Widget.App.Button.Secondary">
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:textSize">11sp</item>
+        <item name="iconSize">18dp</item>
+        <item name="iconPadding">8dp</item>
+    </style>
+
+    <style name="Widget.App.Button.CompactDanger" parent="Widget.App.Button.Compact">
+        <item name="android:textColor">@color/pf_danger_text</item>
+        <item name="backgroundTint">@color/pf_danger_bg</item>
+        <item name="iconTint">@color/pf_danger_text</item>
+    </style>
+
+    <!-- 普通 AlertDialog 按钮：确保在任何弹窗底板上都有可读文字 -->
+    <style name="Widget.App.DialogButton" parent="Widget.AppCompat.Button.Borderless">
+        <item name="android:textColor">@color/pf_text_secondary</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="Widget.App.DialogButton.Positive" parent="Widget.App.DialogButton">
+        <item name="android:textColor">@color/pf_volt</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
 </resources>

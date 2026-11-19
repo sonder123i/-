@@ -1,6 +1,7 @@
 package com.zcshou.gogogo.run.ui.overlay
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.PixelFormat
 import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
@@ -10,6 +11,7 @@ import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -33,7 +35,7 @@ class RoamHubView(context: Context) : LinearLayout(context) {
     private val joystick: TacticalJoystickView
     private val statusText: TextView
     private val dragBar: TextView
-    private val lockButton: TextView
+    private val lockButton: ImageView
     private val gearChips = mutableListOf<Pair<TextView, RoamSpeeds.Gear>>()
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
 
@@ -41,6 +43,7 @@ class RoamHubView(context: Context) : LinearLayout(context) {
     private var gearSpeed = 3.6f
     private var lastBearing = 0f
     private var hubPanel: View
+    private var hubLook: Boolean? = null
 
     init {
         orientation = VERTICAL
@@ -53,8 +56,8 @@ class RoamHubView(context: Context) : LinearLayout(context) {
 
         attachWindowDrag(dragBar)
 
-        findViewById<TextView>(R.id.btnRoamHubLocate).setOnClickListener { onLocate?.invoke() }
-        findViewById<TextView>(R.id.btnRoamHubHide).setOnClickListener { onHide?.invoke() }
+        findViewById<View>(R.id.btnRoamHubLocate).setOnClickListener { onLocate?.invoke() }
+        findViewById<View>(R.id.btnRoamHubHide).setOnClickListener { onHide?.invoke() }
         findViewById<TextView>(R.id.btnRoamHubStop).setOnClickListener { confirmStop() }
         lockButton.setOnClickListener {
             joystick.toggleLockFromButton()
@@ -84,21 +87,36 @@ class RoamHubView(context: Context) : LinearLayout(context) {
             }
         }
         updateLockChip()
+        applyPanelGlass(translucent = true)
         refreshStatus()
     }
 
-    /** V4.0：跨窗模糊被 ROM 禁用时切回 94% 实体面板，杜绝透字。 */
+    /** V6.6：跨窗模糊可用时半透，被 ROM 禁用时换成更实的兜底，杜绝透字。 */
     fun setCrossWindowBlurEnabled(enabled: Boolean) {
-        hubPanel.setBackgroundResource(
-            if (enabled) R.drawable.bg_hub_panel_glass else R.drawable.bg_hub_panel_solid
-        )
+        if (hubLook == enabled) return
+        hubLook = enabled
+        applyPanelGlass(enabled)
+    }
+
+    /**
+     * 摇杆盘底片：棱镜虹彩玻璃。
+     * 悬浮窗采不到下层像素，材质厚度只能靠薄膜 + 镜面高光 + 冷银细边画出来。
+     */
+    private fun applyPanelGlass(translucent: Boolean) {
+        hubPanel.background = PrismGlassDrawable(
+            context,
+            22f * resources.displayMetrics.density
+        ).also { it.alpha = if (translucent) 236 else 255 }
     }
 
     private fun updateLockChip() {
-        lockButton.text = if (joystick.isLocked) "🔒" else "🔓"
-        lockButton.setTextColor(
-            context.getColor(if (joystick.isLocked) R.color.pf_volt else R.color.pf_text_secondary)
+        lockButton.setImageResource(
+            if (joystick.isLocked) R.drawable.ic_lock_line else R.drawable.ic_lock_open_line
         )
+        val color = context.getColor(
+            if (joystick.isLocked) R.color.pf_volt else R.color.pf_text_secondary
+        )
+        lockButton.imageTintList = ColorStateList.valueOf(color)
     }
 
     private fun attachWindowDrag(handle: View) {
@@ -179,14 +197,20 @@ class RoamHubView(context: Context) : LinearLayout(context) {
     private fun paintGears() {
         gearChips.forEach { (view, gear) ->
             val on = gear == selectedGear
+            // 悬浮窗自己的色板（dr_overlay_*）随主题翻转，不要混用 App 内的 pf_*，
+            // 否则深色主题下会出现「黑底 + 黑字」。
             view.setTextColor(
-                context.getColor(if (on) R.color.pf_volt else R.color.pf_text_secondary)
+                context.getColor(
+                    if (on) R.color.dr_overlay_ice else R.color.dr_overlay_text_secondary
+                )
             )
             view.setTypeface(
                 null,
                 if (on) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL
             )
-            view.setBackgroundResource(if (on) R.drawable.bg_tab_selected else R.drawable.bg_round_dark)
+            view.setBackgroundResource(
+                if (on) R.drawable.bg_overlay_chip_selected else R.drawable.bg_round_dark
+            )
         }
     }
 
@@ -205,6 +229,7 @@ class RoamHubView(context: Context) : LinearLayout(context) {
         joystick.unlock()
         val current = RoamSpeeds.speed(context, gear)
         val input = EditText(context).apply {
+            com.zcshou.gogogo.run.ui.widget.DialogStyler.styleInput(this)
             setText(current.toString())
             setSelection(text.length)
             inputType = android.text.InputType.TYPE_CLASS_NUMBER or

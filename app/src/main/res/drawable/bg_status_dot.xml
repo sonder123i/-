@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 6dp 状态圆点：由代码按语义着色（Apple Green / Red / 中性灰） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/pf_neutral_dot" />
+    <size android:width="6dp" android:height="6dp" />
+</shape>

@@ -4,38 +4,47 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Rect
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.zcshou.gogogo.run.engine.RunPhase
-import com.zcshou.gogogo.run.service.RunSessionHolder
 import com.google.android.material.snackbar.Snackbar
 import com.zcshou.gogogo.R
+import com.zcshou.gogogo.run.BrandConfig
 import com.zcshou.gogogo.run.data.db.RunRouteEntity
 import com.zcshou.gogogo.run.data.db.RunScheduleEntity
 import com.zcshou.gogogo.run.data.repository.RunRepository
 import com.zcshou.gogogo.run.engine.RouteShareCodec
+import com.zcshou.gogogo.run.engine.RunPhase
 import com.zcshou.gogogo.run.engine.TrackJsonCodec
 import com.zcshou.gogogo.run.engine.TrackMathUtils
 import com.zcshou.gogogo.run.guard.RunShortcutManager
 import com.zcshou.gogogo.run.guard.SetupGuard
+import com.zcshou.gogogo.run.service.RunSessionHolder
 import com.zcshou.gogogo.run.ui.editor.RouteEditorActivity
+import com.example.liquidglass.ScrollEdgeBlurView
 import com.zcshou.gogogo.run.ui.editor.RouteSources
+import com.zcshou.gogogo.run.ui.glass.DeepRunGlassManager
+import com.zcshou.gogogo.run.ui.glass.GlassDialogs
+import com.zcshou.gogogo.run.ui.glass.GlassRenderGate
 import com.zcshou.gogogo.run.ui.overlay.RouteThumbnailView
+import com.zcshou.gogogo.run.ui.widget.LensChipTrack
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -46,7 +55,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Tab 1：步频流 —— 本周概览 + 横向路线切换条 + 当前主路线卡 + 路线工坊。
+ * Tab 1：云迹 —— 本周概览 + 横向路线切换条 + 当前主路线卡 + 路线工坊。
  */
 class RouteListFragment : Fragment() {
 
@@ -59,25 +68,32 @@ class RouteListFragment : Fragment() {
     private lateinit var emptyView: View
     private lateinit var mainCard: View
     private lateinit var chipScroll: View
+    private lateinit var chipScrollView: HorizontalScrollView
     private lateinit var chipRow: LinearLayout
+    private lateinit var chipTrack: LensChipTrack
     private lateinit var weekKm: TextView
     private lateinit var weekCount: TextView
     private lateinit var setupBanner: TextView
     private lateinit var routeCountLabel: TextView
+    private lateinit var routeListHeader: View
+    private lateinit var workshopTitle: View
+    private lateinit var workshopCard: View
 
     private lateinit var thumb: RouteThumbnailView
     private lateinit var nameText: TextView
     private lateinit var metaText: TextView
     private lateinit var scheduleText: TextView
     private lateinit var quickStartBtn: TextView
-    private lateinit var tuneBtn: TextView
-    private lateinit var menuBtn: TextView
+    private lateinit var shareBtn: View
+    private lateinit var tuneBtn: View
+    private lateinit var menuBtn: View
 
     private var routes: List<RunRouteEntity> = emptyList()
     private var schedules: List<RunScheduleEntity> = emptyList()
     private var selectedRouteId = 0L
     private var pendingExport: RunRouteEntity? = null
     private var lastRunPhase: RunPhase? = null
+    private var lastGlassRefreshAt = 0L
 
     private val exportGpxLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("application/gpx+xml")) { uri ->
@@ -110,23 +126,31 @@ class RouteListFragment : Fragment() {
         emptyView = view.findViewById(R.id.routeEmpty)
         mainCard = view.findViewById(R.id.routeMainCard)
         chipScroll = view.findViewById(R.id.routeChipScroll)
+        chipScrollView = view.findViewById(R.id.routeChipScrollView)
         chipRow = view.findViewById(R.id.routeChipRow)
+        chipTrack = LensChipTrack(chipRow)
         weekKm = view.findViewById(R.id.weekKm)
         weekCount = view.findViewById(R.id.weekCount)
         setupBanner = view.findViewById(R.id.setupBanner)
         routeCountLabel = view.findViewById(R.id.routeCountLabel)
+        routeListHeader = view.findViewById(R.id.routeListHeader)
+        workshopTitle = view.findViewById(R.id.routeWorkshopTitle)
+        workshopCard = view.findViewById(R.id.workshopCard)
 
         thumb = mainCard.findViewById(R.id.routeThumb)
         nameText = mainCard.findViewById(R.id.routeName)
         metaText = mainCard.findViewById(R.id.routeMeta)
         scheduleText = mainCard.findViewById(R.id.routeSchedule)
         quickStartBtn = mainCard.findViewById(R.id.btnQuickStart)
+        shareBtn = mainCard.findViewById(R.id.btnShareCode)
         tuneBtn = mainCard.findViewById(R.id.btnTune)
         menuBtn = mainCard.findViewById(R.id.routeMenu)
 
         selectedRouteId = requireContext()
             .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getLong(KEY_SELECTED, 0L)
+
+        applyScrollInsets(view)
 
         view.findViewById<TextView>(R.id.btnNewRoute).setOnClickListener {
             openEditor(RouteEditorActivity.MODE_PRESET)
@@ -140,7 +164,8 @@ class RouteListFragment : Fragment() {
         view.findViewById<TextView>(R.id.btnEmptyCreate).setOnClickListener {
             openEditor(RouteEditorActivity.MODE_PRESET)
         }
-        view.findViewById<TextView>(R.id.btnImportShare).setOnClickListener { importShareCode() }
+        view.findViewById<View>(R.id.btnImportShare).setOnClickListener { importShareCode() }
+        view.findViewById<View>(R.id.btnEmptyImport).setOnClickListener { importShareCode() }
         setupBanner.setOnClickListener {
             (activity as? RunHomeActivity)?.openSetupWizard()
         }
@@ -148,10 +173,6 @@ class RouteListFragment : Fragment() {
             HistoryReportDialog.show(requireContext(), repository)
         }
         refreshSetupBanner()
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            repository.seedDemoRouteIfNeeded()
-        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -186,8 +207,22 @@ class RouteListFragment : Fragment() {
                         if (state.phase == lastRunPhase) return@collect
                         lastRunPhase = state.phase
                         when (state.phase) {
-                            RunPhase.PRE_START_SETTLE -> thumb.startSonar(5000)
-                            else -> thumb.stopSonar()
+                            RunPhase.PRE_START_SETTLE -> {
+                                thumb.startSonar(5000)
+                                thumb.setCometRunning(false)
+                            }
+                            RunPhase.RUNNING,
+                            RunPhase.PAUSED,
+                            RunPhase.DETOUR_POINT,
+                            RunPhase.COOLDOWN_WALK,
+                            RunPhase.ENV_GUARD -> {
+                                thumb.stopSonar()
+                                thumb.setCometRunning(false)
+                            }
+                            else -> {
+                                thumb.stopSonar()
+                                thumb.setCometRunning(true)
+                            }
                         }
                     }
                 }
@@ -198,11 +233,83 @@ class RouteListFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         refreshSetupBanner()
+        // 页面可见时恢复巡航光点；相位为巡航中则不启动（0fps）
+        val phase = lastRunPhase
+        thumb.setCometRunning(phase == null || phase == RunPhase.IDLE || phase == RunPhase.FINISHED)
+    }
+
+    override fun onPause() {
+        thumb.setCometRunning(false)
+        super.onPause()
+    }
+
+    /**
+     * 首页全屏沉浸式布局：
+     * ScrollView 自己消化状态栏与导航栏 inset，内容可以滚到状态栏/悬浮导航下方，
+     * 由底部玻璃导航栏产生真实的模糊透视；同时保证最后一项不被导航栏遮挡。
+     */
+    private fun applyScrollInsets(root: View) {
+        val scroll = root.findViewById<View>(R.id.homeScroll)
+        val scrim = root.findViewById<View>(R.id.topScrim)
+        val edgeBlur = root.findViewById<ScrollEdgeBlurView>(R.id.topEdgeBlur)
+        edgeBlur.edge = ScrollEdgeBlurView.Edge.TOP
+        edgeBlur.maxBlurRadius = 22f * resources.displayMetrics.density
+        edgeBlur.bindScrollView(scroll)
+        val baseTop = dp(6)
+        // 与 LiquidTabBar.NavMetrics.contentInsetDp 同源：96dp 是 20:9 手势条下的基线，
+        // 各页再各自加 bars.bottom。改轨道几何必须同步这里。
+        val baseBottom = dp(96)
+        ViewCompat.setOnApplyWindowInsetsListener(scroll) { target, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            target.setPadding(
+                target.paddingLeft,
+                baseTop + bars.top,
+                target.paddingRight,
+                baseBottom + bars.bottom
+            )
+            // 模糊带比状态栏略高：静止时隐藏，滚动后内容进入该带才会得到完整的渐进虚化
+            edgeBlur.layoutParams?.let {
+                it.height = bars.top + dp(36)
+                edgeBlur.layoutParams = it
+            }
+            scrim.layoutParams?.let {
+                it.height = bars.top + dp(12)
+                scrim.layoutParams = it
+            }
+            insets
+        }
+        scroll.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+            // 静止时大标题保持清晰；一旦内容开始滚入状态栏再开启 Scroll Edge 模糊
+            edgeBlur.visibility = if (scrollY > dp(6)) View.VISIBLE else View.INVISIBLE
+            refreshGlassOnScroll()
+            (activity as? RunHomeActivity)?.onHomeScrolled(scrollY - oldScrollY, scrollY)
+        }
+        ViewCompat.requestApplyInsets(scroll)
+    }
+
+    /**
+     * 滚动时让玻璃重新采样背景：底部导航与页面卡片会实时糊住滑过的内容，
+     * 80ms 节流避免每个滚动帧都做一次整窗快照。
+     */
+    private fun refreshGlassOnScroll() {
+        val now = SystemClock.uptimeMillis()
+        if (now - lastGlassRefreshAt < 80) return
+        lastGlassRefreshAt = now
+        // 与编辑器 / 自由漫游的 onMapStatusChange 同款：滚动期间顺延玻璃刷新窗口
+        GlassRenderGate.requestRefresh(160L)
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
-        if (!hidden) refreshSetupBanner()
+        if (hidden) {
+            thumb.setCometRunning(false)
+        } else {
+            refreshSetupBanner()
+            val phase = lastRunPhase
+            thumb.setCometRunning(
+                phase == null || phase == RunPhase.IDLE || phase == RunPhase.FINISHED
+            )
+        }
     }
 
     fun refreshSetupBanner() {
@@ -210,7 +317,9 @@ class RouteListFragment : Fragment() {
         val state = SetupGuard.check(requireContext())
         setupBanner.visibility = if (state.ready) View.GONE else View.VISIBLE
         if (!state.ready) {
-            setupBanner.text = "首次使用需完成 ${state.missing.size} 项基础授权 · 立即配置 >"
+            // 「3 项」而不是「授权」：其中开发者选项并不是权限，叫「授权」会让用户
+            // 去系统权限页找，找不到就放弃了。统一成「配置」。
+            setupBanner.text = "还差 ${state.missing.size} 项基础配置 · 点此完成 >"
         }
     }
 
@@ -229,51 +338,104 @@ class RouteListFragment : Fragment() {
             selectedRouteId = selected.id
             persistSelection()
         }
-        routeCountLabel.text = "${routes.size} 条路线"
-        emptyView.visibility = if (routes.isEmpty()) View.VISIBLE else View.GONE
+        val empty = routes.isEmpty()
+        routeCountLabel.text = if (empty) "尚未添加" else "${routes.size} 条路线"
+        emptyView.visibility = if (empty) View.VISIBLE else View.GONE
         mainCard.visibility = if (selected == null) View.GONE else View.VISIBLE
-        chipScroll.visibility = if (routes.isEmpty()) View.GONE else View.VISIBLE
+        chipScroll.visibility = if (empty) View.GONE else View.VISIBLE
+        // 空状态卡片已经承载了「新建 / 导入口令」两个入口，重复入口全部收起
+        routeListHeader.visibility = if (empty) View.GONE else View.VISIBLE
+        workshopTitle.visibility = if (empty) View.GONE else View.VISIBLE
+        workshopCard.visibility = if (empty) View.GONE else View.VISIBLE
         renderChips(selected?.id ?: 0L)
         selected?.let { bindMainCard(it) }
     }
 
     private fun renderChips(selectedId: Long) {
-        chipRow.removeAllViews()
-        routes.forEach { route ->
+        // 选中态切换时复用已有 chip，不触发重新布局，透镜弹簧才能连续滑动
+        val reuse = chipRow.childCount == routes.size && routes.isNotEmpty()
+        if (!reuse) chipRow.removeAllViews()
+        val chips = ArrayList<TextView>(routes.size)
+        var selectedIndex = 0
+        routes.forEachIndexed { index, route ->
             val on = route.id == selectedId
-            val chip = TextView(requireContext()).apply {
-                text = "${route.name} · ${formatLap(route.singleLapMeters)}"
-                textSize = 12f
-                gravity = Gravity.CENTER
-                setPadding(dp(12), dp(7), dp(12), dp(7))
-                setTextColor(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        if (on) R.color.pf_volt else R.color.pf_text_secondary
-                    )
-                )
-                background = ContextCompat.getDrawable(
-                    requireContext(),
-                    if (on) R.drawable.bg_tab_selected else R.drawable.bg_secondary_button
-                )
-                setOnClickListener {
-                    if (selectedRouteId == route.id) return@setOnClickListener
-                    selectedRouteId = route.id
-                    persistSelection()
-                    render()
+            if (on) selectedIndex = index
+            val chip = if (reuse) {
+                chipRow.getChildAt(index) as TextView
+            } else {
+                TextView(requireContext()).apply {
+                    textSize = 11f
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                    gravity = Gravity.CENTER
+                    setPadding(dp(13), dp(7), dp(13), dp(7))
+                    // 选中透镜由 LensChipTrack 绘制，chip 自身只保留曜石黑 / 纯白字色
+                    background = null
+                    setOnClickListener { v ->
+                        val id = v.tag as? Long ?: return@setOnClickListener
+                        if (selectedRouteId == id) return@setOnClickListener
+                        selectedRouteId = id
+                        persistSelection()
+                        render()
+                    }
                 }
             }
-            val lp = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { marginEnd = dp(6) }
-            chipRow.addView(chip, lp)
+            chip.tag = route.id
+            chip.text = chipLabel(route.name, route.singleLapMeters)
+            chip.setTextColor(
+                ContextCompat.getColor(
+                    requireContext(),
+                    if (on) R.color.pf_volt else R.color.pf_text_secondary
+                )
+            )
+            chip.setTypeface(
+                null,
+                if (on) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL
+            )
+            if (!reuse) {
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { marginEnd = dp(6) }
+                chipRow.addView(chip, lp)
+            }
+            chips.add(chip)
+        }
+        chipTrack.bind(chips, selectedIndex, animate = reuse)
+        // 让选中的路线透镜完整落在轨道可视区内（两侧各预留 16dp，避免贴边截断）
+        val selectedChip = chips.getOrNull(selectedIndex)
+        if (selectedChip != null) {
+            chipRow.post {
+                val viewport = chipScrollView.width
+                if (viewport <= 0) return@post
+                val trailing = dp(16)
+                val current = chipScrollView.scrollX
+                val target = when {
+                    selectedChip.left < current ->
+                        (selectedChip.left - trailing).coerceAtLeast(0)
+                    selectedChip.right + trailing > current + viewport ->
+                        selectedChip.right + trailing - viewport
+                    else -> current
+                }
+                val maxScroll = (chipRow.width - viewport).coerceAtLeast(0)
+                chipScrollView.smoothScrollTo(target.coerceIn(0, maxScroll), 0)
+            }
         }
     }
 
     private fun bindMainCard(route: RunRouteEntity) {
         val schedule = schedules.firstOrNull { it.routeId == route.id }
-        nameText.text = route.name
+        // V4.1：示范路线标题统一精简为「400m 标准田径场」，兼容旧库中带「（示范）」「· 示范」的名字，
+        // 单行不再出现省略号截断。
+        nameText.text = if (route.buildMode == "DEMO") {
+            route.name
+                .replace(" · 示范", "")
+                .replace("（示范）", "")
+                .replace("(示范)", "")
+                .trim()
+        } else {
+            route.name
+        }
         metaText.text = String.format(
             Locale.US,
             "单圈 %.0f m · %s · %s",
@@ -293,7 +455,7 @@ class RouteListFragment : Fragment() {
         thumb.setRoute(TrackJsonCodec.decode(route.denseWaypointsJson))
         quickStartBtn.text = String.format(
             Locale.US,
-            "▶ %.1fkm · %d'%02d\"",
+            "开始跑圈 · %.1f km · %d'%02d\"",
             route.lastTargetDistanceKm,
             route.lastTargetPaceSecPerKm / 60,
             route.lastTargetPaceSecPerKm % 60
@@ -310,6 +472,12 @@ class RouteListFragment : Fragment() {
             "定时：未配置（点击设置）"
         }
         quickStartBtn.setOnClickListener { quickStart(route) }
+        (quickStartBtn as? com.zcshou.gogogo.run.ui.widget.SpecularButton)
+            ?.sonarOnLongPress = true
+        shareBtn.setOnClickListener { shareRouteCode(route) }
+        mainCard.findViewById<View>(R.id.routeHeader).setOnClickListener {
+            openRoutePreview(route)
+        }
         tuneBtn.setOnClickListener {
             QuickStartBottomSheet.newInstance(route.id, route.name)
                 .show(parentFragmentManager, "quick_start")
@@ -318,15 +486,24 @@ class RouteListFragment : Fragment() {
         menuBtn.setOnClickListener { showRouteMenu(route) }
     }
 
+    private fun openRoutePreview(route: RunRouteEntity) {
+        startActivity(
+            Intent(requireContext(), RoutePreviewActivity::class.java)
+                .putExtra(RoutePreviewActivity.EXTRA_ROUTE_ID, route.id)
+        )
+    }
+
     private fun showRouteMenu(route: RunRouteEntity) {
         val popup = PopupMenu(requireContext(), menuBtn)
-        popup.menu.add(0, 1, 0, "重命名")
-        popup.menu.add(0, 2, 1, "复制一份")
-        popup.menu.add(0, 3, 2, "导出 GPX 备份")
-        popup.menu.add(0, 5, 3, "复制 DEEPRUN:// 分享口令")
-        popup.menu.add(0, 4, 4, "删除路线")
+        popup.menu.add(0, 6, 0, "查看路线")
+        popup.menu.add(0, 1, 1, "重命名")
+        popup.menu.add(0, 2, 2, "复制一份")
+        popup.menu.add(0, 3, 3, "导出 GPX 备份")
+        popup.menu.add(0, 5, 4, getString(R.string.route_share_copy, BrandConfig.SHARE_SCHEME))
+        popup.menu.add(0, 4, 5, "删除路线")
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
+                6 -> openRoutePreview(route)
                 1 -> renameRoute(route)
                 2 -> duplicateRoute(route)
                 3 -> exportRoute(route)
@@ -340,11 +517,12 @@ class RouteListFragment : Fragment() {
 
     private fun renameRoute(route: RunRouteEntity) {
         val input = EditText(requireContext()).apply {
+            com.zcshou.gogogo.run.ui.widget.DialogStyler.styleInput(this)
             setText(route.name)
             setSelection(text.length)
             setPadding(dp(16), dp(8), dp(16), dp(8))
         }
-        AlertDialog.Builder(requireContext())
+        GlassDialogs.builder(requireContext())
             .setTitle("重命名路线")
             .setView(input)
             .setPositiveButton("保存") { _, _ ->
@@ -383,40 +561,102 @@ class RouteListFragment : Fragment() {
     }
 
     private fun copyShareCode(route: RunRouteEntity) {
-        val points = TrackJsonCodec.decode(route.denseWaypointsJson)
-        if (points.size < 2) {
+        val code = routeShareCode(route)
+        if (code == null) {
             toast("轨迹数据不足，无法生成口令")
             return
         }
-        runCatching {
-            val code = RouteShareCodec.encode(route.name, points, route.isClockwise)
-            val cm = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("DEEPRUN 路线口令", code)
-            // 口令内含完整路线坐标（位置历史），API 33+ 标记为敏感内容，避免被剪贴板读取方顺带收割
-            if (android.os.Build.VERSION.SDK_INT >= 33) {
-                clip.description.extras = android.os.PersistableBundle(1).apply {
-                    putBoolean(android.content.ClipDescription.EXTRA_IS_SENSITIVE, true)
-                }
+        if (copyShareText(route, code)) {
+            toast("口令已复制，好友粘贴到「导入口令」即可导入")
+        } else {
+            toast("口令复制失败")
+        }
+    }
+
+    /** 路线卡上的显式分享入口：直接拉起系统分享面板，发给微信 / QQ 等任意应用 */
+    private fun shareRouteCode(route: RunRouteEntity) {
+        val code = routeShareCode(route)
+        if (code == null) {
+            toast("轨迹数据不足，无法生成口令")
+            return
+        }
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "${getString(R.string.app_name)}跑圈口令 · ${route.name}")
+            putExtra(Intent.EXTRA_TEXT, shareMessage(route, code))
+        }
+        val opened = runCatching {
+            startActivity(Intent.createChooser(send, "分享跑圈口令"))
+        }.isSuccess
+        if (!opened) {
+            if (copyShareText(route, code)) {
+                toast("没有可分享的应用，口令已复制")
+            } else {
+                toast("没有可分享的应用，口令复制失败")
             }
-            cm.setPrimaryClip(clip)
-            toast("口令已复制，发给室友即可零服务器导入")
-        }.onFailure { toast("口令生成失败") }
+        }
+    }
+
+    private fun routeShareCode(route: RunRouteEntity): String? {
+        val points = TrackJsonCodec.decode(route.denseWaypointsJson)
+        if (points.size < 2) return null
+        return runCatching { RouteShareCodec.encode(route.name, points, route.isClockwise) }.getOrNull()
+    }
+
+    /** 分享文案带一句使用说明，好友复制整段即可被 [RouteShareCodec.decode] 识别 */
+    private fun shareMessage(route: RunRouteEntity, code: String): String = buildString {
+        val app = getString(R.string.app_name)
+        append("【$app】跑圈路线「${route.name}」\n")
+        append("复制整段口令，打开${app}首页点「导入口令」粘贴即可导入（不上传服务器）：\n")
+        append(code)
+    }
+
+    private fun copyShareText(route: RunRouteEntity, code: String): Boolean {
+        val cm = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText(
+            "${BrandConfig.SHARE_SCHEME} 路线口令",
+            shareMessage(route, code)
+        )
+        // 口令内含完整路线坐标（位置历史），API 33+ 标记为敏感内容，避免被剪贴板读取方顺带收割
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            clip.description.extras = android.os.PersistableBundle(1).apply {
+                putBoolean(android.content.ClipDescription.EXTRA_IS_SENSITIVE, true)
+            }
+        }
+        return runCatching { cm.setPrimaryClip(clip) }.isSuccess
     }
 
     private fun importShareCode() {
+        // 好友口令常见路径是「聊天里复制整段 → 打开 App 导入」，先自动读取剪贴板省一步粘贴。
+        val clipCode = readClipboardShareCode()
         val input = EditText(requireContext()).apply {
-            hint = "粘贴 DEEPRUN://... 口令"
+            com.zcshou.gogogo.run.ui.widget.DialogStyler.styleInput(this)
+            hint = "粘贴 ${BrandConfig.SHARE_PREFIX}... 口令"
+            if (clipCode != null) {
+                setText(clipCode)
+                setSelection(text.length)
+            }
             setPadding(dp(16), dp(8), dp(16), dp(8))
-            maxLines = 4
+            maxLines = 5
         }
-        AlertDialog.Builder(requireContext())
-            .setTitle("从分享口令导入")
-            .setMessage("口令仅包含路线坐标与名称，不上传任何服务器")
+        GlassDialogs.builder(requireContext())
+            .setTitle("导入跑圈口令")
+            .setMessage(
+                if (clipCode != null) {
+                    "已读取剪贴板中的口令，点「导入路线」即可。口令只包含路线坐标与名称，不上传服务器"
+                } else {
+                    "直接粘贴好友发来的整段聊天内容即可。口令只包含路线坐标与名称，不上传服务器"
+                }
+            )
             .setView(input)
-            .setPositiveButton("导入") { _, _ ->
+            .setPositiveButton("导入路线") { _, _ ->
                 val shared = RouteShareCodec.decode(input.text.toString())
                 if (shared == null) {
-                    toast("口令无效或已损坏")
+                    toast("口令无效或已损坏，请粘贴完整口令")
+                    return@setPositiveButton
+                }
+                if (shared.points.size > 2000) {
+                    toast("路线点数过多，无法导入")
                     return@setPositiveButton
                 }
                 val lap = TrackMathUtils.cumulativeDistances(shared.points).last()
@@ -440,12 +680,20 @@ class RouteListFragment : Fragment() {
                     )
                     selectedRouteId = id
                     persistSelection()
-                    toast("已导入口令路线：${String.format(Locale.US, "%.0f m", lap)}")
+                    toast("已导入「$name」· ${String.format(Locale.US, "%.0f m", lap)}")
                 }
             }
             .setNegativeButton("取消", null)
             .show()
     }
+
+    private fun readClipboardShareCode(): String? = runCatching {
+        val cm = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val text = cm.primaryClip?.takeIf { it.itemCount > 0 }
+            ?.getItemAt(0)?.coerceToText(requireContext())?.toString()
+            ?: return@runCatching null
+        RouteShareCodec.extractCode(text)
+    }.getOrNull()
 
     private fun uniqueImportName(base: String): String {
         val name = base.take(24)
@@ -486,6 +734,22 @@ class RouteListFragment : Fragment() {
     private fun formatLap(meters: Double): String =
         if (meters >= 1000) String.format(Locale.US, "%.1fkm", meters / 1000.0)
         else String.format(Locale.US, "%.0fm", meters)
+
+    /**
+     * 胶囊文案去重：
+     * 历史路线名可能已经包含「· 317m」，直接再拼一次会变成「317m · 317m」。
+     * 先剥掉名称末尾重复的周长段，再决定是否补一次；名称里已经出现周长时不再追加。
+     */
+    private fun chipLabel(name: String, singleLapMeters: Double): String {
+        val lap = formatLap(singleLapMeters)
+        var base = name.trim()
+        val suffix = " · $lap"
+        while (base.endsWith(suffix)) {
+            base = base.removeSuffix(suffix).trim()
+        }
+        if (base.isEmpty()) return lap
+        return if (base.contains(lap)) base else "$base · $lap"
+    }
 
     private fun openEditor(mode: String) {
         startActivity(
@@ -541,7 +805,7 @@ class RouteListFragment : Fragment() {
         editJitter.setText((schedule?.windowJitterMinutes ?: 8).toString())
         switchWifi.isChecked = schedule?.autoIsolateWifi ?: true
 
-        AlertDialog.Builder(context)
+        GlassDialogs.builder(context)
             .setTitle("定时开跑 · ${route.name}")
             .setView(view)
             .setPositiveButton("保存") { _, _ ->
@@ -576,7 +840,7 @@ class RouteListFragment : Fragment() {
                             "已设定（近似）：${formatTime(next)}"
                         else -> "已设定：${formatTime(next)} 开跑"
                     }
-                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                    com.zcshou.gogogo.run.ui.glass.GlassFeedback.toast(context, message, long = true)
                 }
             }
             .setNegativeButton("取消", null)
@@ -595,7 +859,7 @@ class RouteListFragment : Fragment() {
             .toList()
         val labels = (listOf("不关联") + apps.map { it.second }).toTypedArray()
         val checked = apps.indexOfFirst { it.first == current } + 1
-        AlertDialog.Builder(requireContext())
+        GlassDialogs.builder(requireContext())
             .setTitle("关联跑步 App（开跑时自动拉起）")
             .setSingleChoiceItems(labels, if (checked > 0) checked else 0) { dialog, which ->
                 onPicked(if (which == 0) null else apps[which - 1].first)
@@ -616,5 +880,5 @@ class RouteListFragment : Fragment() {
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun toast(message: String) =
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        com.zcshou.gogogo.run.ui.glass.GlassFeedback.toast(requireContext(), message)
 }

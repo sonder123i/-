@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 
 import com.zcshou.gogogo.run.ui.home.RunHomeActivity;
+import com.zcshou.gogogo.run.ui.theme.ThemeHelper;
 import com.zcshou.utils.GoUtils;
 
 public class WelcomeActivity extends AppCompatActivity {
@@ -38,6 +39,7 @@ public class WelcomeActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ThemeHelper.INSTANCE.apply(this);
         super.onCreate(savedInstanceState);
 
         // 已同意过协议的老用户：不再重复展示欢迎页

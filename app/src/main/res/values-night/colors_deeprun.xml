@@ -1,30 +1,153 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    V4.0 视觉 Token · 深海光学（Abyssal Optics · 暗色）
+    V4.1 视觉 Token · Apple Obsidian Glass（深色）
     与 res/values/colors_deeprun.xml 成对存在，名称必须完全一致。
+
+    性能约束：玻璃是纯静态磨砂材质（86% 不透明），零采样零实时模糊。
 -->
 <resources>
     <!-- 基底与背光 -->
-    <color name="dr_bg_canvas_base">#06080B</color>       <!-- 深渊曜石黑 -->
-    <color name="dr_bg_ambient_glow">#29102A43</color>    <!-- Pelagic 深海蓝 -->
+    <color name="dr_bg_canvas_base">#000000</color>       <!-- 纯曜石黑 -->
+    <color name="dr_bg_ambient_glow">#14FFFFFF</color>    <!-- 极柔中性环境光 -->
 
-    <!-- 液态玻璃 -->
-    <color name="dr_glass_surface_tint">#B8111822</color>   <!-- 深海半透磨砂 -->
-    <color name="dr_glass_rim_highlight">#337CE8F4</color>  <!-- 冷青微光亮边 -->
+    <!-- 液态玻璃（静态磨砂） -->
+    <color name="dr_glass_surface_tint">#DB1C1C1E</color>   <!-- 86% 深空黑磨砂 -->
+    <color name="dr_glass_nav_tint">#E01C1C1E</color>      <!-- V5.2 深空黑磨砂导航胶囊 -->
+    <color name="dr_glass_rim_highlight">#33FFFFFF</color>  <!-- 顶部 1dp 玻璃高光 -->
     <color name="dr_glass_rim_shadow">#1A000000</color>     <!-- 深渊微暗边 -->
 
-    <!-- 哑光实体卡片 -->
-    <color name="dr_matte_card_surface">#E60F151E</color>   <!-- 哑光深岩板 -->
+    <!-- 哑光实体卡片（弹窗兜底，接近实体） -->
+    <color name="dr_matte_card_surface">#FA1C1C1E</color>
 
-    <!-- 强调色 -->
-    <color name="dr_accent_primary">#5CE1E6</color>         <!-- 荧光冰川青 -->
-    <color name="dr_accent_halo">#245CE1E6</color>          <!-- 14% 冰青漫反射 -->
+    <!-- 强调色（无色化：纯白） -->
+    <color name="dr_accent_primary">#FFFFFF</color>
+    <color name="dr_accent_halo">#1FFFFFFF</color>
 
     <!-- 遥测文字 -->
-    <color name="dr_text_telemetry_primary">#F2F7FA</color>   <!-- 冷调光学白 -->
-    <color name="dr_text_telemetry_secondary">#7E8E9F</color> <!-- 深海岩灰 -->
-    <color name="dr_semantic_warning">#FFB020</color>         <!-- 琥珀警示黄 -->
+    <color name="dr_text_telemetry_primary">#F5F5F7</color>
+    <color name="dr_text_telemetry_secondary">#8E8E93</color>
+    <color name="dr_semantic_warning">#FF9F0A</color>
 
     <!-- 复杂背景文字对比度投影（暗色用深渊黑投影） -->
     <color name="dr_text_shadow">#CC000000</color>
+
+    <!-- ================= V5.0 Z 轴四层光学材质 ================= -->
+
+    <!-- L0 · 氛围画布：纯黑底上的极光与等高线 -->
+    <color name="dr_l0_contour">#12FFFFFF</color>          <!-- 7% 冷白等高线 -->
+    <color name="dr_l0_grid">#10FFFFFF</color>            <!-- 6% 冷白几何网格（折射参照） -->
+    <color name="dr_l0_aurora_cyan">#295CE1E6</color>      <!-- 左上冰川青 16% -->
+    <color name="dr_l0_aurora_violet">#29B388FF</color>    <!-- 右下柔雾紫 16% -->
+
+    <!-- L1 · 哑光陶瓷：次级信息容器 -->
+    <color name="dr_l1_matte_surface">#EB1C1C1E</color>    <!-- 92% 深空磨砂 -->
+    <color name="dr_l1_matte_stroke">#14FFFFFF</color>     <!-- 0.5dp 冷白内描边 -->
+
+    <!-- L2 · 棱镜液态玻璃：对角线微光泽 + 棱镜虹彩描边 -->
+    <color name="dr_l2_glass_top">#E8222428</color>
+    <color name="dr_l2_glass_bottom">#D115171B</color>
+    <color name="dr_l2_top_sheen">#66FFFFFF</color>
+    <color name="dr_prism_1">#6670D6FF</color>
+    <color name="dr_prism_2">#66C77DFF</color>
+    <color name="dr_prism_3">#66FF9EBB</color>
+    <color name="dr_prism_4">#66FFFFFF</color>
+
+    <!-- L3 · 高透悬浮透镜（90%~93%） -->
+    <color name="dr_l3_lens_surface">#ED1C1C1E</color>
+
+    <!-- 光纤轨迹：靛蓝 → 冰青 → 紫罗兰（深色略提亮） -->
+    <color name="dr_fiber_indigo">#FF8B96FF</color>
+    <color name="dr_fiber_cyan">#FF7CF3F7</color>
+    <color name="dr_fiber_violet">#FFD9A6FF</color>
+    <color name="dr_fiber_glow">#4D7C8CFF</color>
+
+    <!-- 黑曜石 / 纯白镜面主按钮 -->
+    <color name="dr_mirror_top">#FFFFFFFF</color>
+    <color name="dr_mirror_bottom">#FFE5E5EA</color>
+    <color name="dr_mirror_text">#FF000000</color>
+    <color name="dr_mirror_shimmer">#4D000000</color>
+    <color name="dr_mirror_shimmer_core">#1A000000</color>
+    <color name="dr_mirror_top_edge">#66FFFFFF</color>
+    <color name="dr_mirror_ripple">#1F000000</color>
+
+    <!-- 弹窗：磨砂底板 / 输入凹槽 / 双胶囊按钮 -->
+    <color name="dr_dialog_surface">#ED1C1C1E</color>
+    <!-- 玻璃弹窗的可读性内芯：比底板更实，压住深色按钮/地图透上来的重影 -->
+    <color name="dr_dialog_core">#F51C1C1E</color>
+    <color name="dr_dialog_stroke">#1FFFFFFF</color>
+    <color name="dr_input_recess">#1FFFFFFF</color>
+    <color name="dr_dialog_cancel_bg">#24FFFFFF</color>
+    <color name="dr_dialog_cancel_text">#FFEBEBF5</color>
+    <color name="dr_dialog_confirm_bg">#FFFFFFFF</color>
+    <color name="dr_dialog_confirm_text">#FF000000</color>
+
+    <!-- ================= V5.2 冷银白水晶玻璃（无色美学） ================= -->
+
+    <!-- 双层同心透镜：内层 20% 白水晶滑块 + 1.5dp 纯白镜面外圈 -->
+    <color name="dr_lens_fill_top">#45FFFFFF</color>
+    <color name="dr_lens_fill_mid">#38FFFFFF</color>
+    <color name="dr_lens_fill_bottom">#2EFFFFFF</color>
+    <color name="dr_lens_halo">#0A000000</color>
+    <color name="dr_silver_rim">#E6FFFFFF</color>
+    <color name="dr_silver_rim_soft">#66FFFFFF</color>
+    <color name="dr_silver_sheen">#CCFFFFFF</color>
+    <color name="dr_crystal_rim">#FFFFFFFF</color>
+
+    <!-- 深空岩灰画布 + 冷银冰蓝微光 -->
+    <color name="dr_l0_silver_top">#101113</color>
+    <color name="dr_l0_silver_bottom">#1A1C1F</color>
+    <color name="dr_l0_ice_glow">#2681C7E8</color>
+    <color name="dr_l0_silver_glow">#14FFFFFF</color>
+
+    <!-- 跑道巡航呼吸光点：冰川青白 -->
+    <color name="dr_comet_core">#FF38BDF8</color>
+    <color name="dr_comet_glow">#6638BDF8</color>
+
+    <!-- 冰青高光（悬浮窗档位 / 摇杆） -->
+    <color name="dr_ice_a20">#3338BDF8</color>
+    <color name="dr_ice_a45">#7338BDF8</color>
+
+    <!-- 角部限定色散（只用于圆角弧段，直线边保持纯白） -->
+    <color name="dr_prism_red">#33FF8A8A</color>
+    <color name="dr_prism_cyan">#3300D4FF</color>
+
+    <!-- 悬浮文字微景深投影 -->
+    <color name="dr_text_float_shadow">#33FFFFFF</color>
+
+    <!-- 未选中 Tab：深色玻璃上保持柔灰但不消失 -->
+    <color name="dr_text_unselected">#B8B8BD</color>
+
+    <!-- V6.0 导航光学玻璃底色（alpha 即染色强度）。
+         与浅色同档降到 0.28：暗色下 80% 的黑把轨道压成一块实心板，
+         边缘高光反而看不见了。 -->
+    <color name="dr_nav_optical_tint">#47000000</color>
+    <!-- V6.0 地图控制面板光学玻璃底色：更高遮蔽度，压住地图路名 -->
+    <color name="dr_editor_optical_tint">#F51C1C1E</color>
+    <!-- V6.0 首页主卡光学玻璃底色 -->
+    <color name="dr_card_optical_tint">#E21C1C1E</color>
+
+    <!-- 跨应用悬浮窗：深色「深空黑曜石」。
+         与 values/colors_deeprun.xml 成对定义：浅色走冰晶棱镜，这里保持黑曜石。
+         底色压到 92% 保证任何壁纸下文字都可读，靠冰青细边与虹彩薄纱出层次。 -->
+    <color name="dr_overlay_surface">#EB141416</color>
+    <color name="dr_overlay_surface_solid">#F5141416</color>
+    <color name="dr_overlay_surface_warn">#F5101520</color>
+    <color name="dr_overlay_recess">#26FFFFFF</color>
+    <color name="dr_overlay_round">#24FFFFFF</color>
+    <color name="dr_overlay_text_primary">#FFF5F5F7</color>
+    <color name="dr_overlay_text_secondary">#FFAEAEB2</color>
+    <color name="dr_overlay_ice">#FF7DD3FC</color>
+    <color name="dr_overlay_rim_silver">#59FFFFFF</color>
+    <color name="dr_overlay_rim_ice">#66BAE6FD</color>
+    <color name="dr_overlay_ok">#FF34C759</color>
+    <color name="dr_overlay_danger">#FFFF6961</color>
+    <color name="dr_overlay_danger_bg">#33FF6961</color>
+
+    <!-- 棱镜虹彩层：深色底上要更亮才看得见薄膜干涉，但透明度仍然克制 -->
+    <color name="dr_prism_sheen_a">#3DFF9BD2</color>
+    <color name="dr_prism_sheen_b">#33A78BFA</color>
+    <color name="dr_prism_sheen_c">#29FFD08A</color>
+    <color name="dr_prism_sheen_d">#247DE2FF</color>
+    <color name="dr_prism_specular">#99FFFFFF</color>
+    <color name="dr_prism_edge">#40FFFFFF</color>
 </resources>

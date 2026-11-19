@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    顶部状态栏渐隐遮罩：
+    0~80% 保持页面底色不透明（覆盖状态栏图标区），最后 20% 渐隐到透明，
+    内容滚入状态栏时不会和时间/信号图标打架。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:startColor="@color/pf_canvas"
+        android:centerColor="@color/pf_canvas"
+        android:centerY="0.8"
+        android:endColor="#00000000" />
+</shape>

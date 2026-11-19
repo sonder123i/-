@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import com.baidu.mapapi.map.BaiduMap
 import com.baidu.mapapi.map.BitmapDescriptor
 import com.baidu.mapapi.map.BitmapDescriptorFactory
@@ -15,9 +16,9 @@ import com.baidu.mapapi.model.LatLng
 import com.zcshou.gogogo.run.ui.theme.ThemeHelper
 
 /**
- * V4.0 地图双层光纤轨迹：
- * - 底层 12dp、15% 透明度的冰川青漫反射光晕；
- * - 顶层 2.5dp、100% 不透明的白青渐变核心线（colorsValues 逐段插值）。
+ * Apple 单色双层光纤轨迹：
+ * - 底层 9dp、10% 透明度的中性漫反射光晕；
+ * - 顶层 1.5dp 单色核心线（浅色深炭黑 / 深色纯白微光）。
  * 两条线成组管理，update/remove 成对操作。
  */
 class FiberTrail private constructor(
@@ -51,13 +52,13 @@ class FiberTrail private constructor(
                 val glow = map.addOverlay(
                     PolylineOptions()
                         .points(points)
-                        .width((12f * density).toInt())
-                        .color(if (isDark) 0x265CE1E6.toInt() else 0x26009AB4.toInt())
+                        .width((9f * density).toInt())
+                        .color(if (isDark) 0x26000000.toInt() else 0x261D1D1F.toInt())
                 ) as? Polyline ?: return null
                 val core = map.addOverlay(
                     PolylineOptions()
                         .points(points)
-                        .width((2.5f * density).toInt())
+                        .width((1.5f * density).toInt())
                         .colorsValues(fiberColors(points.size, isDark))
                 ) as? Polyline
                 if (core == null) {
@@ -68,10 +69,11 @@ class FiberTrail private constructor(
             }.getOrNull()
         }
 
-        /** 白青渐变：起点近白，沿线渐变为冰青。 */
+        /** 单色光纤：起点略微提亮，沿线收敛到主色。 */
         fun fiberColors(count: Int, isDark: Boolean): List<Int> {
-            val start = if (isDark) 0xFFEAFCFE.toInt() else 0xFFCFEFF4.toInt()
-            val end = if (isDark) 0xFF5CE1E6.toInt() else 0xFF007A94.toInt()
+            // 深色模式地图会被反相，所以这里先画黑色，反相后呈白色光纤
+            val start = if (isDark) 0xFF000000.toInt() else 0xFF3A3A3C.toInt()
+            val end = if (isDark) 0xFF1D1D1F.toInt() else 0xFF1D1D1F.toInt()
             val out = ArrayList<Int>(count)
             for (i in 0 until count) {
                 val t = if (count <= 1) 0f else i.toFloat() / (count - 1)
@@ -93,7 +95,43 @@ class FiberTrail private constructor(
     }
 }
 
-/** 当前位置光学光点 Marker 图标：冰青光晕 + 白热核心 + 内环。 */
+/** 空降目标 Marker 图标：单色地图针（无彩色默认图钉）。 */
+object FiberTargetPin {
+
+    private var iconDark: BitmapDescriptor? = null
+    private var iconLight: BitmapDescriptor? = null
+
+    fun icon(context: Context): BitmapDescriptor {
+        val dark = ThemeHelper.isDark(context)
+        val cached = if (dark) iconDark else iconLight
+        if (cached != null) return cached
+        val density = context.resources.displayMetrics.density
+        val size = (30f * density).toInt()
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        // 深色地图反相：ink 画黑→反相白，paper 画白→反相黑
+        val ink = if (dark) 0xFF000000.toInt() else 0xFF1D1D1F.toInt()
+        val paper = if (dark) 0xFFFFFFFF.toInt() else 0xFFFFFFFF.toInt()
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ink }
+        val cx = size / 2f
+        val head = size * 0.34f
+        canvas.drawCircle(cx, size * 0.38f, head, paint)
+        val tail = Path().apply {
+            moveTo(cx - head * 0.62f, size * 0.55f)
+            lineTo(cx + head * 0.62f, size * 0.55f)
+            lineTo(cx, size * 0.92f)
+            close()
+        }
+        canvas.drawPath(tail, paint)
+        paint.color = paper
+        canvas.drawCircle(cx, size * 0.38f, head * 0.42f, paint)
+        val desc = BitmapDescriptorFactory.fromBitmap(bitmap)
+        if (dark) iconDark = desc else iconLight = desc
+        return desc
+    }
+}
+
+/** 当前位置光点 Marker 图标：中性光晕 + 单色内环 + 高对比核心。 */
 object FiberPositionDot {
 
     private var iconDark: BitmapDescriptor? = null
@@ -109,14 +147,17 @@ object FiberPositionDot {
         val canvas = Canvas(bitmap)
         val center = size / 2f
         val halo = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (dark) 0x405CE1E6.toInt() else 0x40009AB4.toInt()
+            // 深色地图会反相：先画黑，反相后得到白色光晕
+            color = if (dark) 0x33000000.toInt() else 0x331D1D1F.toInt()
         }
         val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = density
-            color = if (dark) 0xFF5CE1E6.toInt() else 0xFF0088A3.toInt()
+            color = if (dark) 0xFF000000.toInt() else 0xFF1D1D1F.toInt()
         }
-        val core = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+        val core = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (dark) 0xFFFFFFFF.toInt() else 0xFFFFFFFF.toInt()
+        }
 
         canvas.drawCircle(center, center, size * 0.42f, halo)
         canvas.drawCircle(center, center, size * 0.24f, ring)

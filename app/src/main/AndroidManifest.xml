@@ -11,6 +11,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 应用内更新：下载完成后拉起系统安装器 -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- 定时通知（首次开跑时按需申请） -->
@@ -73,6 +76,12 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
+        <!-- 应用更新：前台下载服务 -->
+        <service
+            android:name=".run.update.UpdateDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
         <!-- run 模块 V3.4：下拉控制中心快捷磁贴 -->
         <service
             android:name=".run.service.DeepRunTileService"
@@ -112,7 +121,7 @@
         <activity
             android:name=".WelcomeActivity"
             android:exported="true"
-            android:theme="@style/Theme.PaceFlow"
+            android:theme="@style/Theme.PaceFlow.Light"
             >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -134,28 +143,35 @@
             android:name=".run.ui.home.RunHomeActivity"
             android:exported="false"
             android:label="@string/app_name"
-            android:theme="@style/Theme.PaceFlow" />
+            android:theme="@style/Theme.PaceFlow.Light" />
+
+        <!-- run 模块：已保存路线详情预览 -->
+        <activity
+            android:name=".run.ui.home.RoutePreviewActivity"
+            android:exported="false"
+            android:label="路线预览"
+            android:theme="@style/Theme.PaceFlow.Light" />
 
         <!-- run 模块：关于页（唯一开源许可与致谢处） -->
         <activity
             android:name=".run.ui.home.AboutActivity"
             android:exported="false"
             android:label="关于"
-            android:theme="@style/Theme.PaceFlow" />
+            android:theme="@style/Theme.PaceFlow.Light" />
 
         <!-- run 模块 V3.2：10 秒模拟跑圈预览（无需任何权限） -->
         <activity
             android:name=".run.ui.home.DemoPreviewActivity"
             android:exported="false"
             android:label="模拟预览"
-            android:theme="@style/Theme.PaceFlow" />
+            android:theme="@style/Theme.PaceFlow.Light" />
 
         <!-- run 模块 V3.2：3 步新手配置向导 -->
         <activity
             android:name=".run.ui.home.SetupWizardActivity"
             android:exported="false"
             android:label="基础配置"
-            android:theme="@style/Theme.PaceFlow" />
+            android:theme="@style/Theme.PaceFlow.Light" />
 
         <!-- run 模块：Phase 2 引擎演示驱动页（Phase 4 由 RunHomeActivity 正式替代；adb 调试入口放 debug 变体） -->
         <activity
@@ -169,7 +185,7 @@
             android:name=".run.ui.editor.RouteEditorActivity"
             android:exported="false"
             android:label="建圈器"
-            android:theme="@style/Theme.PaceFlow" />
+            android:theme="@style/Theme.PaceFlow.Light" />
 
         <activity
             android:name=".SettingsActivity"

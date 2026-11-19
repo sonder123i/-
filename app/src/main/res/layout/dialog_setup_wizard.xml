@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/setupWizardScroll"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -26,26 +27,26 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="30 秒完成基础配置"
-                android:textColor="@color/pf_volt"
+                android:textColor="@color/pf_text_primary"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
-            <TextView
+            <ImageView
                 android:id="@+id/btnWizardClose"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:background="@drawable/bg_round_dark"
-                android:gravity="center"
-                android:text="✕"
-                android:textColor="@color/pf_text_secondary"
-                android:textSize="13sp" />
+                android:contentDescription="关闭"
+                android:padding="9dp"
+                android:src="@drawable/ic_xmark"
+                app:tint="@color/pf_text_secondary" />
         </LinearLayout>
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="只申请运行必需的 3 项能力，随时可在系统设置关闭"
+            android:text="2 项核心能力即可开跑，悬浮窗为可选增强，随时可关闭"
             android:textColor="@color/pf_text_secondary"
             android:textSize="12sp" />
 
@@ -65,13 +66,11 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <TextView
+                <View
                     android:id="@+id/stepOverlayDot"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="●"
-                    android:textColor="@color/pf_text_secondary"
-                    android:textSize="12sp" />
+                    android:layout_width="6dp"
+                    android:layout_height="6dp"
+                    android:background="@drawable/bg_status_dot" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -88,7 +87,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="未开启"
-                    android:textColor="@color/pf_amber"
+                    android:textColor="@color/pf_bad"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -97,7 +96,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="用于在跑步软件上方显示控制胶囊，方便随时暂停/接管（绝不读取屏幕内容）。"
+                android:text="用于在跑步软件上方显示控制胶囊，方便随时暂停/接管（绝不读取屏幕内容）。不开启也能跑，暂停/收尾在通知栏操作；若系统提示「部分功能已被限制」，会先引导你解除。"
                 android:textColor="@color/pf_text_secondary"
                 android:textSize="12sp" />
 
@@ -109,7 +108,7 @@
                 android:background="@drawable/bg_tab_selected"
                 android:gravity="center"
                 android:text="去开启悬浮窗"
-                android:textColor="@color/pf_volt"
+                android:textColor="@color/pf_text_primary"
                 android:textSize="13sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -130,13 +129,11 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <TextView
+                <View
                     android:id="@+id/stepDevDot"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="●"
-                    android:textColor="@color/pf_text_secondary"
-                    android:textSize="12sp" />
+                    android:layout_width="6dp"
+                    android:layout_height="6dp"
+                    android:background="@drawable/bg_status_dot" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -153,7 +150,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="未开启"
-                    android:textColor="@color/pf_amber"
+                    android:textColor="@color/pf_bad"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -173,8 +170,8 @@
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_tab_selected"
                 android:gravity="center"
-                android:text="① 去「关于手机」连续点版本号 7 次"
-                android:textColor="@color/pf_volt"
+                android:text="1. 去「关于手机」连续点版本号 7 次"
+                android:textColor="@color/pf_text_primary"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
@@ -185,7 +182,7 @@
                 android:layout_marginTop="6dp"
                 android:background="@drawable/bg_secondary_button"
                 android:gravity="center"
-                android:text="② 进入开发者选项（开总开关 / 选模拟位置）"
+                android:text="2. 进入开发者选项（开总开关 / 选模拟位置）"
                 android:textColor="@color/pf_cyan"
                 android:textSize="12sp" />
 
@@ -219,13 +216,11 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <TextView
+                <View
                     android:id="@+id/stepMockDot"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="●"
-                    android:textColor="@color/pf_text_secondary"
-                    android:textSize="12sp" />
+                    android:layout_width="6dp"
+                    android:layout_height="6dp"
+                    android:background="@drawable/bg_status_dot" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -242,15 +237,16 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="未选择"
-                    android:textColor="@color/pf_amber"
+                    android:textColor="@color/pf_bad"
                     android:textSize="12sp" />
             </LinearLayout>
 
             <TextView
+                android:id="@+id/stepDevAppHint"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="开发者选项 → 选择模拟位置信息应用 → 选择「步频流」"
+                android:text="开发者选项 → 选择模拟位置信息应用 → 选择「应用」"
                 android:textColor="@color/pf_text_secondary"
                 android:textSize="12sp" />
 
@@ -262,7 +258,7 @@
                 android:background="@drawable/bg_tab_selected"
                 android:gravity="center"
                 android:text="去选择模拟位置应用"
-                android:textColor="@color/pf_volt"
+                android:textColor="@color/pf_text_primary"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
@@ -273,8 +269,11 @@
                 android:layout_marginTop="6dp"
                 android:background="@drawable/bg_secondary_button"
                 android:gravity="center"
-                android:text="📋 复制「模拟位置」去设置里搜"
-                android:textColor="@color/pf_cyan"
+                android:drawableStart="@drawable/ic_copy_line"
+                android:drawablePadding="6dp"
+                android:drawableTint="@color/pf_text_primary"
+                android:text="复制「模拟位置」去设置里搜"
+                android:textColor="@color/pf_text_primary"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -286,7 +285,7 @@
             android:background="@drawable/bg_primary_button"
             android:gravity="center"
             android:text="下一步"
-            android:textColor="@color/pf_canvas"
+            android:textColor="@color/pf_on_primary"
             android:textSize="15sp"
             android:textStyle="bold" />
 
@@ -308,7 +307,7 @@
             android:background="@drawable/bg_capsule"
             android:lineSpacingExtra="3dp"
             android:padding="12dp"
-            android:text="本地安全承诺\n✓ 零读取通讯录与相册    ✓ 零获取设备串号\n✓ 轨迹 100% 仅存本机    ✓ 停止即恢复真实 GPS"
+            android:text="本地安全承诺\n无通讯录 / 相册读取   ·   无设备识别码\n轨迹 100% 仅存本机   ·   停止即恢复真实 GPS"
             android:textColor="@color/pf_text_secondary"
             android:textSize="11sp" />
     </LinearLayout>

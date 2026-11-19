@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    V5.0 L3 弹窗玻璃面板：28dp 大圆角高密度磨砂 + 0.5dp 玻璃亮边。
+    标准 AlertDialog 没有跨窗模糊；用 96% 内芯色，深色主按钮/地图垫在下面时
+    也不会把「取消 / 导入」等按钮文字透成灰底。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/dr_dialog_core" />
+    <stroke
+        android:width="0.5dp"
+        android:color="@color/dr_dialog_stroke" />
+    <corners android:radius="28dp" />
+</shape>

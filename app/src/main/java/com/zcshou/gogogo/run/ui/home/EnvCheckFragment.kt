@@ -1,17 +1,24 @@
 package com.zcshou.gogogo.run.ui.home
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.example.liquidglass.ScrollEdgeBlurView
+import com.zcshou.gogogo.BuildConfig
 import com.zcshou.gogogo.R
 import com.zcshou.gogogo.run.data.prefs.AdvancedPrefs
 import com.zcshou.gogogo.run.data.prefs.DisplayPrefs
@@ -19,7 +26,12 @@ import com.zcshou.gogogo.run.data.prefs.RunPrefs
 import com.zcshou.gogogo.run.guard.EnvGuardManager
 import com.zcshou.gogogo.run.guard.ShizukuWifiHelper
 import com.zcshou.gogogo.run.ui.glass.DeepRunGlassManager
+import com.zcshou.gogogo.run.ui.glass.GlassDialogs
+import com.zcshou.gogogo.run.ui.glass.GlassRenderGate
 import com.zcshou.gogogo.run.ui.theme.ThemeHelper
+import com.zcshou.gogogo.run.update.UpdateConfig
+import com.zcshou.gogogo.run.update.UpdateManager
+import kotlinx.coroutines.launch
 
 /**
  * Tab 3：环境体检 —— 模拟位置 / 悬浮窗 / 电池白名单 / 真实 Wi-Fi 连接态。
@@ -36,6 +48,7 @@ class EnvCheckFragment : Fragment() {
     )
 
     private val rows = mutableListOf<EnvRow>()
+    private var lastGlassRefreshAt = 0L
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,14 +68,11 @@ class EnvCheckFragment : Fragment() {
             view, R.id.rowOverlay, "悬浮窗权限",
             { EnvGuardManager.isOverlayAllowed(requireContext()) },
             "已允许悬浮窗，巡航胶囊可用",
-            "未允许：将无法显示进度胶囊",
+            "未允许：仍可开跑，暂停/收尾在通知栏；点此开启胶囊",
             jump = {
-                openIntent(
-                    Intent(
-                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:${requireContext().packageName}")
-                    )
-                )
+                // 走完整向导：侧载安装的「受限设置」需要在应用信息里解除，
+                // 直接跳系统悬浮窗页只会弹出限制提示，用户拿不到下一步。
+                openIntent(Intent(requireContext(), SetupWizardActivity::class.java))
             }
         )
         addRow(
@@ -95,8 +105,43 @@ class EnvCheckFragment : Fragment() {
         paintDot(renderRow.findViewById(R.id.envDot), null)
         renderRow.setOnClickListener { showRenderQualityDialog() }
 
+        val updateRow = view.findViewById<View>(R.id.rowUpdate)
+        updateRow.findViewById<TextView>(R.id.envTitle).text = "应用更新"
+        updateRow.findViewById<TextView>(R.id.envSubtitle).text =
+            "当前版本 v${BuildConfig.VERSION_NAME} · 点击检查更新"
+        paintDot(updateRow.findViewById(R.id.envDot), null)
+        updateRow.setOnClickListener {
+            val manager = UpdateManager.getInstance(requireContext())
+            if (!UpdateConfig.enabled) {
+                com.zcshou.gogogo.run.ui.glass.GlassFeedback.toast(
+                    requireContext(), "当前构建未配置更新源"
+                )
+                return@setOnClickListener
+            }
+            val state = manager.state.value
+            if (state.active ||
+                state.phase == UpdateManager.Phase.PAUSED ||
+                state.phase == UpdateManager.Phase.READY ||
+                state.check == UpdateManager.Check.AVAILABLE ||
+                state.check == UpdateManager.Check.CACHED
+            ) {
+                manager.showDownload()
+            } else {
+                manager.checkForUpdate(manual = true)
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                UpdateManager.getInstance(requireContext()).state.collect { state ->
+                    updateRow.findViewById<TextView>(R.id.envSubtitle).text =
+                        updateSubtitle(state)
+                    paintDot(updateRow.findViewById(R.id.envDot), updateDot(state))
+                }
+            }
+        }
+
         val aboutRow = view.findViewById<View>(R.id.rowAbout)
-        aboutRow.findViewById<TextView>(R.id.envTitle).text = "关于步频流"
+        aboutRow.findViewById<TextView>(R.id.envTitle).text = "关于${getString(R.string.app_name)}"
         aboutRow.findViewById<TextView>(R.id.envSubtitle).text = "版本信息 · 开源许可与致谢"
         paintDot(aboutRow.findViewById(R.id.envDot), null)
         aboutRow.setOnClickListener {
@@ -104,8 +149,53 @@ class EnvCheckFragment : Fragment() {
         }
 
         setupAdvanced(view)
+        applyScrollInsets(view)
 
-        view.findViewById<Button>(R.id.btnRefreshEnv).setOnClickListener { refresh() }
+        view.findViewById<TextView>(R.id.btnRefreshEnv).setOnClickListener { refresh() }
+    }
+
+    /** 全屏沉浸式：ScrollView 自己消化状态栏/导航栏 inset，底部留白防止最后一项被遮挡。 */
+    private fun applyScrollInsets(root: View) {
+        val scroll = root.findViewById<View>(R.id.envScroll)
+        val scrim = root.findViewById<View>(R.id.topScrim)
+        val edgeBlur = root.findViewById<ScrollEdgeBlurView>(R.id.topEdgeBlur)
+        edgeBlur.edge = ScrollEdgeBlurView.Edge.TOP
+        edgeBlur.maxBlurRadius = 22f * resources.displayMetrics.density
+        edgeBlur.bindScrollView(scroll)
+        val baseTop = dp(6)
+        // 与 LiquidTabBar.NavMetrics.contentInsetDp 同源，改轨道几何必须同步这里。
+        val baseBottom = dp(96)
+        ViewCompat.setOnApplyWindowInsetsListener(scroll) { target, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            target.setPadding(
+                target.paddingLeft,
+                baseTop + bars.top,
+                target.paddingRight,
+                baseBottom + bars.bottom
+            )
+            edgeBlur.layoutParams?.let {
+                it.height = bars.top + dp(36)
+                edgeBlur.layoutParams = it
+            }
+            scrim.layoutParams?.let {
+                it.height = bars.top + dp(12)
+                scrim.layoutParams = it
+            }
+            insets
+        }
+        scroll.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            edgeBlur.visibility = if (scrollY > dp(6)) View.VISIBLE else View.INVISIBLE
+            refreshGlassOnScroll()
+        }
+        ViewCompat.requestApplyInsets(scroll)
+    }
+
+    /** 滚动时实时更新玻璃背景采样（80ms 节流），保证底部导航的模糊透视连续。 */
+    private fun refreshGlassOnScroll() {
+        val now = SystemClock.uptimeMillis()
+        if (now - lastGlassRefreshAt < 80) return
+        lastGlassRefreshAt = now
+        GlassRenderGate.requestRefresh(160L)
     }
 
     override fun onResume() {
@@ -124,17 +214,21 @@ class EnvCheckFragment : Fragment() {
         toggle.setOnClickListener {
             val show = group.visibility != View.VISIBLE
             group.visibility = if (show) View.VISIBLE else View.GONE
-            toggle.text = if (show) "高级与极客选项 ⌃" else "高级与极客选项 ⌄"
+            toggle.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                0, 0,
+                if (show) R.drawable.ic_chevron_up else R.drawable.ic_chevron_down,
+                0
+            )
         }
 
         val scanRow = root.findViewById<View>(R.id.rowWifiScan)
         scanRow.findViewById<TextView>(R.id.envTitle).text = "后台 Wi-Fi 扫描"
         scanRow.setOnClickListener {
-            Toast.makeText(
+            com.zcshou.gogogo.run.ui.glass.GlassFeedback.toast(
                 requireContext(),
                 "可在系统「WLAN 高级设置」中关闭「始终允许扫描」",
-                Toast.LENGTH_LONG
-            ).show()
+                long = true
+            )
             openIntent(Intent(Settings.ACTION_WIFI_SETTINGS))
         }
 
@@ -151,9 +245,15 @@ class EnvCheckFragment : Fragment() {
                 button.isChecked = false
                 if (ShizukuWifiHelper.isAvailable()) {
                     ShizukuWifiHelper.requestPermission(7001)
-                    Toast.makeText(requireContext(), "请在 Shizuku 弹窗中允许授权后重试", Toast.LENGTH_SHORT).show()
+                    com.zcshou.gogogo.run.ui.glass.GlassFeedback.toast(
+                        requireContext(),
+                        "请在 Shizuku 弹窗中允许授权后重试"
+                    )
                 } else {
-                    Toast.makeText(requireContext(), "未安装 Shizuku，无法启用该实验功能", Toast.LENGTH_SHORT).show()
+                    com.zcshou.gogogo.run.ui.glass.GlassFeedback.toast(
+                        requireContext(),
+                        "未安装 Shizuku，无法启用该实验功能"
+                    )
                 }
                 return@setOnCheckedChangeListener
             }
@@ -183,9 +283,9 @@ class EnvCheckFragment : Fragment() {
             ThemeHelper.ThemeMode.LIGHT,
             ThemeHelper.ThemeMode.SYSTEM
         )
-        val labels = arrayOf("深海光学（暗色）", "冰川棱镜（浅色）", "跟随系统")
+        val labels = arrayOf("曜石黑（深色）", "日光白（浅色）", "跟随系统")
         val checked = modes.indexOf(ThemeHelper.themeMode(context)).coerceAtLeast(0)
-        androidx.appcompat.app.AlertDialog.Builder(context)
+        GlassDialogs.builder(context)
             .setTitle("视觉主题")
             .setSingleChoiceItems(labels, checked) { dialog, which ->
                 dialog.dismiss()
@@ -202,16 +302,19 @@ class EnvCheckFragment : Fragment() {
             DisplayPrefs.RenderQuality.OPTICAL,
             DisplayPrefs.RenderQuality.BALANCED
         )
-        val labels = arrayOf("极致光学", "省电平衡")
+        val labels = arrayOf("液态玻璃（实时模糊）", "省电平衡（磨砂）")
         val checked = qualities.indexOf(DisplayPrefs.quality(context)).coerceAtLeast(0)
-        androidx.appcompat.app.AlertDialog.Builder(context)
+        GlassDialogs.builder(context)
             .setTitle("渲染质量")
             .setSingleChoiceItems(labels, checked) { dialog, which ->
                 dialog.dismiss()
                 DisplayPrefs.setQuality(context, qualities[which])
                 DeepRunGlassManager.refreshAll()
                 refresh()
-                Toast.makeText(context, "已切换：${labels[which]}", Toast.LENGTH_SHORT).show()
+                com.zcshou.gogogo.run.ui.glass.GlassFeedback.toast(
+                    context,
+                    "已切换：${labels[which]}"
+                )
             }
             .show()
     }
@@ -236,8 +339,8 @@ class EnvCheckFragment : Fragment() {
         val themeRow = root.findViewById<View>(R.id.rowTheme)
         themeRow.findViewById<TextView>(R.id.envSubtitle).text =
             when (ThemeHelper.themeMode(requireContext())) {
-                ThemeHelper.ThemeMode.DARK -> "深海光学 · 暗色（OLED 省电）"
-                ThemeHelper.ThemeMode.LIGHT -> "冰川棱镜 · 浅色（户外强光防眩）"
+                ThemeHelper.ThemeMode.DARK -> "曜石黑 · 深色（OLED 纯黑省电）"
+                ThemeHelper.ThemeMode.LIGHT -> "日光白 · 浅色（户外强光防眩）"
                 ThemeHelper.ThemeMode.SYSTEM -> "跟随系统昼夜切换"
             }
 
@@ -246,16 +349,17 @@ class EnvCheckFragment : Fragment() {
         val tier = DeepRunGlassManager.tier(requireContext())
         val downgrade = DeepRunGlassManager.downgradeReason(requireContext())
         renderRow.findViewById<TextView>(R.id.envSubtitle).text = when {
-            quality == DisplayPrefs.RenderQuality.BALANCED -> "省电平衡 · 最高 ${tier.title}"
-            downgrade == null -> "极致光学 · ${tier.detail}"
-            else -> "极致光学 · 当前 ${tier.title}（$downgrade）"
+            quality == DisplayPrefs.RenderQuality.BALANCED -> "省电平衡 · 当前 ${tier.title}"
+            downgrade == null -> "液态玻璃 · ${tier.detail}"
+            else -> "液态玻璃 · 当前 ${tier.title}（$downgrade）"
         }
 
         val scanRow = root.findViewById<View>(R.id.rowWifiScan)
         val scanOn = EnvGuardManager.isWifiScanAlwaysAvailable(requireContext())
-        val scanDot = scanRow.findViewById<TextView>(R.id.envDot)
-        scanDot.text = "●"
-        scanDot.setTextColor(if (scanOn) 0xFFFFB300.toInt() else 0xFF8A94A6.toInt())
+        paintDot(
+            scanRow.findViewById(R.id.envDot),
+            if (scanOn) null else true
+        )
         scanRow.findViewById<TextView>(R.id.envSubtitle).text =
             if (scanOn) "系统「始终允许扫描」开启，仅提示，不影响开跑" else "后台扫描已关闭"
 
@@ -289,7 +393,7 @@ class EnvCheckFragment : Fragment() {
         val labels = (listOf("不绑定") + apps.map { it.second }).toTypedArray()
         val current = RunPrefs.targetApp(requireContext())
         val checked = apps.indexOfFirst { it.first == current } + 1
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        GlassDialogs.builder(requireContext())
             .setTitle("开跑时自动拉起的目标 App")
             .setSingleChoiceItems(labels, if (checked > 0) checked else 0) { dialog, which ->
                 RunPrefs.setTargetApp(requireContext(), if (which == 0) null else apps[which - 1].first)
@@ -326,7 +430,7 @@ class EnvCheckFragment : Fragment() {
             override fun onStartTrackingTouch(bar: android.widget.SeekBar?) = Unit
             override fun onStopTrackingTouch(bar: android.widget.SeekBar?) = Unit
         })
-        androidx.appcompat.app.AlertDialog.Builder(context)
+        GlassDialogs.builder(context)
             .setTitle("坐标注入频率")
             .setView(container)
             .setPositiveButton("保存") { _, _ ->
@@ -342,21 +446,51 @@ class EnvCheckFragment : Fragment() {
         pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
     }.getOrDefault(pkg)
 
-    private fun paintDot(dot: TextView, ok: Boolean?) {
-        dot.text = "●"
-        dot.setTextColor(
-            when (ok) {
-                true -> 0xFF22C55E.toInt()
-                false -> 0xFFEF4444.toInt()
-                null -> 0xFF8A94A6.toInt()
-            }
-        )
+    /**
+     * 6dp 精致状态圆点：仅异常用 Apple Red，正常用 Apple Green，其余中性灰。
+     * 不再使用大号彩色 ● 字符，避免在玻璃卡上显得廉价。
+     */
+    private fun updateSubtitle(state: UpdateManager.State): String {
+        val current = "当前版本 v${BuildConfig.VERSION_NAME}"
+        return when {
+            state.active -> "正在下载 ${state.progress}% · 点击查看"
+            state.phase == UpdateManager.Phase.PAUSED ->
+                "已暂停 ${state.progress}% · 点击继续"
+            state.phase == UpdateManager.Phase.READY -> "安装包已就绪 · 点击安装"
+            state.phase == UpdateManager.Phase.FAILED ->
+                state.message.ifBlank { "下载失败 · 点击重试" }
+            state.check == UpdateManager.Check.CHECKING -> "正在检查更新…"
+            state.check == UpdateManager.Check.AVAILABLE ->
+                "发现 v${state.manifest?.versionName} · 点击查看"
+            state.check == UpdateManager.Check.UP_TO_DATE -> "已是最新 · v${BuildConfig.VERSION_NAME}"
+            state.check == UpdateManager.Check.CACHED ->
+                state.message.ifBlank { "显示上次验证的更新信息" }
+            state.check == UpdateManager.Check.FAILED ->
+                state.message.ifBlank { "检查失败 · 点击重试" }
+            else -> "$current · 点击检查更新"
+        }
+    }
+
+    private fun updateDot(state: UpdateManager.State): Boolean? = when {
+        state.active || state.phase == UpdateManager.Phase.PAUSED -> null
+        state.phase == UpdateManager.Phase.READY -> true
+        state.check == UpdateManager.Check.AVAILABLE -> false
+        state.check == UpdateManager.Check.FAILED -> false
+        state.check == UpdateManager.Check.UP_TO_DATE -> true
+        else -> null
+    }
+
+    private fun paintDot(dot: View, ok: Boolean?) {
+        (dot as? com.zcshou.gogogo.run.ui.widget.StatusOrbView)?.setState(ok)
     }
 
     private fun openIntent(intent: Intent) {
         runCatching { startActivity(intent) }
             .onFailure {
-                Toast.makeText(requireContext(), "跳转失败，请手动到系统设置中配置", Toast.LENGTH_SHORT).show()
+                com.zcshou.gogogo.run.ui.glass.GlassFeedback.toast(
+                    requireContext(),
+                    "跳转失败，请手动到系统设置中配置"
+                )
             }
     }
 

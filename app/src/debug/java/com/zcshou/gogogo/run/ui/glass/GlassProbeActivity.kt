@@ -48,7 +48,7 @@ class GlassProbeActivity : AppCompatActivity() {
         palette.forEachIndexed { index, color ->
             bars.addView(
                 TextView(this).apply {
-                    text = if (index % 2 == 0) "DEEPRUN  ·  0123456789" else "深海光学  ·  ABYSSAL OPTICS"
+                    text = if (index % 2 == 0) "CLOUDTRACE  ·  0123456789" else "深海光学  ·  ABYSSAL OPTICS"
                     setTextColor(Color.parseColor("#0B0E11"))
                     textSize = 26f
                     gravity = Gravity.CENTER

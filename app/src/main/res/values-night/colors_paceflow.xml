@@ -1,32 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    步频流 PaceFlow · 动能暗夜（Kinetic Dark）色板
-    与 res/values/colors.xml 中的浅色值成对存在。
-    深色值与原 V3.x 完全一致，保证暗色主题零视觉回归。
+    Apple Obsidian Glass · 苹果级无色纯粹液态玻璃（深色）
+    与 res/values/colors.xml 中的浅色值成对存在，名称必须完全一致。
+    纯黑底 + 中性玻璃，主色翻转为纯白；仅保留 Apple 语义色。
 -->
 <resources>
-    <color name="pf_canvas">#0B0E11</color>
-    <color name="pf_card">#151A22</color>
-    <color name="pf_card_98">#FA151A22</color>
-    <color name="pf_card_pill">#F2151A22</color>
-    <color name="pf_card_solid">#F0151A22</color>
-    <color name="pf_capsule_surface">#E614191F</color>
+    <color name="pf_canvas">#000000</color>
+    <color name="pf_card">#AD1C1C1E</color>
+    <color name="pf_card_98">#AD1C1C1E</color>
+    <color name="pf_card_pill">#AD1C1C1E</color>
+    <color name="pf_card_solid">#FA1C1C1E</color>
+    <color name="pf_hub_panel_solid">#E81C1C1E</color>
+    <color name="pf_editor_panel">#E61C1C1E</color>
+    <color name="pf_stepper_touch">#24FFFFFF</color>
+    <color name="pf_on_primary">#000000</color>
+    <color name="pf_capsule_surface">#AD1C1C1E</color>
 
-    <color name="pf_stroke">#232A35</color>
-    <color name="pf_panel_stroke">#2C3545</color>
+    <color name="pf_stroke">#2C2C2E</color>
+    <color name="pf_panel_stroke">#2EFFFFFF</color>
 
-    <color name="pf_volt">#C8FF00</color>
-    <color name="pf_volt_a60">#99C8FF00</color>
-    <color name="pf_volt_a70">#B3C8FF00</color>
-    <color name="pf_volt_a18">#2EC8FF00</color>
+    <color name="pf_volt">#FFFFFF</color>
+    <color name="pf_volt_a60">#99FFFFFF</color>
+    <color name="pf_volt_a70">#B3FFFFFF</color>
+    <color name="pf_volt_a18">#26FFFFFF</color>
+    <color name="pf_secondary_surface">#1FFFFFFF</color>
+    <color name="pf_search_field">#26FFFFFF</color>
+    <color name="pf_danger_text">#FF6961</color>
 
-    <color name="pf_cyan">#00E5FF</color>
-    <color name="pf_amber">#FFB300</color>
-    <color name="pf_amber_a20">#33FFB300</color>
+    <color name="pf_cyan">#FFFFFF</color>
+    <color name="pf_amber">#FF9F0A</color>
+    <color name="pf_amber_a20">#33FF9F0A</color>
 
-    <color name="pf_text_primary">#F2F5F8</color>
-    <color name="pf_text_secondary">#8A94A6</color>
-    <color name="pf_ok">#22C55E</color>
-    <color name="pf_bad">#EF4444</color>
-    <color name="pf_danger_bg">#2E1518</color>
+    <color name="pf_text_primary">#F5F5F7</color>
+    <color name="pf_text_secondary">#AEAEB2</color>
+    <color name="pf_text_tertiary">#636366</color>
+    <color name="pf_ok">#34C759</color>
+    <color name="pf_bad">#FF3B30</color>
+    <color name="pf_danger_bg">#3D181A</color>
+    <color name="pf_neutral_dot">#636366</color>
 </resources>

@@ -1,10 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.example.liquidglass.LiquidGlassView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/pf_card"
-    android:orientation="vertical"
-    android:padding="20dp">
+    app:adaptiveLensScale="true"
+    app:adaptiveTint="false"
+    app:bevelWidth="14dp"
+    app:cornerRadius="28dp"
+    app:dispersionStrength="0.08"
+    app:glassMaterial="regular"
+    app:glassTint="@color/dr_card_optical_tint"
+    app:refractionFalloff="2"
+    app:refractionHeight="8dp"
+    app:sensorHighlight="true">
+
+    <!-- LiquidGlassView 是 FrameLayout：内容必须自己竖向排布 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
 
     <TextView
         android:id="@+id/sheetTitle"
@@ -31,7 +46,7 @@
         android:max="95"
         android:progress="25"
         android:progressTint="@color/pf_volt"
-        android:thumbTint="@color/pf_volt" />
+        android:thumbTint="@color/pf_on_primary" />
 
     <TextView
         android:id="@+id/paceLabel"
@@ -50,7 +65,7 @@
         android:max="48"
         android:progress="20"
         android:progressTint="@color/pf_volt"
-        android:thumbTint="@color/pf_volt" />
+        android:thumbTint="@color/pf_on_primary" />
 
     <Switch
         android:id="@+id/switchDrift"
@@ -60,16 +75,18 @@
         android:checked="true"
         android:text="智能拟真浮动（每圈变道防重叠）"
         android:textColor="@color/pf_text_primary"
-        android:textSize="14sp" />
+        android:textSize="14sp"
+        android:thumbTint="@color/pf_on_primary" />
 
     <Switch
         android:id="@+id/switchReverse"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:checked="false"
-        android:text="🔄 反向跑（与已保存方向相反）"
+        android:text="反向跑（与已保存方向相反）"
         android:textColor="@color/pf_text_primary"
-        android:textSize="14sp" />
+        android:textSize="14sp"
+        android:thumbTint="@color/pf_on_primary" />
 
     <Switch
         android:id="@+id/switchCooldown"
@@ -78,7 +95,8 @@
         android:checked="true"
         android:text="达标后慢走缓冲"
         android:textColor="@color/pf_text_primary"
-        android:textSize="14sp" />
+        android:textSize="14sp"
+        android:thumbTint="@color/pf_on_primary" />
 
     <TextView
         android:layout_width="match_parent"
@@ -88,13 +106,16 @@
         android:textColor="@color/pf_text_secondary"
         android:textSize="11sp" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnStartRun"
+        style="@style/Widget.App.Button.Primary"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:backgroundTint="@color/pf_volt"
-        android:text="开始跑"
-        android:textColor="@color/pf_canvas"
-        android:textStyle="bold" />
-</LinearLayout>
+        android:layout_height="50dp"
+        android:layout_marginTop="14dp"
+        android:text="开始跑圈"
+        android:textSize="14sp"
+        app:icon="@drawable/ic_play"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp" />
+    </LinearLayout>
+</com.example.liquidglass.LiquidGlassView>

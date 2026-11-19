@@ -46,5 +46,14 @@
             android:padding="16dp"
             android:textColor="@color/pf_text_secondary"
             android:textSize="12sp" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/aboutAutoCheck"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/about_auto_check"
+            android:textColor="@color/pf_text_primary"
+            android:textSize="14sp" />
     </LinearLayout>
 </ScrollView>

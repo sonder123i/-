@@ -1,19 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?android:attr/selectableItemBackground"
     android:gravity="center_vertical"
+    android:minHeight="58dp"
     android:orientation="horizontal"
-    android:padding="14dp">
+    android:paddingStart="16dp"
+    android:paddingTop="13dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="13dp">
 
-    <TextView
+    <!-- V5.0 微呼吸光学指示灯：6dp 核心点 + 22% 同心光晕 -->
+    <com.zcshou.gogogo.run.ui.widget.StatusOrbView
         android:id="@+id/envDot"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="●"
-        android:textColor="@color/pf_text_secondary"
-        android:textSize="16sp" />
+        android:layout_width="15dp"
+        android:layout_height="15dp" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -38,11 +41,11 @@
             android:textSize="12sp" />
     </LinearLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <ImageView
+        android:layout_width="18dp"
+        android:layout_height="18dp"
         android:layout_marginStart="8dp"
-        android:text="›"
-        android:textColor="@color/pf_text_secondary"
-        android:textSize="20sp" />
+        android:contentDescription="进入"
+        android:src="@drawable/ic_chevron_right"
+        app:tint="@color/pf_text_tertiary" />
 </LinearLayout>

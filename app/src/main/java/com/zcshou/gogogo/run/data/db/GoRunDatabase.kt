@@ -21,7 +21,7 @@ abstract class GoRunDatabase : RoomDatabase() {
         @Volatile
         private var instance: GoRunDatabase? = null
 
-        /** v1 -> v2：步频流规格新增 方向/记忆参数/关联 App/记录 routeId 字段 */
+        /** v1 -> v2：云迹规格新增 方向/记忆参数/关联 App/记录 routeId 字段 */
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE run_routes ADD COLUMN isClockwise INTEGER NOT NULL DEFAULT 1")

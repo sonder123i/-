@@ -8,10 +8,17 @@ import android.text.method.LinkMovementMethod
 import android.text.style.StyleSpan
 import android.text.style.URLSpan
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.zcshou.gogogo.BuildConfig
 import com.zcshou.gogogo.R
+import com.zcshou.gogogo.run.ui.glass.GlassFeedback
 import com.zcshou.gogogo.run.ui.theme.ThemeHelper
+import com.zcshou.gogogo.run.update.UpdateConfig
+import com.zcshou.gogogo.run.update.UpdateDialog
+import com.zcshou.gogogo.run.update.UpdateManager
+import com.zcshou.gogogo.run.update.UpdatePrefs
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 /**
  * 关于页：新品牌展示 + 全应用唯一的开源许可与致谢（GPLv3）。
@@ -22,6 +29,8 @@ class AboutActivity : AppCompatActivity() {
         private const val REPO_URL = "https://github.com/ZCShou/GoGoGo"
     }
 
+    private var updateDialog: AlertDialog? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeHelper.apply(this)
         super.onCreate(savedInstanceState)
@@ -29,12 +38,36 @@ class AboutActivity : AppCompatActivity() {
         setContentView(R.layout.activity_about)
         ThemeHelper.padTopForStatusBar(findViewById(R.id.aboutRoot))
 
-        findViewById<TextView>(R.id.aboutVersion).text =
-            String.format(getString(R.string.about_version_format), BuildConfig.VERSION_NAME)
+        val versionText = findViewById<TextView>(R.id.aboutVersion)
+        versionText.text = String.format(
+            getString(R.string.about_version_format),
+            BuildConfig.VERSION_NAME
+        ) + " · 点击检查更新"
+        versionText.setOnClickListener {
+            if (!UpdateConfig.enabled) {
+                GlassFeedback.toast(this, "当前构建未配置更新源")
+                return@setOnClickListener
+            }
+            if (updateDialog?.isShowing == true) return@setOnClickListener
+            UpdateManager.getInstance(this).checkForUpdate(manual = true)
+            updateDialog = UpdateDialog.show(this) { updateDialog = null }
+        }
 
         val license = findViewById<TextView>(R.id.aboutLicense)
         license.text = buildLicenseText()
+
+        val autoCheck = findViewById<SwitchMaterial>(R.id.aboutAutoCheck)
+        autoCheck.isChecked = UpdatePrefs.autoCheck(this)
+        autoCheck.setOnCheckedChangeListener { _, checked ->
+            UpdatePrefs.setAutoCheck(this, checked)
+        }
         license.movementMethod = LinkMovementMethod.getInstance()
+    }
+
+    override fun onDestroy() {
+        updateDialog?.dismiss()
+        updateDialog = null
+        super.onDestroy()
     }
 
     private fun buildLicenseText(): CharSequence {

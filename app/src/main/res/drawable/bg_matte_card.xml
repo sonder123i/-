@@ -1,25 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    V4.0 哑光半透实体卡片：0.5dp 精密边界线 + 磨砂实体底板。
-    用于首页「路线工坊」等与玻璃主卡拉开虚实层次的功能卡片。
+    Apple 无边框圆角玻璃卡片：只有半透材质，没有细线外框。
+    需要实时模糊的卡片请直接使用 LiquidGlassContainer。
 -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="@color/pf_card_98" />
-            <corners android:radius="20dp" />
-        </shape>
-    </item>
-    <item>
-        <inset
-            android:inset="0.5dp">
-            <shape android:shape="rectangle">
-                <stroke
-                    android:width="0.5dp"
-                    android:color="@color/pf_volt_a60" />
-                <corners android:radius="19dp" />
-                <solid android:color="@android:color/transparent" />
-            </shape>
-        </inset>
-    </item>
-</layer-list>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/pf_card" />
+    <corners android:radius="22dp" />
+</shape>

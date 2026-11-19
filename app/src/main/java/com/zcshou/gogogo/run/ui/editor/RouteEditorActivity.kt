@@ -27,11 +27,11 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.SeekBar
+import com.zcshou.gogogo.run.ui.widget.VernierSeekBar
+import com.zcshou.gogogo.run.ui.widget.TabTintAnimator
 import android.widget.Switch
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.dynamicanimation.animation.SpringAnimation
@@ -42,6 +42,7 @@ import com.baidu.mapapi.map.BitmapDescriptor
 import com.baidu.mapapi.map.BitmapDescriptorFactory
 import com.baidu.mapapi.map.MapStatus
 import com.baidu.mapapi.map.MapStatusUpdateFactory
+import com.baidu.mapapi.map.LogoPosition
 import com.baidu.mapapi.map.TextureMapView
 import com.baidu.mapapi.map.Marker
 import com.baidu.mapapi.map.MarkerOptions
@@ -76,6 +77,7 @@ import com.zcshou.gogogo.run.engine.TrackMathUtils.LatLng as Wgs
 import com.zcshou.gogogo.run.engine.toWgsJson
 import com.zcshou.gogogo.run.guard.RealLocationSampler
 import com.zcshou.gogogo.run.ui.glass.DeepRunGlassManager
+import com.zcshou.gogogo.run.ui.glass.GlassDialogs
 import com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer
 import com.zcshou.gogogo.run.ui.overlay.FiberTrail
 import com.zcshou.gogogo.run.ui.theme.MapStyleHelper
@@ -130,6 +132,7 @@ class RouteEditorActivity : AppCompatActivity() {
     private lateinit var repository: RunRepository
     private lateinit var mapView: TextureMapView
     private lateinit var baiduMap: BaiduMap
+    private lateinit var editorTopPanel: View
     private lateinit var reticle: OpticalReticleView
     private lateinit var lockBorder: View
     private lateinit var freehandLockChip: TextView
@@ -149,20 +152,27 @@ class RouteEditorActivity : AppCompatActivity() {
     private lateinit var switchClose: Switch
     private lateinit var panelPresetAlign: LinearLayout
     private lateinit var panelPresetLocked: LiquidGlassContainer
-    private lateinit var lapSeekAlign: SeekBar
-    private lateinit var lapSeekLock: SeekBar
+    private lateinit var editorBottomDock: View
+    private lateinit var dockHeader: View
+    private lateinit var dockActionRow: View
+    private lateinit var dockSaveRow: View
+    private lateinit var presetAlignSeekRow: View
+    private lateinit var lapSeekAlign: VernierSeekBar
+    private lateinit var lapSeekLock: VernierSeekBar
     private lateinit var lapValueAlign: TextView
     private lateinit var lapValueLock: TextView
-    private lateinit var rotateSeek: SeekBar
+    private lateinit var rotateSeek: VernierSeekBar
     private lateinit var rotateValue: TextView
     private lateinit var btnLock: TextView
     private lateinit var btnUndo: TextView
     private lateinit var btnClear: TextView
     private lateinit var btnSave: TextView
-    private lateinit var btnPreview: TextView
+    private lateinit var btnPreview: View
     private lateinit var layerDark: TextView
     private lateinit var layerNormal: TextView
     private lateinit var layerSat: TextView
+    private lateinit var layerSwitcher: View
+    private lateinit var btnLocateMe: View
 
     private val suggestionSearch by lazy { SuggestionSearch.newInstance() }
     private val routeSearch by lazy { RoutePlanSearch.newInstance() }
@@ -194,6 +204,8 @@ class RouteEditorActivity : AppCompatActivity() {
     private var isClockwise = true
     private var buildMode = "PRESET_TRACK"
     private var sourceHint = "400m 田径场"
+    private var systemTopInset = 0
+    private var systemBottomInset = 0
 
     private var chainSegments: List<Pair<Wgs, Wgs>> = emptyList()
     private var chainIndex = 0
@@ -259,6 +271,7 @@ class RouteEditorActivity : AppCompatActivity() {
         repository = RunRepository(applicationContext)
 
         bindViews()
+        applyEditorInsets()
         setupMap()
         setupModeBar()
         setupPresetPanel()
@@ -285,6 +298,12 @@ class RouteEditorActivity : AppCompatActivity() {
     private fun bindViews() {
         mapView = findViewById(R.id.editMapView)
         baiduMap = mapView.map
+        editorTopPanel = findViewById(R.id.editorTopPanel)
+        (editorTopPanel as? com.example.liquidglass.LiquidGlassView)?.apply {
+            backdropSource = mapView
+            com.zcshou.gogogo.run.ui.glass.GlassRenderGate.register(this)
+            com.zcshou.gogogo.run.ui.glass.OpticalGlassTuning.applyMapPanel(this)
+        }
         reticle = findViewById(R.id.opticalReticle)
         lockBorder = findViewById(R.id.mapLockBorder)
         freehandLockChip = findViewById(R.id.freehandLockChip)
@@ -303,6 +322,16 @@ class RouteEditorActivity : AppCompatActivity() {
         switchClose = findViewById(R.id.switchClose)
         panelPresetAlign = findViewById(R.id.panelPresetAlign)
         panelPresetLocked = findViewById(R.id.panelPresetLocked)
+        editorBottomDock = findViewById(R.id.editorBottomDock)
+        (editorBottomDock as? com.example.liquidglass.LiquidGlassView)?.apply {
+            backdropSource = mapView
+            com.zcshou.gogogo.run.ui.glass.GlassRenderGate.register(this)
+            com.zcshou.gogogo.run.ui.glass.OpticalGlassTuning.applyMapPanel(this)
+        }
+        dockHeader = findViewById(R.id.dockHeader)
+        dockActionRow = findViewById(R.id.dockActionRow)
+        dockSaveRow = findViewById(R.id.dockSaveRow)
+        presetAlignSeekRow = findViewById(R.id.presetAlignSeekRow)
         lapSeekAlign = findViewById(R.id.lapSeekAlign)
         lapSeekLock = findViewById(R.id.lapSeekLock)
         lapValueAlign = findViewById(R.id.lapValueAlign)
@@ -317,15 +346,79 @@ class RouteEditorActivity : AppCompatActivity() {
         layerDark = findViewById(R.id.layerDark)
         layerNormal = findViewById(R.id.layerNormal)
         layerSat = findViewById(R.id.layerSat)
+        layerSwitcher = findViewById(R.id.layerSwitcher)
+        btnLocateMe = findViewById(R.id.btnLocateMe)
     }
 
     // ---------------- 地图初始化 ----------------
 
+    /** 全屏沉浸式：顶部面板/图层条避开状态栏，底部坞站避开导航栏，顶部加 36dp 渐隐保护层。 */
+    private fun applyEditorInsets() {
+        val root = findViewById<View>(R.id.editorRoot)
+        val scrim = findViewById<View>(R.id.editorTopScrim)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            systemTopInset = bars.top
+            systemBottomInset = bars.bottom
+            setTopMargin(editorTopPanel, dp(10) + bars.top)
+            setTopMargin(layerSwitcher, dp(210) + bars.top)
+            setTopMargin(freehandLockChip, dp(205) + bars.top)
+            setBottomMargin(editorBottomDock, dp(10) + bars.bottom)
+            setBottomMargin(btnLocateMe, dp(240) + bars.bottom)
+            scrim.layoutParams?.let {
+                it.height = bars.top + dp(12)
+                scrim.layoutParams = it
+            }
+            repositionMapAttribution()
+            root.post { refreshSideControlsAvoidance() }
+            insets
+        }
+        androidx.core.view.ViewCompat.requestApplyInsets(root)
+    }
+
+    private fun setTopMargin(view: View, px: Int) {
+        (view.layoutParams as? FrameLayout.LayoutParams)?.let {
+            it.topMargin = px
+            view.layoutParams = it
+        }
+    }
+
+    private fun setBottomMargin(view: View, px: Int) {
+        (view.layoutParams as? FrameLayout.LayoutParams)?.let {
+            it.bottomMargin = px
+            view.layoutParams = it
+        }
+    }
+
+    /** Logo / 比例尺固定在底部控制栏正上方 12dp 的左下角，不遮挡坞站与面板。 */
+    private fun repositionMapAttribution() {
+        if (!::editorBottomDock.isInitialized || !::mapView.isInitialized) return
+        runCatching {
+            val dockLoc = IntArray(2)
+            editorBottomDock.getLocationOnScreen(dockLoc)
+            val mapLoc = IntArray(2)
+            mapView.getLocationOnScreen(mapLoc)
+            val dockTop = dockLoc[1] - mapLoc[1]
+            if (dockTop <= 0 || mapView.height <= 0) return
+            mapView.setLogoPosition(LogoPosition.logoPostionleftBottom)
+            // 底部内边距把 Logo 从地图底边抬到底部控制栏上方 12dp
+            mapView.setPadding(0, 0, 0, (mapView.height - dockTop + dp(12)).coerceAtLeast(0))
+            mapView.showScaleControl(true)
+            // 比例尺控件锚定在坞站上方 12dp（控件自身高约 28dp）
+            mapView.setScaleControlPosition(Point(dp(16), dockTop - dp(12) - dp(28)))
+        }
+    }
+
     private fun setupMap() {
         MapStyleHelper.applyForTheme(mapView)
         mapView.showZoomControls(false)
+        // 底部被建圈坞站占满：Logo / 比例尺放到顶部面板下方，避免被坞站遮住
+        repositionMapAttribution()
         baiduMap.setOnMapLoadedCallback {
             mapReady = true
+            repositionMapAttribution()
+            // 地图引擎就绪后强制重套皮肤，确保深色模式不会残留亮白底图
+            MapStyleHelper.applyForTheme(mapView)
             updateCrosshair()
         }
         mapView.postDelayed({
@@ -372,6 +465,7 @@ class RouteEditorActivity : AppCompatActivity() {
             }
 
             override fun onMapStatusChange(status: MapStatus) {
+                com.zcshou.gogogo.run.ui.glass.GlassRenderGate.requestRefresh(260L)
                 if (mode == EditMode.PRESET && presetStage == PresetStage.ALIGN) updateCrosshair()
             }
 
@@ -412,10 +506,10 @@ class RouteEditorActivity : AppCompatActivity() {
             view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
             setQuickAngle(angle)
         }
-        findViewById<TextView>(R.id.dpUp).setOnClickListener { tickNudge(it, 0.0) }
-        findViewById<TextView>(R.id.dpRight).setOnClickListener { tickNudge(it, 90.0) }
-        findViewById<TextView>(R.id.dpDown).setOnClickListener { tickNudge(it, 180.0) }
-        findViewById<TextView>(R.id.dpLeft).setOnClickListener { tickNudge(it, 270.0) }
+        findViewById<View>(R.id.dpUp).setOnClickListener { tickNudge(it, 0.0) }
+        findViewById<View>(R.id.dpRight).setOnClickListener { tickNudge(it, 90.0) }
+        findViewById<View>(R.id.dpDown).setOnClickListener { tickNudge(it, 180.0) }
+        findViewById<View>(R.id.dpLeft).setOnClickListener { tickNudge(it, 270.0) }
         findViewById<TextView>(R.id.btnAngle0).setOnClickListener { tickAngle(it, 0.0) }
         findViewById<TextView>(R.id.btnAngle90).setOnClickListener { tickAngle(it, 90.0) }
         findViewById<TextView>(R.id.btnUnlock).setOnClickListener {
@@ -455,11 +549,6 @@ class RouteEditorActivity : AppCompatActivity() {
         bindSeek(lapSeekLock) { progress -> setTargetLap(200.0 + progress) }
         bindSeek(rotateSeek) { progress ->
             val offset = progress - 45
-            val bucket = abs(offset) / 5
-            if (bucket != lastHapticBucket) {
-                lastHapticBucket = bucket
-                rotateSeek.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-            }
             rotationDeg = rotationBase + offset
             rotateValue.text = String.format(Locale.US, "%.0f°", normalizeAngle(rotationDeg))
             markEdited()
@@ -469,8 +558,8 @@ class RouteEditorActivity : AppCompatActivity() {
 
     private fun bindClicks() {
         findViewById<TextView>(R.id.btnSearch).setOnClickListener { doSearch() }
-        findViewById<TextView>(R.id.btnLocateMe).setOnClickListener { locateMe() }
-        findViewById<TextView>(R.id.btnClose).setOnClickListener { finish() }
+        findViewById<View>(R.id.btnLocateMe).setOnClickListener { locateMe() }
+        findViewById<View>(R.id.btnClose).setOnClickListener { finish() }
         btnUndo.setOnClickListener { undo() }
         findViewById<TextView>(R.id.btnReverse).setOnClickListener { reverseDirection() }
         btnClear.setOnClickListener { clearAll() }
@@ -485,10 +574,13 @@ class RouteEditorActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        com.zcshou.gogogo.run.ui.glass.GlassRenderGate.setActive(true)
         mapView.onResume()
     }
 
     override fun onPause() {
+        // 锁屏 / 切后台：立即停掉地图面板的光学着色器刷新
+        com.zcshou.gogogo.run.ui.glass.GlassRenderGate.setActive(false)
         super.onPause()
         persistDraftIfNeeded()
         mapView.onPause()
@@ -565,22 +657,53 @@ class RouteEditorActivity : AppCompatActivity() {
             mode == EditMode.PRESET && presetStage == PresetStage.LOCKED
         )
 
+        // 套模未锁定：底部只留一枚悬浮「锁定」胶囊，隐藏尺寸滑杆/D-Pad/撤销/保存行，
+        // 避免提前占住地图并把「无法保存」暴露给用户。
+        val slimLockOnly = mode == EditMode.PRESET && presetStage == PresetStage.ALIGN
+        presetAlignSeekRow.visibility = if (slimLockOnly) View.GONE else View.VISIBLE
+        // 光学玻璃坞站常驻；slim 状态下内容只剩锁定胶囊，玻璃自动包裹成小面板
+        val dockPad = if (slimLockOnly) dp(6) else dp(12)
+        editorBottomDock.setPadding(dockPad, dockPad, dockPad, dockPad)
+        (editorBottomDock.layoutParams as? FrameLayout.LayoutParams)?.let { lp ->
+            lp.width = if (slimLockOnly) {
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            } else {
+                FrameLayout.LayoutParams.MATCH_PARENT
+            }
+            lp.gravity = if (slimLockOnly) {
+                android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL
+            } else {
+                android.view.Gravity.BOTTOM
+            }
+            editorBottomDock.layoutParams = lp
+        }
+        dockHeader.visibility = if (slimLockOnly) View.GONE else View.VISIBLE
+        dockActionRow.visibility = if (slimLockOnly) View.GONE else View.VISIBLE
+        dockSaveRow.visibility = if (slimLockOnly) View.GONE else View.VISIBLE
+        btnLock.visibility = if (slimLockOnly) View.VISIBLE else View.GONE
+        // 未锁定时只留一枚居中的悬浮胶囊，把 70% 视野还给地图
+        (btnLock.layoutParams as? LinearLayout.LayoutParams)?.let { lp ->
+            lp.width = if (slimLockOnly) {
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            } else {
+                LinearLayout.LayoutParams.MATCH_PARENT
+            }
+            lp.gravity = android.view.Gravity.CENTER_HORIZONTAL
+            btnLock.layoutParams = lp
+        }
+
         modeGuide.text = when (mode) {
-            EditMode.PRESET ->
-                "拖动地图将真实操场对准屏幕中心绿框，支持 400m / 300m / 200m 标准田径场"
-            EditMode.TRACK ->
-                "依次点击路线拐角自动连成闭环（长按节点可拖动，轻点节点可删除）"
-            EditMode.FREE ->
-                "锁定地图后单指一笔画完，松手自动平滑（双指可缩放，点胶囊可切自由视野）"
-            EditMode.GPX ->
-                "GPX 轨迹已导入（WGS-84），可直接保存，或切到其他模式重新画"
+            EditMode.PRESET -> "拖动地图对准操场中心，选尺寸后锁定微调"
+            EditMode.TRACK -> "依次点击路线拐角自动连成闭环"
+            EditMode.FREE -> "锁定后单指一笔画完，松手自动平滑"
+            EditMode.GPX -> "GPX 轨迹已导入（WGS-84），可直接保存"
         }
         btnUndo.text = when (mode) {
-            EditMode.FREE -> "↩ 撤销一笔"
+            EditMode.FREE -> "撤销一笔"
             else -> "撤销"
         }
         btnClear.text = when (mode) {
-            EditMode.FREE -> "🗑 清空重画"
+            EditMode.FREE -> "清空重画"
             else -> "清空"
         }
         updateMapGestures()
@@ -590,9 +713,9 @@ class RouteEditorActivity : AppCompatActivity() {
     }
 
     private fun styleModeChip(chip: TextView, on: Boolean) {
-        // 背景交给 MercuryTabStrip 的液滴指示器，标签只负责字色与字重
+        // 背景交给 MercuryTabStrip 的双层玻璃透镜；文字与图标平滑点亮为曜石黑 / 纯白
         chip.background = null
-        chip.setTextColor(getColor(if (on) R.color.pf_volt else R.color.pf_text_secondary))
+        TabTintAnimator.apply(chip, on)
         chip.setTypeface(null, if (on) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
     }
 
@@ -600,6 +723,7 @@ class RouteEditorActivity : AppCompatActivity() {
     private fun updateDockVisibility(visible: Boolean) {
         if (!visible) {
             panelPresetLocked.visibility = View.GONE
+            refreshSideControlsAvoidance()
             return
         }
         if (panelPresetLocked.visibility == View.VISIBLE) return
@@ -607,6 +731,7 @@ class RouteEditorActivity : AppCompatActivity() {
         panelPresetLocked.alpha = 0f
         panelPresetLocked.translationY = 48f * density
         panelPresetLocked.visibility = View.VISIBLE
+        refreshSideControlsAvoidance()
         panelPresetLocked.post {
             panelPresetLocked.animate().alpha(1f).setDuration(160L).start()
             SpringAnimation(panelPresetLocked, SpringAnimation.TRANSLATION_Y, 0f).apply {
@@ -618,26 +743,58 @@ class RouteEditorActivity : AppCompatActivity() {
         }
     }
 
-    /** 用百度地图快照给玻璃坞站做背景采样（含海图路网 / 卫星实景）。 */
-    private fun refreshDockBackdrop() {
-        if (panelPresetLocked.visibility != View.VISIBLE) return
-        runCatching {
-            baiduMap.snapshot { bitmap ->
-                if (bitmap == null) return@snapshot
-                runOnUiThread {
-                    if (isFinishing || isDestroyed) return@runOnUiThread
-                    val location = IntArray(2)
-                    mapView.getLocationInWindow(location)
-                    panelPresetLocked.setExternalBackdrop(
-                        bitmap,
-                        location[0].toFloat(),
-                        location[1].toFloat(),
-                        1f
-                    )
-                }
+    /** V5.0：定位按钮与图层条纵向错开；坞站上移时把两者一起抬到面板下方，互不遮挡。 */
+    private fun refreshSideControlsAvoidance() {
+        editorBottomDock.post {
+            // 坞站高度/位置变化后，同步把地图 Logo 与比例尺重新贴回控制栏上方
+            repositionMapAttribution()
+            val gap = dp(12)
+            val dockLoc = IntArray(2)
+            editorBottomDock.getLocationOnScreen(dockLoc)
+            val dockTop = dockLoc[1]
+
+            val layerLoc = IntArray(2)
+            layerSwitcher.getLocationOnScreen(layerLoc)
+            val baseLayerTop = layerLoc[1] - layerSwitcher.translationY.toInt()
+
+            val locateLoc = IntArray(2)
+            btnLocateMe.getLocationOnScreen(locateLoc)
+            val baseLocateTop = locateLoc[1] - btnLocateMe.translationY.toInt()
+            val locateHeight = btnLocateMe.height
+            if (locateHeight <= 0 || layerSwitcher.height <= 0) return@post
+
+            val needsLift = baseLocateTop + locateHeight + gap > dockTop
+            if (!needsLift) {
+                layerSwitcher.animate().translationY(0f).setDuration(160L).start()
+                btnLocateMe.animate().translationY(0f).setDuration(160L).start()
+                return@post
             }
+
+            val panelLoc = IntArray(2)
+            editorTopPanel.getLocationOnScreen(panelLoc)
+            val panelBottom = panelLoc[1] + editorTopPanel.height
+            val stackTop = panelBottom + dp(8)
+            val maxLayerTop = dockTop - gap - layerSwitcher.height
+            var finalLayerTop = minOf(maxLayerTop, stackTop + locateHeight + dp(10))
+            var finalLocateTop = finalLayerTop - dp(10) - locateHeight
+            if (finalLocateTop < stackTop) {
+                finalLocateTop = stackTop
+                finalLayerTop = finalLocateTop + locateHeight + dp(10)
+            }
+
+            layerSwitcher.animate()
+                .translationY((finalLayerTop - baseLayerTop).toFloat())
+                .setDuration(160L)
+                .start()
+            btnLocateMe.animate()
+                .translationY((finalLocateTop - baseLocateTop).toFloat())
+                .setDuration(160L)
+                .start()
         }
     }
+
+    /** V4.1：玻璃坞站改用静态磨砂，不再截取百度地图快照（避免与地图抢 GPU）。 */
+    private fun refreshDockBackdrop() = Unit
 
     private fun updateSwitches() {
         updatingSwitches = true
@@ -728,7 +885,7 @@ class RouteEditorActivity : AppCompatActivity() {
         updateModeUi()
         rebuildPreset()
         refreshDockBackdrop()
-        toast("跑道已锁定：可用 ← ↑ ↓ → 每次挪 1m 精调")
+        toast("跑道已锁定：可用方向键每次挪 1m 精调")
     }
 
     private fun selectPreset(id: String) {
@@ -747,7 +904,7 @@ class RouteEditorActivity : AppCompatActivity() {
         presetChips.forEach { (id, chip) ->
             val on = id == selected
             chip.setBackgroundResource(if (on) R.drawable.bg_tab_selected else R.drawable.bg_secondary_button)
-            chip.setTextColor(getColor(if (on) R.color.pf_volt else R.color.pf_text_primary))
+            chip.setTextColor(getColor(if (on) R.color.pf_volt else R.color.pf_text_secondary))
             chip.setTypeface(null, if (on) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
         }
     }
@@ -985,10 +1142,13 @@ class RouteEditorActivity : AppCompatActivity() {
         val active = mode == EditMode.FREE && freehandLocked
         lockBorder.visibility = if (active) View.VISIBLE else View.GONE
         freehandLockChip.text =
-            if (freehandLocked) "✏️ 地图已锁定 · 单指画线" else "🖐 自由拖动视野"
-        freehandLockChip.setTextColor(
-            getColor(if (freehandLocked) R.color.pf_volt else R.color.pf_text_secondary)
+            if (freehandLocked) "地图已锁定 · 单指画线" else "自由拖动视野"
+        val lockColor = getColor(
+            if (freehandLocked) R.color.pf_volt else R.color.pf_text_secondary
         )
+        freehandLockChip.setTextColor(lockColor)
+        freehandLockChip.compoundDrawableTintList =
+            android.content.res.ColorStateList.valueOf(lockColor)
         if (active) {
             if (lockPulse == null) {
                 lockPulse = android.animation.ValueAnimator.ofFloat(0.35f, 1f).apply {
@@ -1134,8 +1294,12 @@ class RouteEditorActivity : AppCompatActivity() {
             baiduMap.projection.toScreenLocation(marker.position)
         }.getOrNull() ?: return
         val bubble = TextView(this).apply {
-            text = "🗑 删除第 ${index + 1} 个点"
-            setTextColor(getColor(R.color.pf_volt))
+            text = "删除第 ${index + 1} 个点"
+            setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_delete, 0, 0, 0)
+            compoundDrawablePadding = dp(5)
+            val ink = getColor(R.color.pf_volt)
+            setTextColor(ink)
+            compoundDrawableTintList = android.content.res.ColorStateList.valueOf(ink)
             textSize = 12f
             setPadding(dp(14), dp(8), dp(14), dp(8))
             background = ContextCompat.getDrawable(this@RouteEditorActivity, R.drawable.bg_bubble)
@@ -1297,7 +1461,7 @@ class RouteEditorActivity : AppCompatActivity() {
                     MapStyleHelper.applyLight(mapView)
                 }
                 MapLayer.SAT -> {
-                    mapView.setMapCustomStyleEnable(false)
+                    MapStyleHelper.disable(mapView)
                     baiduMap.setMapType(BaiduMap.MAP_TYPE_SATELLITE)
                 }
             }
@@ -1331,7 +1495,7 @@ class RouteEditorActivity : AppCompatActivity() {
             val labels = all.map { info ->
                 listOfNotNull(info.key, info.district, info.address).joinToString(" · ")
             }.toTypedArray()
-            AlertDialog.Builder(this)
+            GlassDialogs.builder(this)
                 .setTitle("选择地点")
                 .setItems(labels) { _, which ->
                     val info = all[which]
@@ -1392,14 +1556,18 @@ class RouteEditorActivity : AppCompatActivity() {
         searchHistoryRow.visibility = if (history.isEmpty()) View.GONE else View.VISIBLE
         history.forEach { place ->
             val chip = TextView(this).apply {
-                text = "🕘 ${place.name}"
+                text = place.name
+                setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_clock_line, 0, 0, 0)
+                compoundDrawablePadding = dp(4)
                 textSize = 10f
                 maxLines = 1
                 ellipsize = android.text.TextUtils.TruncateAt.END
                 maxWidth = dp(120)
                 gravity = Gravity.CENTER
                 setPadding(dp(10), dp(4), dp(10), dp(4))
-                setTextColor(getColor(R.color.pf_text_secondary))
+                val ink = getColor(R.color.pf_text_secondary)
+                setTextColor(ink)
+                compoundDrawableTintList = android.content.res.ColorStateList.valueOf(ink)
                 background = ContextCompat.getDrawable(this@RouteEditorActivity, R.drawable.bg_secondary_button)
                 setOnClickListener {
                     searchInput.setText(place.name)
@@ -1469,7 +1637,7 @@ class RouteEditorActivity : AppCompatActivity() {
         val hasContent = anchors.isNotEmpty() || freehandStrokes.isNotEmpty() ||
             currentStroke.isNotEmpty() || densePoints.size >= 2
         if (hasContent) {
-            AlertDialog.Builder(this)
+            GlassDialogs.builder(this)
                 .setTitle("清空当前轨迹？")
                 .setMessage("清空后需要重新画线；已保存的路线不受影响。")
                 .setPositiveButton("清空") { _, _ -> doClearAll() }
@@ -1561,14 +1729,16 @@ class RouteEditorActivity : AppCompatActivity() {
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        paint.color = 0x33C8FF00
+        paint.color = getColor(R.color.pf_volt)
+        paint.alpha = 0x33
         canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
-        paint.color = 0xFFC8FF00.toInt()
+        paint.alpha = 255
+        paint.color = getColor(R.color.pf_volt)
         canvas.drawCircle(size / 2f, size / 2f, size * 0.34f, paint)
-        paint.color = 0xFF0B0E11.toInt()
+        paint.color = getColor(R.color.pf_canvas)
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = size * 0.10f
-        paint.color = 0xFF0B0E11.toInt()
+        paint.color = getColor(R.color.pf_canvas)
         canvas.drawCircle(size / 2f, size / 2f, size * 0.34f, paint)
         return BitmapDescriptorFactory.fromBitmap(bitmap)
     }
@@ -1637,32 +1807,45 @@ class RouteEditorActivity : AppCompatActivity() {
     }
 
     private fun showSaveDialog(defaultName: String) {
-        val input = EditText(this).apply {
+        // 弹窗出现时隐藏底部栏「正在获取地标名称…」，避免被弹窗盖住一半
+        status.visibility = View.GONE
+        val view = layoutInflater.inflate(R.layout.dialog_save_route, null)
+        val input = view.findViewById<EditText>(R.id.saveRouteName).apply {
             setText(defaultName)
             setSelection(text.length)
         }
-        val container = FrameLayout(this).apply {
-            setPadding(dp(20), dp(8), dp(20), 0)
-            addView(input)
+        view.findViewById<TextView>(R.id.saveRouteMeta).text = String.format(
+            Locale.US,
+            "单圈 %.0f m · %s · 基准海拔 %.0f m",
+            lapMeters,
+            if (isClosed) "闭环" else "未闭环",
+            sampleAltitude()
+        )
+
+        val dialog = android.app.Dialog(this).apply {
+            requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+            setContentView(view)
+            setCanceledOnTouchOutside(true)
+            window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+            val width = (resources.displayMetrics.widthPixels * 0.88f).toInt()
+            window?.setLayout(width, android.view.WindowManager.LayoutParams.WRAP_CONTENT)
+            window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         }
-        AlertDialog.Builder(this)
-            .setTitle("保存路线")
-            .setMessage(
-                String.format(
-                    Locale.US,
-                    "单圈 %.0f m · %s · 基准海拔 %.0f m",
-                    lapMeters,
-                    if (isClosed) "闭环" else "未闭环",
-                    sampleAltitude()
-                )
-            )
-            .setView(container)
-            .setPositiveButton("保存") { _, _ ->
-                val name = input.text.toString().trim().ifEmpty { defaultName }
-                persistRoute(name)
-            }
-            .setNegativeButton("取消", null)
-            .show()
+        view.findViewById<View>(R.id.btnSaveCancel).setOnClickListener { dialog.dismiss() }
+        view.findViewById<View>(R.id.btnSaveConfirm).setOnClickListener {
+            val name = input.text.toString().trim().ifEmpty { defaultName }
+            persistRoute(name)
+            dialog.dismiss()
+        }
+        dialog.setOnDismissListener {
+            status.visibility = View.VISIBLE
+            updateStatusText()
+        }
+        dialog.show()
+        input.requestFocus()
+        dialog.window?.setSoftInputMode(
+            android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+        )
     }
 
     private fun persistRoute(name: String) {
@@ -1690,17 +1873,59 @@ class RouteEditorActivity : AppCompatActivity() {
 
     private fun refreshUi() {
         if (mode == EditMode.PRESET && presetStage == PresetStage.ALIGN) {
-            lapText.text = String.format(Locale.US, "目标 %.0f m", targetLapMeters)
+            renderLapTelemetry(String.format(Locale.US, "目标 %.0fm", targetLapMeters))
         } else {
-            lapText.text = if (densePoints.size < 2) {
-                "单圈 -- m"
-            } else {
-                String.format(Locale.US, "单圈 %.0f m", lapMeters)
-            }
+            renderLapTelemetry(
+                if (densePoints.size < 2) {
+                    "单圈 --m"
+                } else {
+                    String.format(Locale.US, "单圈 %.0fm", lapMeters)
+                }
+            )
         }
         updateStatusText()
         updateSaveState()
         renderOverlays()
+    }
+
+    /**
+     * 精密仪器排版：核心数字 34sp Bold，前缀标签与单位后缀缩至 ~11sp 并转为次要色，
+     * 带 tnum 的等宽数字在跳秒时不会左右抖动。
+     */
+    private fun renderLapTelemetry(raw: String) {
+        val spannable = android.text.SpannableString(raw)
+        val firstDigit = raw.indexOfFirst { it.isDigit() }
+        if (firstDigit > 0) {
+            spannable.setSpan(
+                android.text.style.RelativeSizeSpan(0.33f),
+                0, firstDigit,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            spannable.setSpan(
+                android.text.style.ForegroundColorSpan(getColor(R.color.pf_text_secondary)),
+                0, firstDigit,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        val lastDigit = raw.indexOfLast { it.isDigit() }
+        val suffixStart = when {
+            lastDigit >= 0 && lastDigit < raw.length - 1 -> lastDigit + 1
+            raw.endsWith("m") -> raw.length - 1
+            else -> -1
+        }
+        if (suffixStart > 0) {
+            spannable.setSpan(
+                android.text.style.RelativeSizeSpan(0.33f),
+                suffixStart, raw.length,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            spannable.setSpan(
+                android.text.style.ForegroundColorSpan(getColor(R.color.pf_text_secondary)),
+                suffixStart, raw.length,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        lapText.text = spannable
     }
 
     private fun updateStatusText() {
@@ -1726,7 +1951,11 @@ class RouteEditorActivity : AppCompatActivity() {
             !(mode == EditMode.PRESET && presetStage == PresetStage.ALIGN)
         btnSave.isEnabled = valid
         btnSave.alpha = if (valid) 1f else 0.45f
-        btnSave.text = if (valid) "保存路线" else "无法保存 · 至少 2 点"
+        btnSave.text = when {
+            valid -> "保存路线"
+            mode == EditMode.PRESET && presetStage == PresetStage.ALIGN -> "锁定后可保存"
+            else -> "至少 2 点"
+        }
         btnPreview.isEnabled = densePoints.size >= 3
         btnPreview.alpha = if (densePoints.size >= 3) 1f else 0.45f
     }
@@ -1812,15 +2041,10 @@ class RouteEditorActivity : AppCompatActivity() {
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        paint.color = 0xF2151A22.toInt()
+        paint.color = getColor(R.color.pf_volt)
         paint.style = Paint.Style.FILL
         canvas.drawCircle(size / 2f, size / 2f, size / 2f - dp(1), paint)
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = dp(2).toFloat()
-        paint.color = 0xFFC8FF00.toInt()
-        canvas.drawCircle(size / 2f, size / 2f, size / 2f - dp(2), paint)
-        paint.style = Paint.Style.FILL
-        paint.color = 0xFFC8FF00.toInt()
+        paint.color = getColor(R.color.pf_canvas)
         paint.textSize = size * 0.44f
         paint.textAlign = Paint.Align.CENTER
         paint.typeface = android.graphics.Typeface.DEFAULT_BOLD
@@ -1996,7 +2220,7 @@ class RouteEditorActivity : AppCompatActivity() {
 
     private fun restoreDraftIfNeeded(): Boolean {
         val obj = readDraft() ?: return false
-        AlertDialog.Builder(this)
+        GlassDialogs.builder(this)
             .setTitle("检测到未保存的路线草稿")
             .setMessage("上次退出前正在编辑的轨迹还在，是否继续编辑？")
             .setCancelable(false)
@@ -2141,7 +2365,8 @@ class RouteEditorActivity : AppCompatActivity() {
         toast(message)
     }
 
-    private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    private fun toast(message: String) =
+        com.zcshou.gogogo.run.ui.glass.GlassFeedback.toast(this, message)
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }

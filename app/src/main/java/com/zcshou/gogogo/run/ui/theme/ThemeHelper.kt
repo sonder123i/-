@@ -11,7 +11,6 @@ import androidx.core.view.WindowInsetsCompat
 import android.view.View
 import com.zcshou.gogogo.R
 import com.zcshou.gogogo.run.ui.glass.DeepRunGlassManager
-import com.zcshou.gogogo.run.ui.glass.GlassBackdrop
 
 /**
  * V4.0 双生主题：深海光学（Abyssal Optics · 暗）/ 冰川棱镜（Glacial Prism · 亮）/ 跟随系统。
@@ -46,8 +45,12 @@ object ThemeHelper {
         if (stored != null) {
             runCatching { ThemeMode.valueOf(stored) }.getOrNull()?.let { return it }
         }
-        // 迁移旧版布尔开关：默认暗色
-        return if (prefs(context).getBoolean(KEY_DARK, true)) ThemeMode.DARK else ThemeMode.LIGHT
+        // 迁移旧版布尔开关：默认浅色（日光白）。
+        //
+        // 曾经这里兜底 true（暗色）。暗色适合 OLED 省电，但首页/体检/路线这些
+        // 页面都是照浅色玻璃调的：暗色下透镜边缘高光、卡片描边全部压到看不见，
+        // 观感反而更糊。浅色作为默认值，用户在体检页仍可一键切到曜石黑。
+        return if (prefs(context).getBoolean(KEY_DARK, false)) ThemeMode.DARK else ThemeMode.LIGHT
     }
 
     fun setThemeMode(context: Context, mode: ThemeMode) {
@@ -64,7 +67,6 @@ object ThemeHelper {
     fun applyThemeMode(context: Context, mode: ThemeMode) {
         setThemeMode(context, mode)
         applyGlobalNightMode(context)
-        GlassBackdrop.invalidate()
         DeepRunGlassManager.refreshAll()
     }
 

@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.os.Bundle
+import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -43,7 +44,7 @@ class DemoPreviewActivity : AppCompatActivity() {
         mapView = findViewById(R.id.demoMap)
         countdown = findViewById(R.id.demoCountdown)
         MapStyleHelper.applyForTheme(mapView)
-        findViewById<TextView>(R.id.btnDemoClose).setOnClickListener { finish() }
+        findViewById<View>(R.id.btnDemoClose).setOnClickListener { finish() }
 
         val map = mapView.map
         mapView.showZoomControls(false)
@@ -60,7 +61,10 @@ class DemoPreviewActivity : AppCompatActivity() {
 
         val bdPoints = points.map { toBd(it) }
         map.addOverlay(
-            PolylineOptions().points(bdPoints).width(9).color(0xFFC8FF00.toInt())
+            PolylineOptions()
+                .points(bdPoints)
+                .width((1.5f * resources.displayMetrics.density).toInt().coerceAtLeast(1))
+                .color(getColor(R.color.pf_volt))
         )
         map.setMapStatus(
             MapStatusUpdateFactory.newLatLngZoom(toBd(center), 17.5f)
@@ -118,9 +122,9 @@ class DemoPreviewActivity : AppCompatActivity() {
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        paint.color = 0xFFC8FF00.toInt()
+        paint.color = getColor(R.color.pf_volt)
         canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
-        paint.color = 0xFF0B0E11.toInt()
+        paint.color = getColor(R.color.pf_canvas)
         canvas.drawCircle(size / 2f, size / 2f, size * 0.28f, paint)
         return BitmapDescriptorFactory.fromBitmap(bitmap)
     }

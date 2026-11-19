@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 悬浮窗档位/图标按钮的圆形凹槽。
+     用 dr_overlay_round（浅色=8% 黑 / 深色=14% 白）而不是 pf_card_solid：
+     后者在浅色主题下是纯白，叠在白色棱镜玻璃上会完全看不见。 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
-    <solid android:color="@color/pf_card_solid" />
-    <stroke
-        android:width="1dp"
-        android:color="@color/pf_panel_stroke" />
+    <solid android:color="@color/dr_overlay_round" />
 </shape>

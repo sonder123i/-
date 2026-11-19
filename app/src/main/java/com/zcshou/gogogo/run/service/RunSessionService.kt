@@ -17,6 +17,7 @@ import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import com.zcshou.gogogo.R
 import com.zcshou.gogogo.run.data.prefs.AdvancedPrefs
@@ -55,6 +56,7 @@ class RunSessionService : Service() {
         private const val EXTRA_COOLDOWN = "cooldown"
         private const val EXTRA_LINKED_PKG = "linked_pkg"
         private const val EXTRA_REVERSE = "reverse_direction"
+        private const val EXTRA_TARGET_METERS = "target_meters"
 
         const val ACTION_START = "com.zcshou.gogogo.run.action.START"
         const val ACTION_TOGGLE_PAUSE = "com.zcshou.gogogo.run.action.TOGGLE_PAUSE"
@@ -63,6 +65,20 @@ class RunSessionService : Service() {
         const val ACTION_ABORT = "com.zcshou.gogogo.run.action.ABORT"
         const val ACTION_MANUAL_TAKEOVER = "com.zcshou.gogogo.run.action.MANUAL_TAKEOVER"
         const val ACTION_MANUAL_RELEASE = "com.zcshou.gogogo.run.action.MANUAL_RELEASE"
+        const val ACTION_ADJUST_PACE = "com.zcshou.gogogo.run.action.ADJUST_PACE"
+        const val ACTION_ADJUST_TARGET = "com.zcshou.gogogo.run.action.ADJUST_TARGET"
+
+        fun adjustPaceIntent(context: Context, paceSecPerKm: Int): Intent =
+            Intent(context, RunSessionService::class.java).apply {
+                action = ACTION_ADJUST_PACE
+                putExtra(EXTRA_PACE, paceSecPerKm)
+            }
+
+        fun adjustTargetIntent(context: Context, targetMeters: Double): Intent =
+            Intent(context, RunSessionService::class.java).apply {
+                action = ACTION_ADJUST_TARGET
+                putExtra(EXTRA_TARGET_METERS, targetMeters)
+            }
 
         fun startIntent(
             context: Context,
@@ -109,6 +125,8 @@ class RunSessionService : Service() {
     private lateinit var repository: RunRepository
 
     private var engine: RunCruiseEngine? = null
+    /** 悬浮窗授权结果：通知每秒刷新多次，缓存一次 appops 查询避免反复 IPC。 */
+    private var overlayAllowed = false
     private var serviceGoRequested = false
     private var pendingStart: StartConfig? = null
     private var runStarted = false
@@ -174,6 +192,7 @@ class RunSessionService : Service() {
     override fun onCreate() {
         super.onCreate()
         repository = RunRepository(applicationContext)
+        overlayAllowed = Settings.canDrawOverlays(this)
         createChannel()
         startForeground(NOTIFICATION_ID, buildNotification(RunRuntimeState(), "准备中…"))
         stepGuard = StepGuard(this)
@@ -182,6 +201,8 @@ class RunSessionService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // 用户可能刚从设置页返回，重新读一次悬浮窗授权
+        overlayAllowed = Settings.canDrawOverlays(this)
         when (intent?.action) {
             ACTION_START -> {
                 val routeId = intent.getLongExtra(EXTRA_ROUTE_ID, 0L)
@@ -221,6 +242,14 @@ class RunSessionService : Service() {
             ACTION_MANUAL_TAKEOVER -> engine?.setManualOverride(true)
 
             ACTION_MANUAL_RELEASE -> engine?.setManualOverride(false)
+
+            ACTION_ADJUST_PACE -> engine?.adjustTargetPace(
+                intent.getIntExtra(EXTRA_PACE, 0)
+            )
+
+            ACTION_ADJUST_TARGET -> engine?.adjustTargetMeters(
+                intent.getDoubleExtra(EXTRA_TARGET_METERS, 0.0)
+            )
         }
         return START_NOT_STICKY
     }
@@ -341,7 +370,7 @@ class RunSessionService : Service() {
                 vibrate(longArrayOf(0, 700, 200, 700))
                 engine?.pause()
                 getSystemService(NotificationManager::class.java)
-                    .notify(NOTIFICATION_ID, buildNotification(engine?.state?.value ?: RunRuntimeState(), "⚠️ 注入被系统中断，已自动暂停"))
+                    .notify(NOTIFICATION_ID, buildNotification(engine?.state?.value ?: RunRuntimeState(), "注入被系统中断，已自动暂停"))
             }
         }
         injectionReceiver = receiver
@@ -504,7 +533,7 @@ class RunSessionService : Service() {
             "--"
         }
         val text = overrideText ?: if (state.stepsWarning) {
-            "⚠️ 未检测到步数，请把手机放进裤子口袋"
+            "未检测到步数，请把手机放进裤子口袋"
         } else if (state.phase == RunPhase.PRE_START_SETTLE) {
             String.format(
                 Locale.US,
@@ -529,10 +558,17 @@ class RunSessionService : Service() {
             else -> "$brand · 跑圈中"
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_cloudtrace)
             .setContentTitle(title)
             .setContentText(text)
-            .setSubText("随身携带手机走动，同步硬件计步")            .setOngoing(state.phase != RunPhase.FINISHED)
+            .setSubText(
+                if (overlayAllowed) {
+                    "随身携带手机走动，同步硬件计步"
+                } else {
+                    "悬浮窗未开启：暂停 / 收尾可在本通知操作"
+                }
+            )
+            .setOngoing(state.phase != RunPhase.FINISHED)
             .setOnlyAlertOnce(true)
             .setContentIntent(contentIntent)
             .addAction(

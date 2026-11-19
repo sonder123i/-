@@ -1,5 +1,6 @@
 package com.zcshou.gogogo.run.engine
 
+import com.zcshou.gogogo.run.BrandConfig
 import com.zcshou.gogogo.run.engine.TrackMathUtils.LatLng
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -9,20 +10,44 @@ import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
 /**
- * 纯本地路线口令：压缩 + Base64 塞进 DEEPRUN:// 链接，零服务器分享给室友。
+ * 纯本地路线口令：压缩 + Base64 塞进 `品牌协议://` 链接，零服务器分享给室友。
  * 格式：v1|nameBase64|顺时针0/1|lat,lng;lat,lng;...
  * 纯 Kotlin（java.util.zip/Base64），可直接 JVM 单测。
  */
 object RouteShareCodec {
 
-    private const val PREFIX = "DEEPRUN://"
+    private val PREFIXES = listOf(BrandConfig.SHARE_PREFIX, BrandConfig.LEGACY_PREFIX)
     private const val MAX_DECODE_BYTES = 4 * 1024 * 1024
+
+    private val TRAILING_PUNCTUATION = charArrayOf(
+        '。', '，', ',', '.', ';', '；', '!', '！', '?', '？',
+        ')', '）', ']', '】', '}', '》', '>', '"', '\'', '、'
+    )
 
     data class SharedRoute(
         val name: String,
         val points: List<LatLng>,
         val clockwise: Boolean
     )
+
+    /**
+     * 从聊天消息 / 剪贴板整段文本中拎出第一条口令。
+     * 兼容更名前后的两种协议前缀；口令本身只含 URL-safe Base64 字符，
+     * 遇到空白或中文标点即视为结束。
+     */
+    fun extractCode(text: String): String? =
+        PREFIXES.firstNotNullOfOrNull { prefix -> extractWith(text, prefix) }
+
+    private fun extractWith(text: String, prefix: String): String? {
+        val trimmed = text.trim()
+        val start = trimmed.indexOf(prefix, ignoreCase = true)
+        if (start < 0) return null
+        val token = trimmed.substring(start + prefix.length)
+            .takeWhile { !it.isWhitespace() }
+            .trimEnd(*TRAILING_PUNCTUATION)
+        if (token.isEmpty()) return null
+        return prefix + token
+    }
 
     fun encode(name: String, points: List<LatLng>, clockwise: Boolean): String {
         require(points.size >= 2) { "至少 2 个点" }
@@ -38,12 +63,18 @@ object RouteShareCodec {
             }
             bos.toByteArray()
         }
-        return PREFIX + Base64.getUrlEncoder().withoutPadding().encodeToString(compressed)
+        return PREFIXES.first() + Base64.getUrlEncoder().withoutPadding().encodeToString(compressed)
     }
 
     fun decode(text: String): SharedRoute? = runCatching {
-        val raw = text.trim().removePrefix(PREFIX).removePrefix(PREFIX.lowercase())
-        if (raw.isBlank()) return null
+        // 分享时会把口令夹在说明文字里发出；导入侧要允许直接粘贴整段聊天内容。
+        val code = extractCode(text)
+        val raw = if (code != null) {
+            val prefix = PREFIXES.firstOrNull { code.startsWith(it, ignoreCase = true) } ?: return null
+            code.substring(prefix.length)
+        } else {
+            text.trim().filterNot { it.isWhitespace() }.takeIf { it.isNotEmpty() } ?: return null
+        }
         val compressed = decodeBase64(raw) ?: return null
         val payload = gunzip(compressed) ?: return null
         val parts = payload.split("|", limit = 4)

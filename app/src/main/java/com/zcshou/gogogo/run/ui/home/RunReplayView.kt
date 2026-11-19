@@ -110,7 +110,8 @@ class RunReplayView @JvmOverloads constructor(
         val offsetY = (mapBottom - spanY * scale) / 2f
         val lapCount = laps.coerceIn(1, 8)
         // 先画一层淡底，突出分层轨迹
-        trackPaint.color = 0x22C8FF00
+        trackPaint.color = context.getColor(R.color.pf_volt)
+        trackPaint.alpha = 0x22
         trackPaint.strokeWidth = dp(1.5f)
         drawLap(canvas, local, 0f, scale, offsetX, offsetY, maxY)
         for (lap in 0 until lapCount) {

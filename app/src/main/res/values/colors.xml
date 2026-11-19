@@ -1,43 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#ff008577</color>
-    <color name="colorPrimaryDark">#ff008577</color>
-    <color name="colorAccent">#ff00897B</color>
+    <color name="colorPrimary">@color/pf_volt</color>
+    <color name="colorPrimaryDark">@color/pf_canvas</color>
+    <color name="colorAccent">@color/pf_volt</color>
 
-    <!-- Kinetic Athletic 设计系统（步频流 PaceFlow）· 冰川棱镜浅色
+    <!-- Apple Daylight Glass · 苹果级无色纯粹液态玻璃（浅色）
          深色值在 res/values-night/colors_paceflow.xml 成对定义；
-         由 ThemeHelper.applyGlobalNightMode 同步 uiMode，保证手动换主题不串色。 -->
-    <color name="pf_canvas">#F3F6FA</color>
-    <color name="pf_card">#FFFFFF</color>
-    <color name="pf_card_98">#FAFFFFFF</color>
-    <color name="pf_card_pill">#F2FFFFFF</color>
-    <color name="pf_card_solid">#F0FFFFFF</color>
-    <color name="pf_capsule_surface">#E6FFFFFF</color>
+         由 ThemeHelper.applyGlobalNightMode 同步 uiMode，保证手动换主题不串色。
+         设计约束：全应用仅黑白灰 + 三个语义色（Apple Green / Red / Orange）。 -->
+    <color name="pf_canvas">#F5F5F7</color>
+    <color name="pf_card">#B8FFFFFF</color>
+    <color name="pf_card_98">#B8FFFFFF</color>
+    <color name="pf_card_pill">#B8FFFFFF</color>
+    <color name="pf_card_solid">#FAFFFFFF</color>
+    <color name="pf_hub_panel_solid">#EDFFFFFF</color>
+    <color name="pf_editor_panel">#EBFFFFFF</color>
+    <color name="pf_stepper_touch">#14000000</color>
+    <color name="pf_on_primary">#FFFFFF</color>
+    <color name="pf_capsule_surface">#B8FFFFFF</color>
 
-    <color name="pf_stroke">#E2E8F0</color>
-    <color name="pf_panel_stroke">#D8E0EA</color>
+    <!-- 分割线：只用于列表内缩进分隔，绝不作为卡片外框 -->
+    <color name="pf_stroke">#E5E5EA</color>
+    <color name="pf_panel_stroke">#1A000000</color>
 
-    <color name="pf_volt">#007A94</color>
-    <color name="pf_volt_a60">#99007A94</color>
-    <color name="pf_volt_a70">#B3007A94</color>
-    <color name="pf_volt_a18">#2E007A94</color>
+    <!-- 单色主色：浅色=曜石黑，深色=纯白（由 values-night 翻转） -->
+    <color name="pf_volt">#1D1D1F</color>
+    <color name="pf_volt_a60">#991D1D1F</color>
+    <color name="pf_volt_a70">#B31D1D1F</color>
+    <color name="pf_volt_a18">#241D1D1F</color>
+    <color name="pf_secondary_surface">#14000000</color>
+    <color name="pf_search_field">#14000000</color>
+    <color name="pf_danger_text">#FF3B30</color>
 
-    <color name="pf_cyan">#0E7490</color>
-    <color name="pf_amber">#D97706</color>
-    <color name="pf_amber_a20">#33D97706</color>
+    <color name="pf_cyan">#1D1D1F</color>
+    <color name="pf_amber">#FF9F0A</color>
+    <color name="pf_amber_a20">#33FF9F0A</color>
 
-    <color name="pf_text_primary">#0B131E</color>
-    <color name="pf_text_secondary">#5A687A</color>
-    <color name="pf_ok">#15803D</color>
-    <color name="pf_bad">#DC2626</color>
-    <color name="pf_danger_bg">#FEF2F2</color>
+    <color name="pf_text_primary">#1D1D1F</color>
+    <color name="pf_text_secondary">#86868B</color>
+    <color name="pf_text_tertiary">#C7C7CC</color>
+    <color name="pf_ok">#34C759</color>
+    <color name="pf_bad">#FF3B30</color>
+    <color name="pf_danger_bg">#1FFF3B30</color>
+    <color name="pf_neutral_dot">#C7C7CC</color>
 
     <!-- 清透日光（与浅色 pf_* 同值，兼容旧引用） -->
-    <color name="pf_light_canvas">#F3F6FA</color>
-    <color name="pf_light_card">#FFFFFF</color>
-    <color name="pf_light_accent">#007A94</color>
-    <color name="pf_light_text_primary">#0B131E</color>
-    <color name="pf_light_text_secondary">#5A687A</color>
+    <color name="pf_light_canvas">#F5F5F7</color>
+    <color name="pf_light_card">#B8FFFFFF</color>
+    <color name="pf_light_accent">#1D1D1F</color>
+    <color name="pf_light_text_primary">#1D1D1F</color>
+    <color name="pf_light_text_secondary">#86868B</color>
 
     <color name="white">#ffffff</color> <!-- 白色 -->
     <color name="ivory">#fffff0</color> <!-- 象牙色 -->

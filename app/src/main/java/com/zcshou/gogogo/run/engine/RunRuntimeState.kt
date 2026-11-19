@@ -18,6 +18,8 @@ data class RunRuntimeState(
     val currentLapIndex: Int = 0,
     val speedMps: Double = 0.0,
     val paceSecPerKm: Int = 0,
+    /** 当前目标配速（悬浮窗运行中调整用） */
+    val targetPaceSecPerKm: Int = 0,
     val position: TrackMathUtils.LatLng? = null,
     val elapsedSec: Long = 0,
     val message: String? = null,

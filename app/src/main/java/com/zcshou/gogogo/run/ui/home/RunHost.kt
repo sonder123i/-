@@ -43,4 +43,10 @@ interface RunHost {
 
     /** 弹系统对话框前临时隐藏悬浮窗，避免遮挡确认按钮 */
     fun setOverlayHidden(hidden: Boolean) = Unit
+
+    /** 运行中调整目标配速（秒/公里） */
+    fun adjustPace(paceSecPerKm: Int) = Unit
+
+    /** 运行中调整目标距离（公里） */
+    fun adjustTargetKm(km: Float) = Unit
 }

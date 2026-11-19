@@ -1,49 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <!-- 收起态：144x38dp 磨砂药丸 -->
-    <LinearLayout
-        android:id="@+id/capsuleBar"
-        android:layout_width="144dp"
-        android:layout_height="38dp"
-        android:background="@drawable/bg_capsule"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="6dp"
-        android:paddingEnd="12dp">
+    <!-- 收起态：宽度自适应的磨砂迷你药丸。
+         外壳用 CapsuleShellView 而不是 FrameLayout：它在子视图画完后叠加边缘流光，
+         既不参与测量（不会把胶囊撑大），也天然贴合胶囊矩形。 -->
+    <com.zcshou.gogogo.run.ui.overlay.CapsuleShellView
+        android:id="@+id/capsuleShell"
+        android:layout_width="wrap_content"
+        android:layout_height="38dp">
 
-        <com.zcshou.gogogo.run.ui.overlay.RingProgressView
-            android:id="@+id/capsuleRing"
-            android:layout_width="26dp"
-            android:layout_height="26dp" />
+        <LinearLayout
+            android:id="@+id/capsuleBar"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:minWidth="144dp"
+            android:orientation="horizontal"
+            android:paddingStart="6dp"
+            android:paddingEnd="14dp">
 
-        <TextView
-            android:id="@+id/capsuleText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:layout_weight="1"
-            android:ellipsize="end"
-            android:fontFeatureSettings="tnum"
-            android:maxLines="1"
-            android:text="待命"
-            android:textColor="@color/pf_text_primary"
-            android:textSize="11sp" />
-    </LinearLayout>
+            <com.zcshou.gogogo.run.ui.overlay.RingProgressView
+                android:id="@+id/capsuleRing"
+                android:layout_width="26dp"
+                android:layout_height="26dp" />
 
-    <!-- 展开态：自动跑圈控制岛 -->
-    <LinearLayout
+            <TextView
+                android:id="@+id/capsuleText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:fontFeatureSettings="tnum"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="待命"
+                android:textColor="@color/dr_overlay_text_primary"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </com.zcshou.gogogo.run.ui.overlay.CapsuleShellView>
+
+    <!-- 展开态：磨砂玻璃控制岛（展开时迷你药丸整体隐藏）。
+         同样是 CapsuleShellView：玻璃背景 + 边缘流光都在这块圆角区域上。 -->
+    <com.zcshou.gogogo.run.ui.overlay.CapsuleShellView
         android:id="@+id/capsuleActions"
         android:layout_width="288dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:background="@drawable/bg_hub_panel"
-        android:orientation="vertical"
-        android:padding="12dp"
         android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
 
         <LinearLayout
             android:id="@+id/hubHeader"
@@ -52,13 +65,11 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <TextView
+            <View
                 android:id="@+id/hubDot"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="●"
-                android:textColor="@color/pf_ok"
-                android:textSize="10sp" />
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:background="@drawable/bg_status_dot" />
 
             <TextView
                 android:id="@+id/hubStatus"
@@ -69,18 +80,19 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="模拟运行中 · 已接管"
-                android:textColor="@color/pf_text_primary"
+                android:textColor="@color/dr_overlay_text_primary"
                 android:textSize="12sp" />
 
-            <TextView
+            <ImageView
                 android:id="@+id/btnHubCollapse"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                android:background="@drawable/bg_round_dark"
-                android:gravity="center"
-                android:text="✕"
-                android:textColor="@color/pf_text_secondary"
-                android:textSize="13sp" />
+                android:background="@drawable/bg_overlay_round"
+                android:contentDescription="收起"
+                android:padding="8dp"
+                android:src="@drawable/ic_xmark"
+                android:tint="@color/dr_overlay_text_secondary"
+                tools:ignore="UseAppTint" />
         </LinearLayout>
 
         <LinearLayout
@@ -98,43 +110,108 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="配速"
-                    android:textColor="@color/pf_text_secondary"
+                    android:text="配速 · 可调"
+                    android:textColor="@color/dr_overlay_text_secondary"
                     android:textSize="10sp" />
 
-                <TextView
-                    android:id="@+id/capsulePace"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFeatureSettings="tnum"
-                    android:text="--"
-                    android:textColor="@color/pf_volt"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="28dp"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/btnPaceMinus"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:background="@drawable/bg_overlay_recess"
+                        android:gravity="center"
+                        android:text="−"
+                        android:textColor="@color/dr_overlay_text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/capsulePace"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFeatureSettings="tnum"
+                        android:gravity="center"
+                        android:text="--"
+                        android:textColor="@color/dr_overlay_ice"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btnPacePlus"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:background="@drawable/bg_overlay_recess"
+                        android:gravity="center"
+                        android:text="+"
+                        android:textColor="@color/dr_overlay_text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:orientation="vertical">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="圈数"
-                    android:textColor="@color/pf_text_secondary"
+                    android:text="目标距离 · 可调"
+                    android:textColor="@color/dr_overlay_text_secondary"
                     android:textSize="10sp" />
 
-                <TextView
-                    android:id="@+id/capsuleLap"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFeatureSettings="tnum"
-                    android:text="0"
-                    android:textColor="@color/pf_cyan"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="28dp"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/btnDistMinus"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:background="@drawable/bg_overlay_recess"
+                        android:gravity="center"
+                        android:text="−"
+                        android:textColor="@color/dr_overlay_text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/capsuleLap"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFeatureSettings="tnum"
+                        android:gravity="center"
+                        android:text="3.0km"
+                        android:textColor="@color/dr_overlay_ice"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btnDistPlus"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:background="@drawable/bg_overlay_recess"
+                        android:gravity="center"
+                        android:text="+"
+                        android:textColor="@color/dr_overlay_text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
 
@@ -149,10 +226,10 @@
                 android:layout_width="0dp"
                 android:layout_height="38dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_secondary_button"
+                android:background="@drawable/bg_overlay_recess"
                 android:gravity="center"
                 android:text="暂停"
-                android:textColor="@color/pf_text_primary"
+                android:textColor="@color/dr_overlay_text_primary"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
@@ -162,10 +239,10 @@
                 android:layout_height="38dp"
                 android:layout_marginStart="6dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_secondary_button"
+                android:background="@drawable/bg_overlay_recess"
                 android:gravity="center"
                 android:text="插点"
-                android:textColor="@color/pf_cyan"
+                android:textColor="@color/dr_overlay_ice"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
@@ -175,52 +252,59 @@
                 android:layout_height="38dp"
                 android:layout_marginStart="6dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_secondary_button"
+                android:background="@drawable/bg_overlay_recess"
                 android:gravity="center"
                 android:text="收尾"
-                android:textColor="@color/pf_amber"
+                android:textColor="@color/dr_overlay_ice"
                 android:textSize="12sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <TextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCapsuleManual"
+            style="@style/Widget.App.Button.Secondary"
             android:layout_width="match_parent"
             android:layout_height="34dp"
             android:layout_marginTop="6dp"
-            android:background="@drawable/bg_secondary_button"
-            android:gravity="center"
-            android:text="🕹️ 临时手动接管"
-            android:textColor="@color/pf_volt"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:text="临时手动接管"
+            android:textColor="@color/dr_overlay_ice"
+            app:backgroundTint="@color/dr_overlay_recess"
+            app:icon="@drawable/ic_crosshair"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconTint="@color/dr_overlay_ice" />
 
-        <TextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnHubStopSim"
+            style="@style/Widget.App.Button.Danger"
             android:layout_width="match_parent"
             android:layout_height="36dp"
             android:layout_marginTop="6dp"
-            android:background="@drawable/bg_danger_button"
-            android:gravity="center"
-            android:text="⏹ 结束定位并关闭"
-            android:textColor="#FF5252"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+            android:text="结束定位并关闭"
+            app:backgroundTint="@color/dr_overlay_danger_bg"
+            app:icon="@drawable/ic_stop"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconTint="@color/dr_overlay_danger" />
+        </LinearLayout>
+    </com.zcshou.gogogo.run.ui.overlay.CapsuleShellView>
 
-    <!-- 手动接管形态：紧凑战术摇杆 -->
-    <LinearLayout
+    <!-- 手动接管形态：紧凑战术摇杆（同一套磨砂玻璃 + 流光） -->
+    <com.zcshou.gogogo.run.ui.overlay.CapsuleShellView
         android:id="@+id/capsuleRoamPanel"
         android:layout_width="210dp"
         android:layout_height="250dp"
         android:layout_marginTop="6dp"
-        android:background="@drawable/bg_hub_panel_solid"
-        android:orientation="vertical"
-        android:paddingStart="10dp"
-        android:paddingTop="6dp"
-        android:paddingEnd="10dp"
-        android:paddingBottom="10dp"
         android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingStart="10dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="10dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -233,31 +317,36 @@
                 android:layout_width="0dp"
                 android:layout_height="32dp"
                 android:layout_weight="1"
+                android:drawableStart="@drawable/ic_more"
+                android:drawablePadding="4dp"
+                android:drawableTint="@color/dr_overlay_text_secondary"
                 android:gravity="center_vertical"
-                android:text="≡ 拖动位置"
-                android:textColor="@color/pf_text_secondary"
+                android:text="拖动位置"
+                android:textColor="@color/dr_overlay_text_secondary"
                 android:textSize="11sp" />
 
-            <TextView
+            <ImageView
                 android:id="@+id/btnRoamLock"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:background="@drawable/bg_round_dark"
-                android:gravity="center"
-                android:text="🔓"
-                android:textColor="@color/pf_text_secondary"
-                android:textSize="12sp" />
+                android:background="@drawable/bg_overlay_round"
+                android:contentDescription="摇杆锁定"
+                android:padding="7dp"
+                android:src="@drawable/ic_lock_open_line"
+                android:tint="@color/dr_overlay_text_secondary"
+                tools:ignore="UseAppTint" />
 
-            <TextView
+            <ImageView
                 android:id="@+id/btnRoamCollapse"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
                 android:layout_marginStart="6dp"
-                android:background="@drawable/bg_round_dark"
-                android:gravity="center"
-                android:text="✕"
-                android:textColor="@color/pf_text_secondary"
-                android:textSize="12sp" />
+                android:background="@drawable/bg_overlay_round"
+                android:contentDescription="收起"
+                android:padding="7dp"
+                android:src="@drawable/ic_xmark"
+                android:tint="@color/dr_overlay_text_secondary"
+                tools:ignore="UseAppTint" />
         </LinearLayout>
 
         <LinearLayout
@@ -275,7 +364,7 @@
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp"
                 android:text="步"
-                android:textColor="@color/pf_text_secondary"
+                android:textColor="@color/dr_overlay_text_secondary"
                 android:textSize="11sp" />
 
             <TextView
@@ -283,12 +372,12 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/bg_tab_selected"
+                android:background="@drawable/bg_overlay_chip_selected"
                 android:gravity="center"
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp"
                 android:text="跑"
-                android:textColor="@color/pf_volt"
+                android:textColor="@color/dr_overlay_ice"
                 android:textSize="11sp"
                 android:textStyle="bold" />
 
@@ -301,7 +390,7 @@
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp"
                 android:text="骑"
-                android:textColor="@color/pf_text_secondary"
+                android:textColor="@color/dr_overlay_text_secondary"
                 android:textSize="11sp" />
 
             <TextView
@@ -313,7 +402,7 @@
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp"
                 android:text="车"
-                android:textColor="@color/pf_text_secondary"
+                android:textColor="@color/dr_overlay_text_secondary"
                 android:textSize="11sp" />
         </LinearLayout>
 
@@ -334,10 +423,10 @@
                 android:layout_width="0dp"
                 android:layout_height="34dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_tab_selected"
+                android:background="@drawable/bg_overlay_chip_selected"
                 android:gravity="center"
                 android:text="回归跑道"
-                android:textColor="@color/pf_volt"
+                android:textColor="@color/dr_overlay_ice"
                 android:textSize="11sp"
                 android:textStyle="bold" />
 
@@ -347,12 +436,13 @@
                 android:layout_height="34dp"
                 android:layout_marginStart="6dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_danger_button"
+                android:background="@drawable/bg_overlay_danger_button"
                 android:gravity="center"
                 android:text="结束定位"
-                android:textColor="#FF5252"
+                android:textColor="@color/dr_overlay_danger"
                 android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
-    </LinearLayout>
+        </LinearLayout>
+    </com.zcshou.gogogo.run.ui.overlay.CapsuleShellView>
 </LinearLayout>

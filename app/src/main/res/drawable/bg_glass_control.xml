@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    V5.2 圆形/胶囊玻璃控件：高透玻璃渐变 + 1dp 银白镜面外圈。
+    用于建圈器右上角的 GPX 与关闭按钮，与模式栏双层透镜保持一致。
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="@color/dr_lens_fill_top"
+                android:endColor="@color/dr_lens_fill_bottom" />
+            <corners android:radius="100dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <stroke
+                android:width="1dp"
+                android:color="@color/dr_silver_rim" />
+            <corners android:radius="100dp" />
+        </shape>
+    </item>
+</layer-list>

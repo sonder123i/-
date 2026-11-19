@@ -95,14 +95,17 @@ class RunCruiseEngine(
 
     private var progressMeters = 0.0
     private var totalMeters = 0.0
-    private var targetMeters = 0.0
-    private var finishThresholdMeters = 0.0
+    // 以下三个字段会被主线程（adjustTargetPace / adjustTargetMeters）写入、
+    // 由 Dispatchers.Default 的 tick 循环读取，需保证跨线程可见性。
+    @Volatile private var targetMeters = 0.0
+    @Volatile private var finishThresholdMeters = 0.0
     private var lapIndex = 0
     private var currentSpeedMps = 0.0
     private var lastPosition: TrackMathUtils.LatLng? = null
     private var lastBearing = 0.0
 
-    private var paceSim: PaceSimulator? = null
+    @Volatile private var paceSim: PaceSimulator? = null
+    @Volatile private var targetPaceSecPerKm = 340
     private var laneDriftEnabled = true
     private var cooldownEnabled = true
     private var laneFrom = 0.0
@@ -195,6 +198,7 @@ class RunCruiseEngine(
             )
         }
         paceSim = PaceSimulator(targetPaceSecPerKm, random)
+        this.targetPaceSecPerKm = targetPaceSecPerKm
         laneDriftEnabled = enableLaneDrift
         cooldownEnabled = enableCooldownWalk
 
@@ -261,6 +265,41 @@ class RunCruiseEngine(
     /** 临时手动接管：暂停引擎自身的坐标注入，把注入权交给摇杆 */
     fun setManualOverride(enabled: Boolean) {
         manualOverride = enabled
+    }
+
+    /**
+     * 运行中调整目标配速（秒/公里）。
+     * 重新创建 PaceSimulator 只重置热身/冲刺系数，不改变已跑里程与路线进度。
+     */
+    fun adjustTargetPace(paceSecPerKm: Int) {
+        if (!active || paceSecPerKm <= 0) return
+        val clamped = paceSecPerKm.coerceIn(180, 900)
+        if (clamped == targetPaceSecPerKm) return
+        targetPaceSecPerKm = clamped
+        paceSim = PaceSimulator(clamped, random)
+        publish()
+    }
+
+    /**
+     * 运行中调整目标距离（米）。
+     * 不允许把目标设到已跑里程以下（至少保留 10m），避免立刻触发结束。
+     */
+    fun adjustTargetMeters(meters: Double) {
+        if (!active || meters <= 0.0) return
+        val minTarget = totalMeters + 10.0
+        val newTarget = meters.coerceIn(minTarget, 100_000.0)
+        if (kotlin.math.abs(newTarget - targetMeters) < 0.5) return
+        targetMeters = newTarget
+        // 与起跑时一致：保留 15~65m 的随机超额，避免调整后每趟轨迹雷同
+        finishThresholdMeters = if (overshootMeters.isEmpty() || overshootMeters.last <= 0) {
+            newTarget
+        } else {
+            newTarget + random.nextInt(
+                overshootMeters.first.coerceAtLeast(0),
+                overshootMeters.last + 1
+            )
+        }
+        publish()
     }
 
     /** 响应悬浮窗「临时插点」：生成 当前点 -> 打卡点 -> 主线前方 30m 汇入点 的支线 */
@@ -546,6 +585,7 @@ class RunCruiseEngine(
             currentLapIndex = lapIndex,
             speedMps = currentSpeedMps,
             paceSecPerKm = pace,
+            targetPaceSecPerKm = targetPaceSecPerKm,
             position = lastPosition,
             elapsedSec = elapsed
         )

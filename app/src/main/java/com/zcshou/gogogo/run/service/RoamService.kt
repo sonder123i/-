@@ -1,5 +1,6 @@
 package com.zcshou.gogogo.run.service
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -236,42 +237,47 @@ class RoamService : Service() {
         }
     }
 
-    private fun buildNotification(speedMps: Double) = NotificationCompat.Builder(this, CHANNEL_ID)
-        .setSmallIcon(R.mipmap.ic_launcher)
-        .setContentTitle("自由漫游")
-        .setContentText(
-            if (speedMps > 0.05) String.format(Locale.US, "漫游中 · %.1f m/s", speedMps)
-            else "已接管 · 推摇杆开始移动"
-        )
-        .setOngoing(true)
-        .setOnlyAlertOnce(true)
-        .setContentIntent(
-            PendingIntent.getActivity(
-                this, 0,
-                Intent(this, RunHomeActivity::class.java).apply {
-                    putExtra(EXTRA_OPEN_ROAM, true)
-                },
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    private fun buildNotification(speedMps: Double): Notification {
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_cloudtrace)
+            .setContentTitle("自由漫游")
+            .setContentText(
+                if (speedMps > 0.05) String.format(Locale.US, "漫游中 · %.1f m/s", speedMps)
+                else "已接管 · 推摇杆开始移动"
             )
-        )
-        .addAction(
-            0, "停止",
-            PendingIntent.getService(
-                this, 1,
-                Intent(this, RoamService::class.java).setAction(ACTION_STOP),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setContentIntent(
+                PendingIntent.getActivity(
+                    this, 0,
+                    Intent(this, RunHomeActivity::class.java).apply {
+                        putExtra(EXTRA_OPEN_ROAM, true)
+                    },
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
             )
-        )
-        .addAction(
-            0, if (hub == null) "显示摇杆" else "隐藏摇杆",
-            PendingIntent.getService(
-                this, 2,
-                Intent(this, RoamService::class.java)
-                    .setAction(if (hub == null) ACTION_SHOW else ACTION_HIDE),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            .addAction(
+                0, "停止",
+                PendingIntent.getService(
+                    this, 1,
+                    Intent(this, RoamService::class.java).setAction(ACTION_STOP),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
             )
-        )
-        .build()
+        // 没有悬浮窗权限时摇杆按钮点了也不会出现，直接不显示，避免死按钮
+        if (Settings.canDrawOverlays(this)) {
+            builder.addAction(
+                0, if (hub == null) "显示摇杆" else "隐藏摇杆",
+                PendingIntent.getService(
+                    this, 2,
+                    Intent(this, RoamService::class.java)
+                        .setAction(if (hub == null) ACTION_SHOW else ACTION_HIDE),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            )
+        }
+        return builder.build()
+    }
 
     private fun updateNotification(speedMps: Double) {
         runCatching {

@@ -1,31 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 空状态单色线稿：跑道 + 大肥鱼，全部使用 pf_volt 单色 Token -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="120dp"
     android:height="90dp"
     android:viewportWidth="120"
     android:viewportHeight="90">
-    <!-- 跑道外圈 -->
     <path
         android:pathData="M36,14 L84,14 A22,22 0 0 1 84,58 L36,58 A22,22 0 0 1 36,14 Z"
-        android:strokeColor="#C8FF00"
-        android:strokeWidth="2.5"
+        android:strokeColor="@color/pf_volt"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.9"
         android:fillColor="#00000000" />
-    <!-- 跑道内圈 -->
     <path
         android:pathData="M40,20 L80,20 A16,16 0 0 1 80,52 L40,52 A16,16 0 0 1 40,20 Z"
-        android:strokeColor="#66C8FF00"
-        android:strokeWidth="1.5"
+        android:strokeColor="@color/pf_volt"
+        android:strokeWidth="1"
+        android:strokeAlpha="0.3"
         android:fillColor="#00000000" />
-    <!-- 大肥鱼身体 -->
     <path
-        android:pathData="M48,34 C56,30 66,30 72,36 C66,42 56,42 48,38 Z"
-        android:fillColor="#C8FF00" />
-    <!-- 鱼尾 -->
+        android:pathData="M50,36 C58,31 68,31 74,37 C68,43 58,43 50,39 Z"
+        android:strokeColor="@color/pf_volt"
+        android:strokeWidth="1.5"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
     <path
-        android:pathData="M46,32 L38,27 L38,41 L46,38 Z"
-        android:fillColor="#C8FF00" />
-    <!-- 鱼眼 -->
+        android:pathData="M48,33 L41,29 L41,43 L48,39 Z"
+        android:strokeColor="@color/pf_volt"
+        android:strokeWidth="1.5"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
     <path
-        android:pathData="M65,35 m-1.6,0 a1.6,1.6 0 1,0 3.2,0 a1.6,1.6 0 1,0 -3.2,0"
-        android:fillColor="#0B0E11" />
+        android:pathData="M56,35.5 A1.4,1.4 0 1 0,56 38.3 A1.4,1.4 0 0 0,56 35.5 Z"
+        android:fillColor="@color/pf_volt" />
 </vector>

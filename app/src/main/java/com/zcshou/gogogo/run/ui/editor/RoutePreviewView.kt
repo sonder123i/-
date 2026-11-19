@@ -24,21 +24,31 @@ class RoutePreviewView @JvmOverloads constructor(
     private var closed = true
 
     private val density = resources.displayMetrics.density
+    /** 底层柔光：让细线在玻璃卡片上仍有光纤质感。 */
+    private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 8f * density
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+        color = context.getColor(R.color.pf_volt)
+        alpha = 30
+        maskFilter = android.graphics.BlurMaskFilter(4f * density, android.graphics.BlurMaskFilter.Blur.NORMAL)
+    }
     private val pathPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 5f * density
+        strokeWidth = 1.5f * density
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
         color = context.getColor(R.color.pf_volt)
     }
     private val startPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = context.getColor(R.color.pf_amber)
+        color = context.getColor(R.color.pf_volt)
     }
     private val gridPaint = Paint().apply {
         color = context.getColor(R.color.pf_stroke)
         strokeWidth = density
+        alpha = 46
     }
-    private val bgPaint = Paint().apply { color = context.getColor(R.color.pf_card) }
 
     fun setRoute(points: List<TrackMathUtils.LatLng>, closed: Boolean) {
         this.points = points
@@ -48,8 +58,6 @@ class RoutePreviewView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
-
         val step = 32f * density
         var gx = step
         while (gx < width) {
@@ -91,8 +99,9 @@ class RoutePreviewView @JvmOverloads constructor(
             else path.lineTo(viewX(east), viewY(north))
         }
         if (closed) path.close()
+        canvas.drawPath(path, glowPaint)
         canvas.drawPath(path, pathPaint)
 
-        canvas.drawCircle(viewX(local.first().first), viewY(local.first().second), 6f * density, startPaint)
+        canvas.drawCircle(viewX(local.first().first), viewY(local.first().second), 4f * density, startPaint)
     }
 }

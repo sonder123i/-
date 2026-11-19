@@ -11,6 +11,7 @@ import android.view.HapticFeedbackConstants
 import android.view.View
 import com.zcshou.gogogo.R
 import com.zcshou.gogogo.run.ui.theme.FiberStyle
+import com.zcshou.gogogo.run.ui.theme.ThemeHelper
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.max
@@ -55,19 +56,23 @@ class OpticalReticleView @JvmOverloads constructor(
     private val inkSecondary = context.getColor(R.color.pf_text_secondary)
     private val inkPrimary = context.getColor(R.color.pf_text_primary)
 
+    private val isDark = ThemeHelper.isDark(context)
+
+    /** 跑道外描边：6dp / 22% 靛蓝柔光，任何地图上都保持锐利边界。 */
     private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = dp(12f)
+        strokeWidth = dp(6f)
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
-        color = accent
-        alpha = 38 // 15%
+        color = FiberStyle.glowColor(context)
+        alpha = FiberStyle.GLOW_ALPHA
     }
+    /** 跑道核心实线：3dp 光纤渐变（靛蓝 → 冰青 → 紫罗兰）。 */
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = dp(2.5f)
+        strokeWidth = dp(3f)
         strokeJoin = Paint.Join.ROUND
-        color = accent
+        color = if (isDark) 0xFFFFFFFF.toInt() else 0xFF1D1D1F.toInt()
     }
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -93,11 +98,17 @@ class OpticalReticleView @JvmOverloads constructor(
         color = accentSoft
         alpha = 220
     }
+    private val crossGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = dp(5f)
+        color = if (isDark) 0xFF5CE1E6.toInt() else 0xFFFFFFFF.toInt()
+        alpha = if (isDark) 0x66 else 0x55
+    }
     private val crossPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = dp(1.1f)
-        color = inkPrimary
-        alpha = 190
+        strokeWidth = dp(2f)
+        color = if (isDark) 0xFFFFFFFF.toInt() else 0xFF1D1D1F.toInt()
+        alpha = 255
     }
     private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -127,6 +138,7 @@ class OpticalReticleView @JvmOverloads constructor(
         val ringRadius = max(dp(120f), trackRadius + dp(26f))
 
         drawTickRing(canvas, cx, cy, ringRadius)
+        drawCornerFrame(canvas, cx, cy, ringRadius)
         drawCrosshair(canvas, cx, cy)
         if (flashAlpha > 0f) {
             flashPaint.alpha = (flashAlpha * 255).toInt().coerceIn(0, 255)
@@ -135,11 +147,42 @@ class OpticalReticleView @JvmOverloads constructor(
 
         if (!showTrack || templatePoints.size < 3 || pxPerMeter <= 0.001f) return
         // 光纤渐变核心线：中心近白、边缘泛冰青
-        trackPaint.shader = FiberStyle.linear(context, width, height)
         drawTrack(canvas, cx, cy)
     }
 
     // ---------------------------------------------------------------- 刻度环
+
+    /** 四角取景框线：徕卡取景器式 L 形括号，强化「正在瞄准」的镜头感。 */
+    private fun drawCornerFrame(canvas: Canvas, cx: Float, cy: Float, ringRadius: Float) {
+        val half = ringRadius + dp(7f)
+        val arm = dp(18f)
+        val inset = dp(2f)
+        val paint = if (flashAlpha > 0f) flashPaint else ringPaint
+        // 记录原始描边参数，画完按各自初值恢复（ringPaint 是 0.8dp，不能统一写成 1px）
+        val originalStroke = paint.strokeWidth
+        val originalAlpha = paint.alpha
+        paint.strokeWidth = dp(1.2f)
+        paint.alpha = if (flashAlpha > 0f) {
+            (flashAlpha * 240).toInt().coerceIn(0, 255)
+        } else {
+            150
+        }
+        // 左上
+        canvas.drawLine(cx - half, cy - half + arm, cx - half, cy - half + inset, paint)
+        canvas.drawLine(cx - half + inset, cy - half, cx - half + arm, cy - half, paint)
+        // 右上
+        canvas.drawLine(cx + half - arm, cy - half, cx + half - inset, cy - half, paint)
+        canvas.drawLine(cx + half, cy - half + inset, cx + half, cy - half + arm, paint)
+        // 左下
+        canvas.drawLine(cx - half, cy + half - arm, cx - half, cy + half - inset, paint)
+        canvas.drawLine(cx - half + inset, cy + half, cx - half + arm, cy + half, paint)
+        // 右下
+        canvas.drawLine(cx + half - arm, cy + half, cx + half - inset, cy + half, paint)
+        canvas.drawLine(cx + half, cy + half - arm, cx + half, cy + half - inset, paint)
+        // 恢复描边参数，避免影响后续刻度绘制
+        paint.strokeWidth = originalStroke
+        paint.alpha = originalAlpha
+    }
 
     private fun drawTickRing(canvas: Canvas, cx: Float, cy: Float, radius: Float) {
         canvas.drawCircle(cx, cy, radius, ringPaint)
@@ -180,6 +223,15 @@ class OpticalReticleView @JvmOverloads constructor(
     private fun drawCrosshair(canvas: Canvas, cx: Float, cy: Float) {
         val len = dp(26f)
         val gap = dp(8f)
+        // 双层光学线：先画高对比外光晕，再压 2dp 核心实线
+        crossGlowPaint.pathEffect = dash
+        canvas.drawLine(cx - len, cy, cx - gap, cy, crossGlowPaint)
+        canvas.drawLine(cx + gap, cy, cx + len, cy, crossGlowPaint)
+        canvas.drawLine(cx, cy - len, cx, cy - gap, crossGlowPaint)
+        canvas.drawLine(cx, cy + gap, cx, cy + len, crossGlowPaint)
+        crossGlowPaint.pathEffect = null
+        canvas.drawCircle(cx, cy, dp(8f), crossGlowPaint)
+
         crossPaint.pathEffect = dash
         canvas.drawLine(cx - len, cy, cx - gap, cy, crossPaint)
         canvas.drawLine(cx + gap, cy, cx + len, cy, crossPaint)
@@ -221,7 +273,9 @@ class OpticalReticleView @JvmOverloads constructor(
         fill.close()
         canvas.drawPath(fill, fillPaint)
         canvas.drawPath(path, glowPaint)
+        trackPaint.shader = FiberStyle.linear(context, width, height)
         canvas.drawPath(path, trackPaint)
+        trackPaint.shader = null
     }
 
     /** 跑道在屏幕上的最大半径，用于把刻度环撑到跑道外侧。 */

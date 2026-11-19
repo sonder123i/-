@@ -42,32 +42,33 @@ class TacticalJoystickView @JvmOverloads constructor(
     private val dp = { v: Float -> v * density }
 
     private val basePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = context.getColor(R.color.pf_capsule_surface)
+        color = context.getColor(R.color.dr_overlay_round)
         style = Paint.Style.FILL
     }
     private val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = context.getColor(R.color.pf_panel_stroke)
+        color = context.getColor(R.color.dr_overlay_rim_silver)
         style = Paint.Style.STROKE
         strokeWidth = dp(1.5f)
     }
     private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0x2E8A94A6
+        color = context.getColor(R.color.dr_overlay_text_secondary)
+        alpha = 0x2E
         style = Paint.Style.STROKE
         strokeWidth = dp(1f)
     }
     private val ballPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = context.getColor(R.color.pf_volt)
-        setShadowLayer(dp(12f), 0f, 0f, context.getColor(R.color.pf_volt_a60))
+        color = context.getColor(R.color.dr_overlay_ice)
+        setShadowLayer(dp(12f), 0f, 0f, context.getColor(R.color.dr_ice_a45))
     }
     private val ballStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = context.getColor(R.color.pf_canvas)
+        color = context.getColor(R.color.dr_overlay_text_primary)
         style = Paint.Style.STROKE
         strokeWidth = dp(1.2f)
     }
     private val lockPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = dp(1.8f)
-        color = 0xDD0B0E11.toInt()
+        color = context.getColor(R.color.dr_overlay_text_primary)
     }
     private val lockPath = Path()
 

@@ -24,6 +24,14 @@
         android:background="@drawable/bg_map_lock_border"
         android:visibility="gone" />
 
+    <!-- 顶部 36dp 渐隐保护层 -->
+    <View
+        android:id="@+id/editorTopScrim"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:layout_gravity="top"
+        android:background="@drawable/bg_top_scrim" />
+
     <TextView
         android:id="@+id/freehandLockChip"
         android:layout_width="wrap_content"
@@ -32,10 +40,13 @@
         android:layout_marginStart="14dp"
         android:layout_marginTop="205dp"
         android:background="@drawable/bg_capsule"
+        android:drawableStart="@drawable/ic_pencil"
+        android:drawablePadding="6dp"
+        android:drawableTint="@color/pf_volt"
         android:gravity="center"
         android:paddingStart="14dp"
         android:paddingEnd="14dp"
-        android:text="✏️ 地图已锁定 · 单指画线"
+        android:text="地图已锁定 · 单指画线"
         android:textColor="@color/pf_volt"
         android:textSize="12sp"
         android:textStyle="bold"
@@ -82,7 +93,7 @@
             android:textSize="10sp" />
     </LinearLayout>
 
-    <TextView
+    <ImageView
         android:id="@+id/btnLocateMe"
         android:layout_width="48dp"
         android:layout_height="48dp"
@@ -91,19 +102,33 @@
         android:layout_marginBottom="240dp"
         android:background="@drawable/bg_round_dark"
         android:contentDescription="定位到我当前位置"
-        android:gravity="center"
-        android:text="🎯"
-        android:textColor="@color/pf_cyan"
-        android:textSize="20sp" />
+        android:padding="13dp"
+        android:src="@drawable/ic_crosshair"
+        app:tint="@color/pf_text_primary" />
 
-    <LinearLayout
+    <com.zcshou.gogogo.run.ui.glass.CausticGlassView
+        android:id="@+id/editorTopPanel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="top"
         android:layout_margin="10dp"
-        android:background="@drawable/bg_capsule"
-        android:orientation="vertical"
-        android:padding="10dp">
+        android:elevation="8dp"
+        app:adaptiveLensScale="true"
+        app:backdropSourceId="@id/editMapView"
+        app:bevelWidth="14dp"
+        app:cornerRadius="24dp"
+        app:dispersionStrength="0.10"
+        app:glassMaterial="regular"
+        app:glassTint="@color/dr_editor_optical_tint"
+        app:refractionFalloff="2"
+        app:refractionHeight="8dp"
+        app:sensorHighlight="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="10dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -116,12 +141,12 @@
                 android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:layout_weight="1"
-                android:background="@color/pf_canvas"
+                android:background="@drawable/bg_search_field"
                 android:hint="搜索操场 / 公园，一键飞跃"
                 android:imeOptions="actionSearch"
                 android:inputType="text"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
                 android:singleLine="true"
                 android:textColor="@color/pf_text_primary"
                 android:textColorHint="@color/pf_text_secondary"
@@ -137,22 +162,20 @@
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:text="搜索"
-                android:textColor="@color/pf_canvas"
+                android:textColor="@color/pf_on_primary"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
-            <TextView
+            <ImageView
                 android:id="@+id/btnClose"
-                android:layout_width="wrap_content"
+                android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_marginStart="6dp"
-                android:background="@drawable/bg_secondary_button"
-                android:gravity="center"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:text="✕"
-                android:textColor="@color/pf_text_primary"
-                android:textSize="15sp" />
+                android:background="@drawable/bg_glass_control"
+                android:contentDescription="关闭"
+                android:padding="11dp"
+                android:src="@drawable/ic_xmark"
+                app:tint="@color/pf_text_primary" />
         </LinearLayout>
 
         <LinearLayout
@@ -183,8 +206,11 @@
                     android:layout_height="34dp"
                     android:layout_weight="1"
                     android:background="@android:color/transparent"
+                    android:drawableStart="@drawable/ic_stadium"
+                    android:drawablePadding="4dp"
+                    android:drawableTint="@color/pf_text_secondary"
                     android:gravity="center"
-                    android:text="🏟️ 操场套模"
+                    android:text="操场套模"
                     android:textColor="@color/pf_text_secondary"
                     android:textSize="12sp" />
 
@@ -195,8 +221,11 @@
                     android:layout_marginStart="4dp"
                     android:layout_weight="1"
                     android:background="@android:color/transparent"
+                    android:drawableStart="@drawable/ic_location_line"
+                    android:drawablePadding="4dp"
+                    android:drawableTint="@color/pf_text_secondary"
                     android:gravity="center"
-                    android:text="📍 逐点连线"
+                    android:text="逐点连线"
                     android:textColor="@color/pf_text_secondary"
                     android:textSize="12sp" />
 
@@ -207,8 +236,11 @@
                     android:layout_marginStart="4dp"
                     android:layout_weight="1"
                     android:background="@android:color/transparent"
+                    android:drawableStart="@drawable/ic_pencil"
+                    android:drawablePadding="4dp"
+                    android:drawableTint="@color/pf_text_secondary"
                     android:gravity="center"
-                    android:text="✏️ 自由手绘"
+                    android:text="自由手绘"
                     android:textColor="@color/pf_text_secondary"
                     android:textSize="12sp" />
 
@@ -217,12 +249,12 @@
                     android:layout_width="wrap_content"
                     android:layout_height="34dp"
                     android:layout_marginStart="6dp"
-                    android:background="@drawable/bg_secondary_button"
+                    android:background="@drawable/bg_glass_control"
                     android:gravity="center"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
                     android:text="GPX"
-                    android:textColor="@color/pf_cyan"
+                    android:textColor="@color/pf_volt"
                     android:textSize="11sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -233,7 +265,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="拖动地图将真实操场对准屏幕中心绿框，支持 400m / 300m / 200m 标准田径场"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="拖动地图对准操场中心，选尺寸后锁定微调"
             android:textColor="@color/pf_text_secondary"
             android:textSize="11sp" />
 
@@ -242,6 +276,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
+            android:clipToPadding="false"
+            android:paddingEnd="16dp"
             android:scrollbars="none">
 
             <LinearLayout
@@ -330,9 +366,10 @@
                 android:id="@+id/switchSnap"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🧲 路网吸附"
+                android:text="路网吸附"
                 android:textColor="@color/pf_text_primary"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+        android:thumbTint="@color/pf_on_primary" />
 
             <TextView
                 android:id="@+id/snapHint"
@@ -341,9 +378,11 @@
                 android:layout_weight="1"
                 android:paddingStart="6dp"
                 android:paddingEnd="6dp"
-                android:text="自动贴合真实步道/公路（适合校外路跑）"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="自动贴合真实步道 / 公路"
                 android:textColor="@color/pf_text_secondary"
-                android:textSize="10sp" />
+                android:textSize="11sp" />
 
             <Switch
                 android:id="@+id/switchClose"
@@ -351,7 +390,8 @@
                 android:layout_height="wrap_content"
                 android:text="首尾闭合"
                 android:textColor="@color/pf_text_primary"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+        android:thumbTint="@color/pf_on_primary" />
         </LinearLayout>
 
         <TextView
@@ -363,18 +403,35 @@
             android:textColor="@color/pf_text_secondary"
             android:textSize="11sp"
             android:visibility="gone" />
-    </LinearLayout>
+        </LinearLayout>
+    </com.zcshou.gogogo.run.ui.glass.CausticGlassView>
 
-    <LinearLayout
+    <com.zcshou.gogogo.run.ui.glass.CausticGlassView
+        android:id="@+id/editorBottomDock"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:layout_margin="10dp"
-        android:background="@drawable/bg_capsule"
-        android:orientation="vertical"
-        android:padding="12dp">
+        android:elevation="8dp"
+        app:adaptiveLensScale="true"
+        app:backdropSourceId="@id/editMapView"
+        app:bevelWidth="14dp"
+        app:cornerRadius="24dp"
+        app:dispersionStrength="0.10"
+        app:glassMaterial="regular"
+        app:glassTint="@color/dr_editor_optical_tint"
+        app:refractionFalloff="2"
+        app:refractionHeight="8dp"
+        app:sensorHighlight="true">
 
         <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+        <LinearLayout
+            android:id="@+id/dockHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -384,17 +441,22 @@
                 android:id="@+id/lapMetersText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:layout_weight="1.15"
                 android:fontFeatureSettings="tnum"
-                android:text="单圈 -- m"
-                android:textColor="@color/pf_volt"
-                android:textSize="22sp"
+                android:letterSpacing="-0.02"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:text="单圈 --m"
+                android:textColor="@color/pf_text_primary"
+                android:textSize="34sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/editorStatus"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="0.85"
                 android:fontFeatureSettings="tnum"
                 android:gravity="end"
                 android:maxLines="2"
@@ -410,6 +472,7 @@
             android:orientation="vertical">
 
             <LinearLayout
+                android:id="@+id/presetAlignSeekRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
@@ -422,7 +485,7 @@
                     android:textColor="@color/pf_text_secondary"
                     android:textSize="11sp" />
 
-                <SeekBar
+                <com.zcshou.gogogo.run.ui.widget.VernierSeekBar
                     android:id="@+id/lapSeekAlign"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -441,17 +504,17 @@
                     android:textSize="11sp" />
             </LinearLayout>
 
-            <TextView
+            <com.zcshou.gogogo.run.ui.widget.SpecularButton
                 android:id="@+id/btnLock"
+                style="@style/Widget.App.Button.Primary"
                 android:layout_width="match_parent"
                 android:layout_height="46dp"
                 android:layout_marginTop="2dp"
-                android:background="@drawable/bg_primary_button"
-                android:gravity="center"
-                android:text="🔒 锁定跑道并微调"
-                android:textColor="@color/pf_canvas"
+                android:text="锁定当前跑道并微调"
                 android:textSize="14sp"
-                android:textStyle="bold" />
+                app:icon="@drawable/ic_lock_line"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp" />
         </LinearLayout>
 
         <com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer
@@ -481,51 +544,52 @@
                     android:layout_height="wrap_content"
                     android:text="微调 1m"
                     android:textColor="@color/pf_text_secondary"
-                    android:textSize="10sp" />
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
 
-                <TextView
+                <ImageView
                     android:id="@+id/dpLeft"
                     android:layout_width="36dp"
                     android:layout_height="32dp"
                     android:layout_marginStart="6dp"
                     android:background="@drawable/bg_secondary_button"
-                    android:gravity="center"
-                    android:text="←"
-                    android:textColor="@color/pf_text_primary"
-                    android:textSize="14sp" />
+                    android:contentDescription="微调"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_arrow_left_line"
+                    app:tint="@color/pf_text_primary" />
 
-                <TextView
+                <ImageView
                     android:id="@+id/dpUp"
                     android:layout_width="36dp"
                     android:layout_height="32dp"
                     android:layout_marginStart="4dp"
                     android:background="@drawable/bg_secondary_button"
-                    android:gravity="center"
-                    android:text="↑"
-                    android:textColor="@color/pf_text_primary"
-                    android:textSize="14sp" />
+                    android:contentDescription="微调"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_arrow_up_line"
+                    app:tint="@color/pf_text_primary" />
 
-                <TextView
+                <ImageView
                     android:id="@+id/dpDown"
                     android:layout_width="36dp"
                     android:layout_height="32dp"
                     android:layout_marginStart="4dp"
                     android:background="@drawable/bg_secondary_button"
-                    android:gravity="center"
-                    android:text="↓"
-                    android:textColor="@color/pf_text_primary"
-                    android:textSize="14sp" />
+                    android:contentDescription="微调"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_arrow_down_line"
+                    app:tint="@color/pf_text_primary" />
 
-                <TextView
+                <ImageView
                     android:id="@+id/dpRight"
                     android:layout_width="36dp"
                     android:layout_height="32dp"
                     android:layout_marginStart="4dp"
                     android:background="@drawable/bg_secondary_button"
-                    android:gravity="center"
-                    android:text="→"
-                    android:textColor="@color/pf_text_primary"
-                    android:textSize="14sp" />
+                    android:contentDescription="微调"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_arrow_right_line"
+                    app:tint="@color/pf_text_primary" />
 
                 <TextView
                     android:id="@+id/btnUnlock"
@@ -534,9 +598,12 @@
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_secondary_button"
+                    android:drawableStart="@drawable/ic_crosshair"
+                    android:drawablePadding="4dp"
+                    android:drawableTint="@color/pf_text_primary"
                     android:gravity="center"
-                    android:text="🎯 重新对准"
-                    android:textColor="@color/pf_cyan"
+                    android:text="重新对准"
+                    android:textColor="@color/pf_text_primary"
                     android:textSize="11sp" />
             </LinearLayout>
 
@@ -568,7 +635,7 @@
                     android:textColor="@color/pf_text_primary"
                     android:textSize="10sp" />
 
-                <SeekBar
+                <com.zcshou.gogogo.run.ui.widget.VernierSeekBar
                     android:id="@+id/rotateSeek"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -600,7 +667,7 @@
                     android:textColor="@color/pf_text_secondary"
                     android:textSize="11sp" />
 
-                <SeekBar
+                <com.zcshou.gogogo.run.ui.widget.VernierSeekBar
                     android:id="@+id/lapSeekLock"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -622,21 +689,23 @@
         </com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer>
 
         <LinearLayout
+            android:id="@+id/dockActionRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:orientation="horizontal">
 
-            <TextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnUndo"
+                style="@style/Widget.App.Button.Secondary"
                 android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_secondary_button"
-                android:gravity="center"
                 android:text="撤销"
-                android:textColor="@color/pf_text_primary"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                app:icon="@drawable/ic_arrow_left_line"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp" />
 
             <TextView
                 android:id="@+id/btnReverse"
@@ -650,49 +719,47 @@
                 android:textColor="@color/pf_text_primary"
                 android:textSize="12sp" />
 
-            <TextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnClear"
+                style="@style/Widget.App.Button.Secondary"
                 android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:layout_marginStart="6dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_secondary_button"
-                android:gravity="center"
                 android:text="清空"
-                android:textColor="@color/pf_text_primary"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                app:icon="@drawable/ic_delete"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp" />
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/dockSaveRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:orientation="horizontal">
 
-            <TextView
+            <com.zcshou.gogogo.run.ui.widget.SpecularButton
                 android:id="@+id/btnSave"
+                style="@style/Widget.App.Button.Primary"
                 android:layout_width="0dp"
                 android:layout_height="44dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_primary_button"
-                android:gravity="center"
                 android:text="保存路线"
-                android:textColor="@color/pf_canvas"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:textSize="14sp" />
 
-            <TextView
+            <ImageView
                 android:id="@+id/btnPreview"
                 android:layout_width="52dp"
                 android:layout_height="44dp"
                 android:layout_marginStart="8dp"
                 android:background="@drawable/bg_secondary_button"
                 android:contentDescription="3 秒两圈试跑预览"
-                android:gravity="center"
-                android:text="▶"
-                android:textColor="@color/pf_volt"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:padding="13dp"
+                android:src="@drawable/ic_play"
+                app:tint="@color/pf_text_primary" />
         </LinearLayout>
-    </LinearLayout>
+        </LinearLayout>
+    </com.zcshou.gogogo.run.ui.glass.CausticGlassView>
 </FrameLayout>

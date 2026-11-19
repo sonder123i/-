@@ -152,7 +152,7 @@ object RouteSources {
             .replace("\"", "&quot;")
         return buildString {
             append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-            append("<gpx version=\"1.1\" creator=\"DeepRun\" ")
+            append("<gpx version=\"1.1\" creator=\"${com.zcshou.gogogo.run.BrandConfig.SHARE_SCHEME}\" ")
             append("xmlns=\"http://www.topografix.com/GPX/1/1\">\n")
             append("  <trk><name>").append(escaped).append("</name><trkseg>\n")
             points.forEach {

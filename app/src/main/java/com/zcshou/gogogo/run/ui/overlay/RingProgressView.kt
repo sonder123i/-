@@ -2,15 +2,16 @@ package com.zcshou.gogogo.run.ui.overlay
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.View
 import com.zcshou.gogogo.R
-import com.zcshou.gogogo.run.ui.theme.FiberStyle
 
 /**
- * 环形进度（胶囊内嵌）：底环 + 荧光绿进度弧，支持 0..1 进度与呼吸点。
+ * 环形进度（胶囊内嵌）：黑曜石底环 + 冰青进度弧，支持 0..1 进度与呼吸点。
  */
 class RingProgressView @JvmOverloads constructor(
     context: Context,
@@ -25,16 +26,16 @@ class RingProgressView @JvmOverloads constructor(
         style = Paint.Style.STROKE
         strokeWidth = 2.5f * density
         strokeCap = Paint.Cap.ROUND
-        color = context.getColor(R.color.pf_stroke)
+        color = context.getColor(R.color.dr_overlay_recess)
     }
     private val progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2.5f * density
         strokeCap = Paint.Cap.ROUND
-        color = context.getColor(R.color.pf_volt)
+        color = context.getColor(R.color.dr_overlay_ice)
     }
     private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = context.getColor(R.color.pf_volt)
+        color = context.getColor(R.color.dr_overlay_ice)
     }
     private val rect = RectF()
 
@@ -56,11 +57,25 @@ class RingProgressView @JvmOverloads constructor(
         rect.set(inset, inset, width - inset, height - inset)
         canvas.drawArc(rect, 0f, 360f, false, trackPaint)
         if (progress > 0f) {
-            // V4.0 光纤渐变进度弧：中心近白、边缘泛冰青
-            progressPaint.shader = FiberStyle.linear(context, width, height)
+            // 冰青 → 近白 的冷光进度弧
+            progressPaint.shader = LinearGradient(
+                0f, 0f, width.toFloat(), height.toFloat(),
+                intArrayOf(
+                    context.getColor(R.color.dr_overlay_ice),
+                    0xFFFFFFFF.toInt()
+                ),
+                null, Shader.TileMode.CLAMP
+            )
             canvas.drawArc(rect, -90f, 360f * progress, false, progressPaint)
         }
-        dotPaint.shader = FiberStyle.linear(context, width, height)
+        dotPaint.shader = LinearGradient(
+            0f, 0f, width.toFloat(), height.toFloat(),
+            intArrayOf(
+                context.getColor(R.color.dr_overlay_ice),
+                0xFFFFFFFF.toInt()
+            ),
+            null, Shader.TileMode.CLAMP
+        )
         dotPaint.alpha = pulseAlpha
         canvas.drawCircle(width / 2f, height / 2f, 2.2f * density, dotPaint)
     }

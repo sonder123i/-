@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/hubPanel"
     android:layout_width="210dp"
     android:layout_height="250dp"
@@ -23,40 +25,43 @@
             android:layout_weight="1"
             android:gravity="center_vertical"
             android:text="≡ 拖动位置"
-            android:textColor="@color/pf_text_secondary"
+            android:textColor="@color/dr_overlay_text_secondary"
             android:textSize="11sp" />
 
-        <TextView
+        <ImageView
             android:id="@+id/btnRoamHubLock"
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:background="@drawable/bg_round_dark"
-            android:gravity="center"
-            android:text="🔓"
-            android:textColor="@color/pf_text_secondary"
-            android:textSize="12sp" />
+            android:contentDescription="摇杆锁定"
+            android:padding="7dp"
+            android:src="@drawable/ic_lock_open_line"
+            android:tint="@color/dr_overlay_text_secondary"
+            tools:ignore="UseAppTint" />
 
-        <TextView
+        <ImageView
             android:id="@+id/btnRoamHubLocate"
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:layout_marginStart="6dp"
             android:background="@drawable/bg_round_dark"
-            android:gravity="center"
-            android:text="⌖"
-            android:textColor="@color/pf_cyan"
-            android:textSize="15sp" />
+            android:contentDescription="回到当前位置"
+            android:padding="7dp"
+            android:src="@drawable/ic_crosshair"
+            android:tint="@color/dr_overlay_text_primary"
+            tools:ignore="UseAppTint" />
 
-        <TextView
+        <ImageView
             android:id="@+id/btnRoamHubHide"
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:layout_marginStart="6dp"
             android:background="@drawable/bg_round_dark"
-            android:gravity="center"
-            android:text="✕"
-            android:textColor="@color/pf_text_secondary"
-            android:textSize="12sp" />
+            android:contentDescription="隐藏"
+            android:padding="7dp"
+            android:src="@drawable/ic_xmark"
+            android:tint="@color/dr_overlay_text_secondary"
+            tools:ignore="UseAppTint" />
     </LinearLayout>
 
     <com.zcshou.gogogo.run.ui.overlay.TacticalJoystickView
@@ -80,7 +85,7 @@
             android:background="@drawable/bg_round_dark"
             android:gravity="center"
             android:text="步"
-            android:textColor="@color/pf_text_secondary"
+            android:textColor="@color/dr_overlay_text_secondary"
             android:textSize="12sp" />
 
         <TextView
@@ -92,7 +97,7 @@
             android:background="@drawable/bg_tab_selected"
             android:gravity="center"
             android:text="跑"
-            android:textColor="@color/pf_volt"
+            android:textColor="@color/dr_overlay_text_primary"
             android:textSize="12sp"
             android:textStyle="bold" />
 
@@ -105,7 +110,7 @@
             android:background="@drawable/bg_round_dark"
             android:gravity="center"
             android:text="骑"
-            android:textColor="@color/pf_text_secondary"
+            android:textColor="@color/dr_overlay_text_secondary"
             android:textSize="12sp" />
 
         <TextView
@@ -117,7 +122,7 @@
             android:background="@drawable/bg_round_dark"
             android:gravity="center"
             android:text="车"
-            android:textColor="@color/pf_text_secondary"
+            android:textColor="@color/dr_overlay_text_secondary"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -137,19 +142,19 @@
             android:fontFeatureSettings="tnum"
             android:maxLines="1"
             android:text="待命 · 3.6 m/s"
-            android:textColor="@color/pf_text_secondary"
+            android:textColor="@color/dr_overlay_text_secondary"
             android:textSize="11sp" />
 
         <TextView
             android:id="@+id/btnRoamHubStop"
             android:layout_width="wrap_content"
             android:layout_height="30dp"
-            android:background="@drawable/bg_danger_button"
+            android:background="@drawable/bg_overlay_danger_button"
             android:gravity="center"
             android:paddingStart="10dp"
             android:paddingEnd="10dp"
             android:text="结束"
-            android:textColor="@color/pf_bad"
+            android:textColor="@color/dr_overlay_danger"
             android:textSize="11sp"
             android:textStyle="bold" />
     </LinearLayout>

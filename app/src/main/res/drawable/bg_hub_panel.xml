@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 液态玻璃面板：高透白/深灰玻璃 + 0.5dp 中性亮边，无彩色外框 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="@color/pf_card_98" />
     <stroke
-        android:width="1.5dp"
+        android:width="0.5dp"
         android:color="@color/pf_panel_stroke" />
     <corners android:radius="24dp" />
 </shape>

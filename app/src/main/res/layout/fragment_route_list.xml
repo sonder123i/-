@@ -4,57 +4,25 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- V4.0 深海光学空间背景：径向环境背光 + 3% 等深线暗纹 -->
+    <!-- Apple 无色空间底色：浅灰 / 纯黑 + 极柔中性环境光 -->
     <com.zcshou.gogogo.run.ui.overlay.BathymetricBackdropView
+        android:id="@+id/homeBackdrop"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <LinearLayout
+    <!--
+        clipToPadding=false + paddingBottom=128dp：
+        内容可以自然滑入底部悬浮玻璃导航下方，产生真实模糊透视；
+        「所有轨迹仅保存在本机」完整露出在导航栏上方。
+        顶部/底部 inset 由 RouteListFragment 在运行时叠加。
+    -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/homeScroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="16dp"
-        android:paddingTop="10dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="6dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:letterSpacing="0.02"
-            android:text="@string/app_name"
-            android:textColor="@color/pf_volt"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/routeCountLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_capsule"
-            android:fontFeatureSettings="tnum"
-            android:paddingStart="10dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="10dp"
-            android:paddingBottom="4dp"
-            android:text="0 条路线"
-            android:textColor="@color/pf_text_secondary"
-            android:textSize="11sp" />
-    </LinearLayout>
-
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
         android:clipToPadding="false"
         android:fillViewport="true"
+        android:paddingBottom="124dp"
         android:scrollbars="none">
 
         <LinearLayout
@@ -62,48 +30,74 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="112dp">
+            android:paddingEnd="16dp">
 
-            <TextView
-                android:id="@+id/setupBanner"
+            <!-- 大标题 + 路线数量 -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/bg_hub_panel"
-                android:padding="12dp"
-                android:text="首次使用需完成 3 项基础授权 · 立即配置 >"
-                android:textColor="@color/pf_amber"
-                android:textSize="13sp"
-                android:visibility="gone" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="6dp"
+                android:paddingBottom="2dp">
 
-            <!-- 本周里程概览卡（V4.0 液态玻璃主遥测卡，陀螺仪随动高光） -->
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:letterSpacing="-0.02"
+                    android:shadowColor="@color/dr_text_float_shadow"
+                    android:shadowDx="0"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
+                    android:text="@string/app_name"
+                    android:textColor="@color/pf_text_primary"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/routeCountLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_capsule"
+                    android:fontFeatureSettings="tnum"
+                    android:paddingStart="10dp"
+                    android:paddingTop="5dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="5dp"
+                    android:shadowColor="@color/dr_text_float_shadow"
+                    android:shadowDx="0"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
+                    android:text="0 条路线"
+                    android:textColor="@color/pf_text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- 一行紧凑的玻璃信息条：本周累计 + 完成次数 + 战报入口 -->
             <com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer
                 android:id="@+id/weekCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                app:lgBevelWidth="6dp"
-                app:lgCaustics="true"
-                app:lgCornerRadius="20dp">
+                android:layout_marginTop="10dp"
+                android:elevation="0dp"
+                app:lgBevelWidth="5dp"
+                app:lgCaustics="false"
+                app:lgCornerRadius="18dp"
+                app:lgMatte="true">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="52dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="14dp">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:paddingStart="16dp"
+                    android:paddingEnd="14dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="本周已跑"
+                        android:text="本周"
                         android:textColor="@color/pf_text_secondary"
                         android:textSize="11sp" />
 
@@ -111,70 +105,156 @@
                         android:id="@+id/weekKm"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
                         android:fontFeatureSettings="tnum"
+                        android:shadowColor="@color/dr_text_float_shadow"
+                        android:shadowDx="0"
+                        android:shadowDy="1"
+                        android:shadowRadius="3"
                         android:text="0.00 km"
-                        android:textColor="@color/pf_volt"
-                        android:textSize="26sp"
+                        android:textColor="@color/pf_text_primary"
+                        android:textSize="18sp"
                         android:textStyle="bold" />
-                </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:orientation="vertical">
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="14dp"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@color/pf_stroke" />
 
                     <TextView
                         android:id="@+id/weekCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFeatureSettings="tnum"
+                        android:shadowColor="@color/dr_text_float_shadow"
+                        android:shadowDx="0"
+                        android:shadowDy="1"
+                        android:shadowRadius="3"
                         android:text="0 次"
-                        android:textColor="@color/pf_cyan"
-                        android:textSize="16sp"
+                        android:textColor="@color/pf_text_primary"
+                        android:textSize="13sp"
                         android:textStyle="bold" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="完成任务"
+                        android:drawableEnd="@drawable/ic_chevron_right"
+                        android:drawablePadding="2dp"
+                        android:drawableTint="@color/pf_text_secondary"
+                        android:gravity="center_vertical"
+                        android:text="战报"
                         android:textColor="@color/pf_text_secondary"
                         android:textSize="11sp" />
                 </LinearLayout>
-                </LinearLayout>
             </com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer>
 
-            <!-- 已保存路线胶囊切换条 -->
-            <HorizontalScrollView
+            <TextView
+                android:id="@+id/setupBanner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_hub_panel"
+                android:drawableStart="@drawable/ic_shield_check"
+                android:drawablePadding="8dp"
+                android:drawableTint="@color/pf_text_primary"
+                android:gravity="center_vertical"
+                android:padding="12dp"
+                android:text="首次使用需完成 3 项基础授权 · 立即配置"
+                android:textColor="@color/pf_bad"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <!-- 我的路线：右侧保留一个常驻的「导入口令」入口，好友发来口令可一步添加 -->
+            <LinearLayout
+                android:id="@+id/routeListHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:letterSpacing="0.06"
+                    android:text="我的路线"
+                    android:textColor="@color/pf_text_secondary"
+                    android:textSize="11sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnImportShare"
+                    style="@style/Widget.App.Button.Compact"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:minWidth="0dp"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="12dp"
+                    android:text="导入口令"
+                    android:textSize="11sp"
+                    app:icon="@drawable/ic_import"
+                    app:iconGravity="textStart"
+                    app:iconPadding="5dp"
+                    app:iconSize="14dp"
+                    app:iconTint="@color/pf_text_primary" />
+            </LinearLayout>
+
+            <!-- V5.2 横向玻璃透镜轨道：外层高透长胶囊 + 内层弹簧选中透镜 -->
+            <com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer
                 android:id="@+id/routeChipScroll"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:scrollbars="none"
-                android:visibility="gone">
+                android:layout_marginTop="8dp"
+                android:elevation="0dp"
+                android:visibility="gone"
+                app:lgBevelWidth="5dp"
+                app:lgCaustics="false"
+                app:lgCornerRadius="19dp"
+                app:lgInteractive="false"
+                app:lgLens="true">
 
-                <LinearLayout
-                    android:id="@+id/routeChipRow"
-                    android:layout_width="wrap_content"
+                <HorizontalScrollView
+                    android:id="@+id/routeChipScrollView"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal" />
-            </HorizontalScrollView>
+                    android:clipToPadding="false"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:scrollbars="none">
 
-            <!-- 当前主路线卡 -->
+                    <LinearLayout
+                        android:id="@+id/routeChipRow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp" />
+                </HorizontalScrollView>
+            </com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer>
+
+            <!-- 当前主路线卡（液态玻璃） -->
             <include
                 android:id="@+id/routeMainCard"
                 layout="@layout/item_route_card"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp" />
 
-            <!-- 空状态：首次建圈引导卡 -->
+            <!-- 空状态：首次建圈引导卡（无边框玻璃） -->
             <LinearLayout
                 android:id="@+id/routeEmpty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/bg_capsule"
+                android:background="@drawable/bg_hub_panel"
                 android:gravity="center_horizontal"
                 android:orientation="vertical"
                 android:paddingStart="20dp"
@@ -186,14 +266,14 @@
                 <ImageView
                     android:layout_width="112dp"
                     android:layout_height="84dp"
-                    android:contentDescription="大肥鱼跑道剪影"
+                    android:contentDescription="单色跑道线稿"
                     android:src="@drawable/ic_fish_track" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:text="第一次建圈？"
+                    android:text="还没有跑圈路线"
                     android:textColor="@color/pf_text_primary"
                     android:textSize="17sp"
                     android:textStyle="bold" />
@@ -203,104 +283,162 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:gravity="center"
-                    android:text="一键套模 400m 标准田径场\n也可以手绘你的校园环线"
+                    android:text="新建一条操场路线，或导入好友发来的口令\n操场套模 · 自由手绘 · 路网贴合"
                     android:textColor="@color/pf_text_secondary"
                     android:textSize="12sp" />
 
-                <TextView
+                <com.zcshou.gogogo.run.ui.widget.SpecularButton
                     android:id="@+id/btnEmptyCreate"
+                    style="@style/Widget.App.Button.Primary"
                     android:layout_width="match_parent"
                     android:layout_height="46dp"
                     android:layout_marginTop="14dp"
-                    android:background="@drawable/bg_primary_button"
-                    android:gravity="center"
-                    android:text="🏟️ 从操场套模开始"
-                    android:textColor="@color/pf_canvas"
+                    android:text="新建跑圈路线"
                     android:textSize="14sp"
-                    android:textStyle="bold" />
+                    app:icon="@drawable/ic_plus"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEmptyImport"
+                    style="@style/Widget.App.Button.Secondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="42dp"
+                    android:layout_marginTop="8dp"
+                    android:text="从分享口令导入"
+                    android:textSize="13sp"
+                    app:icon="@drawable/ic_import"
+                    app:iconGravity="textStart"
+                    app:iconPadding="7dp"
+                    app:iconSize="17dp"
+                    app:iconTint="@color/pf_text_primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center"
+                    android:text="好友在路线卡点「分享口令」，把整段发给你即可"
+                    android:textColor="@color/pf_text_tertiary"
+                    android:textSize="10sp" />
             </LinearLayout>
 
-            <!-- 路线工坊 -->
-            <LinearLayout
+            <!-- 路线工坊：无边框圆角玻璃卡片 -->
+            <TextView
+                android:id="@+id/routeWorkshopTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:letterSpacing="0.06"
+                android:text="路线工坊"
+                android:textColor="@color/pf_text_secondary"
+                android:textSize="11sp" />
+
+            <com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer
                 android:id="@+id/workshopCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_matte_card"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="14dp">
+                android:layout_marginTop="8dp"
+                android:elevation="0dp"
+                app:lgBevelWidth="5dp"
+                app:lgCaustics="false"
+                app:lgCornerRadius="22dp"
+                app:lgMatte="true">
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="0.65"
-                    android:orientation="vertical">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
 
-                    <TextView
-                        android:id="@+id/btnNewRoute"
-                        android:layout_width="match_parent"
-                        android:layout_height="52dp"
-                        android:background="@drawable/bg_primary_button"
-                        android:gravity="center"
-                        android:text="+ 新建跑圈路线"
-                        android:textColor="@color/pf_canvas"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="match_parent"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:gravity="center"
-                        android:text="支持操场一键套模 / 校园自定义画线"
-                        android:textColor="@color/pf_text_secondary"
-                        android:textSize="10sp" />
+                        android:layout_weight="0.62"
+                        android:orientation="vertical">
+
+                        <com.zcshou.gogogo.run.ui.widget.SpecularButton
+                            android:id="@+id/btnNewRoute"
+                            style="@style/Widget.App.Button.Primary"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:text="新建跑圈路线"
+                            android:textSize="15sp"
+                            app:icon="@drawable/ic_plus"
+                            app:iconGravity="textStart"
+                            app:iconPadding="8dp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:gravity="center"
+                            android:text="操场一键套模 / 校园自定义画线"
+                            android:textColor="@color/pf_text_secondary"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_weight="0.38"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnQuickPreset"
+                            style="@style/Widget.App.Button.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="38dp"
+                            android:text="操场套模"
+                            android:textSize="12sp"
+                            app:icon="@drawable/ic_stadium"
+                            app:iconGravity="textStart"
+                            app:iconPadding="8dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnQuickFree"
+                            style="@style/Widget.App.Button.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="38dp"
+                            android:layout_marginTop="6dp"
+                            android:text="自由手绘"
+                            android:textSize="12sp"
+                            app:icon="@drawable/ic_pencil"
+                            app:iconGravity="textStart"
+                            app:iconPadding="8dp" />
+                    </LinearLayout>
                 </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
-                    android:layout_weight="0.35"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/btnQuickPreset"
-                        android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_secondary_button"
-                        android:gravity="center"
-                        android:text="🏟️ 操场套模"
-                        android:textColor="@color/pf_text_primary"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/btnQuickFree"
-                        android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_secondary_button"
-                        android:gravity="center"
-                        android:text="✏️ 自由手绘"
-                        android:textColor="@color/pf_text_primary"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </LinearLayout>
+            </com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer>
 
             <TextView
-                android:id="@+id/btnImportShare"
-                android:layout_width="match_parent"
-                android:layout_height="34dp"
-                android:layout_marginTop="8dp"
-                android:background="?android:attr/selectableItemBackground"
-                android:gravity="center"
-                android:text="🔗 从 DEEPRUN:// 口令导入路线"
-                android:textColor="@color/pf_cyan"
-                android:textSize="12sp" />
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="8dp"
+                android:text="所有轨迹仅保存在本机"
+                android:textColor="@color/pf_text_tertiary"
+                android:textSize="10sp" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-    </LinearLayout>
+
+    <!-- iOS 26 Scroll Edge Effect：内容滚入状态栏时由清晰渐变到模糊（API 31+ GPU，低版本回退遮罩） -->
+    <com.example.liquidglass.ScrollEdgeBlurView
+        android:id="@+id/topEdgeBlur"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:layout_gravity="top"
+        android:visibility="invisible" />
+
+    <!-- 轻量底色渐隐：压住状态栏图标的对比度，不再整条遮挡模糊 -->
+    <View
+        android:id="@+id/topScrim"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:layout_gravity="top"
+        android:alpha="0.55"
+        android:background="@drawable/bg_top_scrim" />
+
 </FrameLayout>

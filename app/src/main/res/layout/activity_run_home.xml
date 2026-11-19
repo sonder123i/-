@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/homeRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/pf_canvas">
 
+    <!-- 全屏内容：地图页可一直铺到状态栏与导航栏下方 -->
     <FrameLayout
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
@@ -15,7 +17,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="84dp"
+        android:layout_marginBottom="96dp"
         android:background="@drawable/bg_capsule"
         android:fontFeatureSettings="tnum"
         android:maxLines="2"
@@ -28,55 +30,120 @@
         android:textSize="12sp"
         android:visibility="gone" />
 
-    <LinearLayout
+    <!-- 独立投影层：在玻璃下方，避免 elevation 阴影压在玻璃上 -->
+    <com.zcshou.gogogo.run.ui.widget.NavShadowView
+        android:id="@+id/navShadow"
+        android:layout_width="match_parent"
+        android:layout_height="140dp"
+        android:layout_gravity="bottom" />
+
+    <!-- 玻璃背景：满宽轨道（左右 16dp 边距），高 72dp，胶囊半径 = 半高 -->
+    <com.zcshou.gogogo.run.ui.glass.CausticGlassView
+        android:id="@+id/navGlass"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
+        app:adaptiveLensScale="true"
+        app:adaptiveTint="false"
+        app:bevelWidth="12dp"
+        app:cornerRadius="36dp"
+        app:dispersionStrength="0.10"
+        app:glassMaterial="regular"
+        app:glassTint="@color/dr_nav_optical_tint"
+        app:refractionFalloff="2"
+        app:refractionHeight="8dp"
+        app:sensorHighlight="true" />
+
+    <!-- 导航容器：抬起透镜 / Tab 内容 / 手势层 -->
+    <FrameLayout
         android:id="@+id/bottomTabs"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <!-- 等宽格子；内留白 6dp 与透镜 56dp 由 LiquidTabBar 统一约束 -->
+        <FrameLayout
+            android:id="@+id/tabHost"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_gravity="center_vertical"
+            android:clipChildren="false">
+
+            <LinearLayout
+                android:id="@+id/tabRow"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:baselineAligned="false"
+                android:clipChildren="false"
+                android:orientation="horizontal"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp">
+
+            <com.zcshou.gogogo.run.ui.widget.NavTabView
+                android:id="@+id/tabRoutes"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                app:navGlyph="route"
+                app:navLabel="自动跑圈" />
+
+            <com.zcshou.gogogo.run.ui.widget.NavTabView
+                android:id="@+id/tabRoam"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                app:navGlyph="map"
+                app:navLabel="自由漫游" />
+
+            <com.zcshou.gogogo.run.ui.widget.NavTabView
+                android:id="@+id/tabEnv"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                app:navGlyph="shield"
+                app:navLabel="体检设置" />
+            </LinearLayout>
+        </FrameLayout>
+    </FrameLayout>
+
+    <!-- 滚动最小化胶囊：只显示当前 Tab，点击展开；外壳同样走真实液态玻璃 -->
+    <com.example.liquidglass.LiquidGlassView
+        android:id="@+id/navMiniGlass"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="18dp"
-        android:background="@drawable/bg_bottom_pill"
-        android:orientation="horizontal"
-        android:padding="5dp">
+        android:layout_marginBottom="20dp"
+        android:elevation="8dp"
+        android:visibility="gone"
+        app:adaptiveLensScale="true"
+        app:adaptiveTint="false"
+        app:bevelWidth="12dp"
+        app:cornerRadius="24dp"
+        app:dispersionStrength="0.04"
+        app:glassMaterial="regular"
+        app:glassTint="@color/dr_nav_optical_tint"
+        app:refractionHeight="8dp"
+        app:sensorHighlight="true">
 
         <TextView
-            android:id="@+id/tabRoutes"
+            android:id="@+id/navMini"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_tab_selected"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:drawablePadding="8dp"
             android:gravity="center"
-            android:paddingStart="18dp"
-            android:paddingTop="10dp"
-            android:paddingEnd="18dp"
-            android:paddingBottom="10dp"
-            android:text="自动跑圈"
+            android:paddingStart="22dp"
+            android:paddingEnd="22dp"
             android:textColor="@color/pf_volt"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tabRoam"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:paddingStart="18dp"
-            android:paddingTop="10dp"
-            android:paddingEnd="18dp"
-            android:paddingBottom="10dp"
-            android:text="自由漫游"
-            android:textColor="@color/pf_text_secondary"
-            android:textSize="13sp" />
-
-        <TextView
-            android:id="@+id/tabEnv"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:paddingStart="18dp"
-            android:paddingTop="10dp"
-            android:paddingEnd="18dp"
-            android:paddingBottom="10dp"
-            android:text="体检设置"
-            android:textColor="@color/pf_text_secondary"
-            android:textSize="13sp" />
-    </LinearLayout>
+    </com.example.liquidglass.LiquidGlassView>
 </FrameLayout>

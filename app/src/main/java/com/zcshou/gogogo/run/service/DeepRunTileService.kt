@@ -31,7 +31,7 @@ class DeepRunTileService : TileService() {
         val tile = qsTile ?: return
         val active = RunSessionHolder.sessionActive
         tile.state = if (active) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-        tile.label = if (active) "收尾" else "深度乐跑"
+        tile.label = if (active) "收尾" else "云迹跑圈"
         tile.icon = Icon.createWithResource(this, R.mipmap.ic_launcher)
         tile.updateTile()
     }

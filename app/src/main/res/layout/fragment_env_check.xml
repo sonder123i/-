@@ -1,185 +1,310 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- V4.0：深海光学空间背景（环境背光 + 3% 等深线） -->
+    <!-- Apple 无色空间底色 -->
     <com.zcshou.gogogo.run.ui.overlay.BathymetricBackdropView
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- clipToPadding=false + 104dp 底部留白：内容穿透底部玻璃导航且最后一项不被遮挡 -->
     <ScrollView
+        android:id="@+id/envScroll"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="108dp"
+        android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingTop="8dp"
-            android:paddingBottom="104dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="12dp"
-            android:background="@drawable/bg_hub_panel"
-            android:orientation="vertical"
-            android:padding="14dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="本地安全运行承诺"
-                android:textColor="@color/pf_volt"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:lineSpacingExtra="3dp"
-                android:text="✓ 零读取通讯录与相册\n✓ 零获取手机识别码 (IMEI)\n✓ 轨迹数据 100% 仅存手机本地\n✓ 停止运行即刻恢复真实 GPS"
+                android:letterSpacing="-0.02"
+                android:text="体检设置"
+                android:textColor="@color/pf_text_primary"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="开跑前请确保以下环境就绪，红灯项点击可跳转设置"
                 android:textColor="@color/pf_text_secondary"
                 android:textSize="12sp" />
-        </LinearLayout>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingStart="16dp"
-            android:paddingTop="8dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="4dp"
-            android:text="开跑前请确保以下环境就绪，红灯项点击可跳转设置"
-            android:textColor="@color/pf_text_secondary"
-            android:textSize="12sp" />
-
-        <include
-            android:id="@+id/rowMock"
-            layout="@layout/item_env_row" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/pf_stroke" />
-
-        <include
-            android:id="@+id/rowOverlay"
-            layout="@layout/item_env_row" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/pf_stroke" />
-
-        <include
-            android:id="@+id/rowBattery"
-            layout="@layout/item_env_row" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/pf_stroke" />
-
-        <include
-            android:id="@+id/rowWifi"
-            layout="@layout/item_env_row" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/pf_stroke" />
-
-        <include
-            android:id="@+id/rowTargetApp"
-            layout="@layout/item_env_row" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/pf_stroke" />
-
-        <include
-            android:id="@+id/rowTheme"
-            layout="@layout/item_env_row" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/pf_stroke" />
-
-        <include
-            android:id="@+id/rowRenderQuality"
-            layout="@layout/item_env_row" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/pf_stroke" />
-
-        <include
-            android:id="@+id/rowAbout"
-            layout="@layout/item_env_row" />
-
-        <TextView
-            android:id="@+id/btnAdvancedToggle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:background="?android:attr/selectableItemBackground"
-            android:padding="14dp"
-            android:text="高级与极客选项 ⌄"
-            android:textColor="@color/pf_text_secondary"
-            android:textSize="13sp" />
-
-        <LinearLayout
-            android:id="@+id/advancedGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <View
+            <!-- 本地安全运行承诺：无边框圆角玻璃卡 -->
+            <com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/pf_stroke" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:elevation="0dp"
+                app:lgBevelWidth="5dp"
+                app:lgCaustics="false"
+                app:lgCornerRadius="22dp"
+                app:lgInteractive="false"
+                app:lgMatte="true">
 
-            <include
-                android:id="@+id/rowWifiScan"
-                layout="@layout/item_env_row" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-            <View
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="安全承诺"
+                            android:src="@drawable/ic_shield_check"
+                            app:tint="@color/pf_text_primary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="本地安全运行承诺"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:lineSpacingExtra="5dp"
+                        android:text="无通讯录 / 相册读取   ·   无设备识别码\n轨迹 100% 仅存本机   ·   停止即恢复真实 GPS"
+                        android:textColor="@color/pf_text_secondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:layout_marginStart="4dp"
+                android:letterSpacing="0.06"
+                android:text="运行环境"
+                android:textColor="@color/pf_text_secondary"
+                android:textSize="11sp" />
+
+            <!-- 单个分组玻璃列表：行间只保留内缩进分隔线，不使用彩色外框 -->
+            <com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/pf_stroke" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:elevation="0dp"
+                app:lgBevelWidth="5dp"
+                app:lgCaustics="false"
+                app:lgCornerRadius="22dp"
+                app:lgInteractive="false"
+                app:lgMatte="true">
 
-            <include
-                android:id="@+id/rowInjectInterval"
-                layout="@layout/item_env_row" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
-            <View
+                    <include
+                        android:id="@+id/rowMock"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="34dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowOverlay"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="34dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowBattery"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="34dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowWifi"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="34dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowTargetApp"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="34dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowTheme"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="34dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowRenderQuality"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="34dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowUpdate"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="34dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowAbout"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="34dp"
+                        android:background="@color/pf_stroke" />
+
+                    <TextView
+                        android:id="@+id/btnAdvancedToggle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?android:attr/selectableItemBackground"
+                        android:drawableEnd="@drawable/ic_chevron_down"
+                        android:drawablePadding="8dp"
+                        android:drawableTint="@color/pf_text_tertiary"
+                        android:gravity="center_vertical"
+                        android:minHeight="52dp"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="高级与极客选项"
+                        android:textColor="@color/pf_text_secondary"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:id="@+id/advancedGroup"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginStart="34dp"
+                            android:background="@color/pf_stroke" />
+
+                        <include
+                            android:id="@+id/rowWifiScan"
+                            layout="@layout/item_env_row" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginStart="34dp"
+                            android:background="@color/pf_stroke" />
+
+                        <include
+                            android:id="@+id/rowInjectInterval"
+                            layout="@layout/item_env_row" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginStart="34dp"
+                            android:background="@color/pf_stroke" />
+
+                        <include
+                            android:id="@+id/rowShizuku"
+                            layout="@layout/item_env_switch" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer>
+
+            <!-- Apple 主按钮：图标 + 文字整体居中 -->
+            <com.zcshou.gogogo.run.ui.widget.SpecularButton
+                android:id="@+id/btnRefreshEnv"
+                style="@style/Widget.App.Button.Primary"
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/pf_stroke" />
+                android:layout_height="50dp"
+                android:layout_marginTop="16dp"
+                android:text="重新检测"
+                app:icon="@drawable/ic_rotate"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp" />
 
-            <include
-                android:id="@+id/rowShizuku"
-                layout="@layout/item_env_switch" />
-        </LinearLayout>
-
-        <Button
-            android:id="@+id/btnRefreshEnv"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:backgroundTint="@color/pf_volt"
-            android:text="重新检测"
-            android:textColor="@color/pf_canvas"
-            android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="10dp"
+                android:text="检测结果仅用于本机功能授权"
+                android:textColor="@color/pf_text_tertiary"
+                android:textSize="10sp" />
         </LinearLayout>
     </ScrollView>
+
+    <!-- iOS 26 Scroll Edge Effect：体检列表滚入状态栏时渐进虚化 -->
+    <com.example.liquidglass.ScrollEdgeBlurView
+        android:id="@+id/topEdgeBlur"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:layout_gravity="top"
+        android:visibility="invisible" />
+
+    <View
+        android:id="@+id/topScrim"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:layout_gravity="top"
+        android:alpha="0.55"
+        android:background="@drawable/bg_top_scrim" />
+
 </FrameLayout>

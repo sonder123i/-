@@ -1,15 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.zcshou.gogogo.run.ui.glass.CausticGlassView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    app:cardBackgroundColor="@color/pf_card"
-    app:cardCornerRadius="20dp"
-    app:cardElevation="0dp"
-    app:cardUseCompatPadding="true"
-    app:strokeColor="@color/pf_stroke"
-    app:strokeWidth="1dp">
+    android:layout_marginTop="10dp"
+    android:layout_marginBottom="2dp"
+    android:elevation="8dp"
+    app:adaptiveLensScale="true"
+    app:backdropSourceId="@id/homeBackdrop"
+    app:bevelWidth="16dp"
+    app:cornerRadius="24dp"
+    app:dispersionStrength="0.10"
+    app:glassMaterial="regular"
+    app:glassTint="@color/dr_card_optical_tint"
+    app:refractionFalloff="2"
+    app:refractionHeight="8dp"
+    app:sensorHighlight="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,19 +24,21 @@
         android:padding="16dp">
 
         <LinearLayout
+            android:id="@+id/routeHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="?android:attr/selectableItemBackground"
             android:orientation="horizontal">
 
             <com.zcshou.gogogo.run.ui.overlay.RouteThumbnailView
                 android:id="@+id/routeThumb"
-                android:layout_width="64dp"
-                android:layout_height="64dp" />
+                android:layout_width="58dp"
+                android:layout_height="58dp" />
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
+                android:layout_marginStart="14dp"
                 android:layout_weight="1"
                 android:orientation="vertical">
 
@@ -38,8 +46,14 @@
                     android:id="@+id/routeName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:shadowColor="@color/dr_text_float_shadow"
+                    android:shadowDx="0"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:textColor="@color/pf_text_primary"
-                    android:textSize="16sp"
+                    android:textSize="17sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -48,65 +62,91 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:fontFeatureSettings="tnum"
+                    android:letterSpacing="0.02"
+                    android:shadowColor="@color/dr_text_float_shadow"
+                    android:shadowDx="0"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:textColor="@color/pf_text_secondary"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
 
                 <TextView
                     android:id="@+id/routeSchedule"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="5dp"
                     android:background="?android:attr/selectableItemBackground"
+                    android:drawableStart="@drawable/ic_clock_line"
+                    android:drawablePadding="5dp"
+                    android:drawableTint="@color/pf_text_secondary"
                     android:fontFeatureSettings="tnum"
                     android:paddingTop="2dp"
                     android:paddingBottom="2dp"
+                    android:shadowColor="@color/dr_text_float_shadow"
+                    android:shadowDx="0"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:text="定时：未配置（点击设置）"
                     android:textColor="@color/pf_text_secondary"
                     android:textSize="11sp" />
             </LinearLayout>
 
-            <TextView
+            <ImageView
                 android:id="@+id/routeMenu"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:contentDescription="路线管理"
-                android:gravity="center"
-                android:text="⋮"
-                android:textColor="@color/pf_text_secondary"
-                android:textSize="20sp" />
+                android:padding="9dp"
+                android:src="@drawable/ic_more"
+                app:tint="@color/pf_text_secondary" />
         </LinearLayout>
 
-        <!-- 拆分主按钮：左侧记忆参数 1 步直达，右侧 ⚙ 微调 -->
+        <!-- 主操作：曜石黑实心胶囊（深色模式翻转为纯白） + 右侧微调 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="14dp"
             android:orientation="horizontal">
 
-            <TextView
+            <com.zcshou.gogogo.run.ui.widget.SpecularButton
                 android:id="@+id/btnQuickStart"
+                style="@style/Widget.App.Button.Primary"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_primary_button"
                 android:fontFeatureSettings="tnum"
-                android:gravity="center"
-                android:text="▶ 3.0km · 5'40&quot;"
-                android:textColor="@color/pf_canvas"
+                android:text="3.0 km · 5'40&quot;"
                 android:textSize="14sp"
-                android:textStyle="bold" />
+                app:icon="@drawable/ic_play"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp" />
 
-            <TextView
+            <ImageView
                 android:id="@+id/btnTune"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
                 android:layout_marginStart="8dp"
                 android:background="@drawable/bg_secondary_button"
-                android:gravity="center"
-                android:text="⚙"
-                android:textColor="@color/pf_text_primary"
-                android:textSize="18sp" />
+                android:contentDescription="参数微调"
+                android:padding="13dp"
+                android:src="@drawable/ic_sliders"
+                app:tint="@color/pf_text_primary" />
         </LinearLayout>
+
+        <!-- 分享：口令直接发到聊天软件，对方粘贴整段即可导入 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnShareCode"
+            style="@style/Widget.App.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="38dp"
+            android:layout_marginTop="8dp"
+            android:text="分享口令给好友"
+            android:textSize="12sp"
+            app:icon="@drawable/ic_share"
+            app:iconGravity="textStart"
+            app:iconPadding="6dp"
+            app:iconSize="15dp"
+            app:iconTint="@color/pf_text_primary" />
     </LinearLayout>
-</androidx.cardview.widget.CardView>
+</com.zcshou.gogogo.run.ui.glass.CausticGlassView>
