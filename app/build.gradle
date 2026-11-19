@@ -75,8 +75,8 @@ android {
         minSdkVersion 27
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 32
-        versionCode 1123
-        versionName '1.12.3' // https://semver.org/lang/zh-CN/
+        versionCode 1130
+        versionName '1.13.0' // https://semver.org/lang/zh-CN/
         buildConfigField "String", "UPDATE_MANIFEST_URL", buildConfigString(updateManifestUrl)
         buildConfigField "String", "UPDATE_BACKUP_URL", buildConfigString(updateBackupUrl)
         buildConfigField "String", "UPDATE_ALLOWED_HOSTS", buildConfigString(updateAllowedHosts)
