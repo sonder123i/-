@@ -197,7 +197,7 @@ dependencies {
     // --- run 包二开依赖（Kotlin + Coroutines + Room + DataStore） ---
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
     implementation 'androidx.room:room-runtime:2.6.1'
-    implementation 'androidx.room:room-ktx:2.6.1'
+    implementation 'androidx.room:room-ktx:2.8.5'
     ksp 'androidx.room:room-compiler:2.6.1'
     implementation 'androidx.datastore:datastore-preferences:1.1.1'
     // Phase 5：可选 Shizuku 联动（未安装/未授权时安全降级为弹窗提醒）
