@@ -1,8 +1,8 @@
 # 云迹
 
-云迹（CloudTrace）是一款 Android 位置模拟应用，支持地图选点、位置搜索、坐标输入、线路移动和悬浮摇杆，并提供位置与线路的收藏、历史记录和 GPX 导入导出。“影”寓意位置的影子，“梭”寓意在位置与线路之间穿梭。
+云迹（CloudTrace）是一款 Android 位置模拟应用，支持地图选点、位置搜索、坐标输入、线路移动和悬浮摇杆，并提供位置与线路的收藏、历史记录和 GPX 导入导出。「云迹」取位置在时间与路线上留下的轨迹之意。
 
-[查看发布版本](https://github.com/sonder123i/CloudTrace/releases) · [问题反馈](https://github.com/sonder123i/CloudTrace/issues)
+[访问官网](https://sonder123i.github.io/CloudTrace/) · [查看发布版本](https://github.com/sonder123i/CloudTrace/releases) · [问题反馈](https://github.com/sonder123i/CloudTrace/issues)
 
 ## 1. 功能
 

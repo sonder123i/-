@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>云迹 CloudTrace · Android 位置模拟</title>
+<meta name="description" content="云迹（CloudTrace）是一款开源的 Android 位置模拟应用，支持地图选点、线路巡航与悬浮摇杆。">
+<link rel="icon" href="./images/LOGO.png">
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #111820;
+    --line: #1e2a36;
+    --text: #e8eef5;
+    --muted: #93a4b5;
+    --volt: #6ee7ff;
+    --accent: #4f8cff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: radial-gradient(1200px 600px at 50% -10%, #152433 0%, var(--bg) 60%);
+    color: var(--text);
+    font: 16px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Microsoft YaHei", sans-serif;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 64px 24px 80px; }
+  header { display: flex; align-items: center; gap: 16px; }
+  header img { width: 64px; height: 64px; border-radius: 14px; }
+  h1 { margin: 0; font-size: 32px; letter-spacing: .5px; }
+  .en { color: var(--muted); font-size: 15px; font-weight: 400; margin-left: 8px; }
+  .tagline { margin: 28px 0 8px; font-size: 20px; }
+  .sub { color: var(--muted); margin: 0 0 32px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 32px 0; }
+  .btn {
+    display: inline-block; padding: 12px 22px; border-radius: 999px;
+    text-decoration: none; font-weight: 600; border: 1px solid transparent;
+  }
+  .primary { background: var(--accent); color: #fff; }
+  .primary:hover { filter: brightness(1.1); }
+  .ghost { border-color: var(--line); color: var(--text); }
+  .ghost:hover { border-color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 36px 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .card h3 { margin: 0 0 6px; font-size: 15px; color: var(--volt); font-weight: 600; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; }
+  h2 { font-size: 18px; margin: 40px 0 12px; }
+  ul { color: var(--muted); padding-left: 20px; }
+  a { color: var(--volt); }
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  code { background: #18222d; padding: 2px 6px; border-radius: 5px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="./images/LOGO.png" alt="云迹">
+    <h1>云迹<span class="en">CloudTrace</span></h1>
+  </header>
+
+  <p class="tagline">把位置选在地图上，把移动交给线路和摇杆。</p>
+  <p class="sub">开源的 Android 位置模拟应用：地图选点、线路巡航、悬浮摇杆，无需 Root。</p>
+
+  <div class="cta">
+    <a class="btn primary" href="https://github.com/sonder123i/CloudTrace/releases/latest">下载最新版本</a>
+    <a class="btn ghost" href="https://github.com/sonder123i/CloudTrace">查看源码</a>
+  </div>
+
+  <div class="grid">
+    <div class="card"><h3>位置模拟</h3><p>地图点选、地点搜索、经纬度输入，普通 / 卫星 / 夜间地图。</p></div>
+    <div class="card"><h3>线路巡航</h3><p>按目标公里数与配速自动移动，支持横向变道与防雷同收尾。</p></div>
+    <div class="card"><h3>悬浮摇杆</h3><p>步行 / 跑步 / 骑行档位，跨应用控制移动方向。</p></div>
+    <div class="card"><h3>数据留在本机</h3><p>位置、线路与历史只保存在设备上，不收集个人信息。</p></div>
+  </div>
+
+  <h2>安装要求</h2>
+  <ul>
+    <li>Android 8.0 及以上（<code>minSdk 27</code>），仅提供 <code>arm64-v8a</code> 安装包。</li>
+    <li>首次使用需在系统开发者选项中将「云迹」设为模拟位置信息应用。</li>
+    <li>使用悬浮摇杆需要授予悬浮窗权限。</li>
+  </ul>
+
+  <h2>更新与校验</h2>
+  <ul>
+    <li>应用内更新使用 ECDSA 签名清单；清单地址：<a href="./update/stable.json">/update/stable.json</a>。</li>
+    <li>APK 与更新清单均可从本页和 GitHub Releases 获取，请核对来源。</li>
+  </ul>
+
+  <footer>
+    以 GPL-3.0 发布，基于 <a href="https://github.com/ZCShou/GoGoGo">ZCShou/GoGoGo</a> 继续开发。
+    百度地图 SDK 为专有组件，不属 GPL 授权范围，详见
+    <a href="https://github.com/sonder123i/CloudTrace/blob/master/THIRD_PARTY_NOTICES.md">第三方许可说明</a>。
+  </footer>
+</div>
+</body>
+</html>
