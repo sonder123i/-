@@ -11,6 +11,9 @@ class UpdateUrlsTest {
         assertTrue(UpdateUrls.isAllowed("https://github.com/o/r/releases/download/v1/app.apk"))
         assertTrue(UpdateUrls.isAllowed("https://gitee.com/o/r/releases/download/v1/app.apk"))
         assertTrue(UpdateUrls.isAllowed("https://objects.githubusercontent.com/x/app.apk"))
+        // Gitee 发行版下载会 302 到 foruda.gitee.com，必须逐跳放行
+        assertTrue(UpdateUrls.isAllowed("https://foruda.gitee.com/attach_file/x/app.apk"))
+        assertTrue(UpdateUrls.isAllowed("https://raw.giteeusercontent.com/o/r/x/app.apk"))
         assertTrue(UpdateUrls.isAllowed(UpdateConfig.sources.first()))
     }
 
