@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""生成 GoGoGo 应用更新清单（schemaVersion=2，ECDSA P-256 签名）。
+"""生成 CloudTrace 应用更新清单（schemaVersion=2，ECDSA P-256 签名）。
 
 用法：
   python scripts/make_update_manifest.py \
-    --apk app/build/outputs/apk/release/Go_1.13.0_arm64-v8a_release.apk \
-    --mirror gh="GitHub Release"="https://github.com/<owner>/GoGoGo/releases/download/v1.13.0/Go_1.13.0_arm64-v8a_release.apk" \
-    --mirror gitee="Gitee 附件"="https://gitee.com/<owner>/GoGoGo/releases/download/v1.13.0/Go_1.13.0_arm64-v8a_release.apk" \
+    --apk app/build/outputs/apk/release/CloudTrace_1.13.0_arm64-v8a_release.apk \
+    --mirror gh="GitHub Release"="https://github.com/<owner>/CloudTrace/releases/download/v1.13.0/CloudTrace_1.13.0_arm64-v8a_release.apk" \
+    --mirror gitee="Gitee 附件"="https://gitee.com/<owner>/cloud-traces/releases/download/v1.13.0/CloudTrace_1.13.0_arm64-v8a_release.apk" \
     --notes-file release-notes/v1.13.0.md \
     --key-file "$GOGOGO_UPDATE_SIGNING_KEY" \
     --out docs/update/stable.json

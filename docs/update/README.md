@@ -68,7 +68,7 @@ GOGOGO_UPDATE_ALLOWED_HOSTS=<你的域名>,gitee.com,foruda.gitee.com,github.com
    ./gradlew :app:assembleRelease
    ```
 
-   产物：`app/build/outputs/apk/release/Go_<version>_arm64-v8a_release.apk`
+   产物：`app/build/outputs/apk/release/CloudTrace_<version>_arm64-v8a_release.apk`
 
 3. 上传 APK 到 GitHub Release / Gitee Release，拿到两个下载地址。
 4. 写更新日志，例如 `release-notes/v1.13.0.md`。
@@ -76,9 +76,9 @@ GOGOGO_UPDATE_ALLOWED_HOSTS=<你的域名>,gitee.com,foruda.gitee.com,github.com
 
    ```bash
    python scripts/make_update_manifest.py \
-     --apk app/build/outputs/apk/release/Go_1.13.0_arm64-v8a_release.apk \
-     --mirror gh="GitHub Release"="https://github.com/<owner>/CloudTrace/releases/download/v1.13.0/Go_1.13.0_arm64-v8a_release.apk" \
-     --mirror gitee="Gitee 附件"="https://gitee.com/<owner>/cloud-traces/releases/download/v1.13.0/Go_1.13.0_arm64-v8a_release.apk" \
+     --apk app/build/outputs/apk/release/CloudTrace_1.13.0_arm64-v8a_release.apk \
+     --mirror gh="GitHub Release"="https://github.com/<owner>/CloudTrace/releases/download/v1.13.0/CloudTrace_1.13.0_arm64-v8a_release.apk" \
+     --mirror gitee="Gitee 附件"="https://gitee.com/<owner>/cloud-traces/releases/download/v1.13.0/CloudTrace_1.13.0_arm64-v8a_release.apk" \
      --notes-file release-notes/v1.13.0.md \
      --key-file "$GOGOGO_UPDATE_SIGNING_KEY" \
      --out docs/update/stable.json
