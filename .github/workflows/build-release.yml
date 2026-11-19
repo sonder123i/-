@@ -98,7 +98,7 @@ jobs:
       - name: Verify APK signature
         run: |
           SIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
-          "$SIGNER" verify --print-certs --print-rotation-min-sdk-version "${{ env.APK_PATH }}"
+          "$SIGNER" verify --print-certs "${{ env.APK_PATH }}"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
