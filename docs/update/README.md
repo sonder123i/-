@@ -48,14 +48,14 @@ https://<owner>.github.io/CloudTrace/update/stable.json
 Gitee 备用源直接读 main 分支：
 
 ```
-https://gitee.com/<owner>/CloudTrace/raw/master/docs/update/stable.json
+https://gitee.com/<owner>/cloud-traces/raw/master/docs/update/stable.json
 ```
 
 如果实际账号/域名不同，不需要改代码，在 `local.properties` 覆盖：
 
 ```properties
 GOGOGO_UPDATE_URL=https://<你的域名>/CloudTrace/update/stable.json
-GOGOGO_UPDATE_BACKUP_URL=https://gitee.com/<owner>/CloudTrace/raw/master/docs/update/stable.json
+GOGOGO_UPDATE_BACKUP_URL=https://gitee.com/<owner>/cloud-traces/raw/master/docs/update/stable.json
 GOGOGO_UPDATE_ALLOWED_HOSTS=<你的域名>,gitee.com,github.com,objects.githubusercontent.com,release-assets.githubusercontent.com
 ```
 
@@ -78,7 +78,7 @@ GOGOGO_UPDATE_ALLOWED_HOSTS=<你的域名>,gitee.com,github.com,objects.githubus
    python scripts/make_update_manifest.py \
      --apk app/build/outputs/apk/release/Go_1.13.0_arm64-v8a_release.apk \
      --mirror gh="GitHub Release"="https://github.com/<owner>/CloudTrace/releases/download/v1.13.0/Go_1.13.0_arm64-v8a_release.apk" \
-     --mirror gitee="Gitee 附件"="https://gitee.com/<owner>/CloudTrace/releases/download/v1.13.0/Go_1.13.0_arm64-v8a_release.apk" \
+     --mirror gitee="Gitee 附件"="https://gitee.com/<owner>/cloud-traces/releases/download/v1.13.0/Go_1.13.0_arm64-v8a_release.apk" \
      --notes-file release-notes/v1.13.0.md \
      --key-file "$GOGOGO_UPDATE_SIGNING_KEY" \
      --out docs/update/stable.json

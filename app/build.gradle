@@ -43,7 +43,7 @@ def updateManifestUrl = updateValue(
 )
 def updateBackupUrl = updateValue(
     'GOGOGO_UPDATE_BACKUP_URL',
-    'https://gitee.com/sonder123i/CloudTrace/raw/master/docs/update/stable.json'
+    'https://gitee.com/sonder123i/cloud-traces/raw/master/docs/update/stable.json'
 )
 def updateAllowedHosts = updateValue(
     'GOGOGO_UPDATE_ALLOWED_HOSTS',
@@ -75,8 +75,8 @@ android {
         minSdkVersion 27
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 32
-        versionCode 1130
-        versionName '1.13.0' // https://semver.org/lang/zh-CN/
+        versionCode 1131
+        versionName '1.13.1' // https://semver.org/lang/zh-CN/
         buildConfigField "String", "UPDATE_MANIFEST_URL", buildConfigString(updateManifestUrl)
         buildConfigField "String", "UPDATE_BACKUP_URL", buildConfigString(updateBackupUrl)
         buildConfigField "String", "UPDATE_ALLOWED_HOSTS", buildConfigString(updateAllowedHosts)
