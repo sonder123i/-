@@ -9,6 +9,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Looper
+import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
 import com.zcshou.gogogo.run.ui.home.FreeRoamController
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -46,6 +47,10 @@ object RealLocationSampler {
         return fresh ?: bestNonMock(lm) ?: bestAny(lm)
     }
 
+    @RequiresPermission(anyOf = [
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    ])
     private fun bestNonMock(lm: LocationManager): Location? = runCatching {
         providers.asSequence()
             .mapNotNull { lm.getLastKnownLocation(it) }
@@ -53,12 +58,20 @@ object RealLocationSampler {
             .maxByOrNull { it.time }
     }.getOrNull()
 
+    @RequiresPermission(anyOf = [
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    ])
     private fun bestAny(lm: LocationManager): Location? = runCatching {
         providers.asSequence()
             .mapNotNull { lm.getLastKnownLocation(it) }
             .maxByOrNull { it.time }
     }.getOrNull()
 
+    @RequiresPermission(anyOf = [
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    ])
     private suspend fun requestNetworkFix(
         context: Context,
         lm: LocationManager

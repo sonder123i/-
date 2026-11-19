@@ -11,6 +11,7 @@ import android.graphics.drawable.ColorDrawable
 import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
 import android.widget.SeekBar
+import androidx.appcompat.widget.AppCompatSeekBar
 import androidx.core.graphics.ColorUtils
 import com.zcshou.gogogo.R
 import com.zcshou.gogogo.run.ui.theme.FiberStyle
@@ -27,7 +28,7 @@ class VernierSeekBar @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = android.R.attr.seekBarStyle
-) : SeekBar(context, attrs, defStyleAttr) {
+) : AppCompatSeekBar(context, attrs, defStyleAttr) {
 
     private val density = resources.displayMetrics.density
     private val dp = { v: Float -> v * density }

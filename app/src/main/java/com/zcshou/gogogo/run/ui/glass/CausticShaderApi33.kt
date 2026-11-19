@@ -3,6 +3,7 @@ package com.zcshou.gogogo.run.ui.glass
 import android.graphics.Canvas
 import android.os.Build
 import android.graphics.RuntimeShader
+import androidx.annotation.RequiresApi
 
 /** API 无关的焦散绘制接口，避免 API < 33 加载 RuntimeShader。 */
 internal interface CausticShader {
@@ -32,6 +33,7 @@ internal object CausticShaderFactory {
  * AGSL 只产出光，不采样背景；背景折射仍由 LiquidGlassView 的透镜管线负责。
  * 这样两层职责分离：SDF 折射 + 这层触摸焦散可以独立启停。
  */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 internal class CausticShaderApi33 : CausticShader {
 
     private val runtimeShader: RuntimeShader? = runCatching {
