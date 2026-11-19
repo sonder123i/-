@@ -56,7 +56,7 @@ https://gitee.com/<owner>/cloud-traces/raw/master/docs/update/stable.json
 ```properties
 GOGOGO_UPDATE_URL=https://<你的域名>/CloudTrace/update/stable.json
 GOGOGO_UPDATE_BACKUP_URL=https://gitee.com/<owner>/cloud-traces/raw/master/docs/update/stable.json
-GOGOGO_UPDATE_ALLOWED_HOSTS=<你的域名>,gitee.com,github.com,objects.githubusercontent.com,release-assets.githubusercontent.com
+GOGOGO_UPDATE_ALLOWED_HOSTS=<你的域名>,gitee.com,foruda.gitee.com,github.com,objects.githubusercontent.com,release-assets.githubusercontent.com
 ```
 
 ## 2. 发版

@@ -47,7 +47,7 @@ def updateBackupUrl = updateValue(
 )
 def updateAllowedHosts = updateValue(
     'GOGOGO_UPDATE_ALLOWED_HOSTS',
-    'sonder123i.github.io,gitee.com,raw.giteeusercontent.com,attachments.gitee.com,' +
+    'sonder123i.github.io,gitee.com,foruda.gitee.com,raw.giteeusercontent.com,attachments.gitee.com,' +
         'github.com,raw.githubusercontent.com,release-assets.githubusercontent.com,' +
         'objects.githubusercontent.com'
 )
@@ -75,8 +75,8 @@ android {
         minSdkVersion 27
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 32
-        versionCode 1131
-        versionName '1.13.1' // https://semver.org/lang/zh-CN/
+        versionCode 1132
+        versionName '1.13.2' // https://semver.org/lang/zh-CN/
         buildConfigField "String", "UPDATE_MANIFEST_URL", buildConfigString(updateManifestUrl)
         buildConfigField "String", "UPDATE_BACKUP_URL", buildConfigString(updateBackupUrl)
         buildConfigField "String", "UPDATE_ALLOWED_HOSTS", buildConfigString(updateAllowedHosts)

@@ -49,6 +49,7 @@ object UpdateConfig {
         "release-assets.githubusercontent.com",
         "objects.githubusercontent.com",
         "gitee.com",
+        "foruda.gitee.com",
         "raw.giteeusercontent.com",
         "attachments.gitee.com"
     )
