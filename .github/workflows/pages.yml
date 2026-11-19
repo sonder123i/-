@@ -7,6 +7,9 @@ on:
       - 'docs/update/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
+  # 官网源码在另一个仓库，定时拉取最新版本重新发布
+  schedule:
+    - cron: '0 3 * * *'
 
 permissions:
   contents: read
