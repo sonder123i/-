@@ -43,8 +43,13 @@ jobs:
 
       - name: Decode signing keystore
         run: |
+          if [ -z "${{ secrets.SIGNING_KEY }}" ]; then
+            echo "::error::SIGNING_KEY secret is empty; refusing to publish an unsigned APK"
+            exit 1
+          fi
           mkdir -p keystore
           echo "${{ secrets.SIGNING_KEY }}" | base64 -d > keystore/release.jks
+          test -s keystore/release.jks || { echo "::error::keystore decode failed"; exit 1; }
 
       - name: Build APK
         run: bash ./gradlew assembleRelease
@@ -52,8 +57,14 @@ jobs:
       - name: Get APK Path
         run: |
           APK_PATH=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
+          test -n "$APK_PATH" || { echo "::error::no release APK produced"; exit 1; }
           echo "APK_PATH=${APK_PATH}" >> $GITHUB_ENV
           echo "FILENAME=$(basename "$APK_PATH")" >> $GITHUB_ENV
+
+      - name: Verify APK signature
+        run: |
+          SIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
+          "$SIGNER" verify --print-certs "${{ env.APK_PATH }}"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
