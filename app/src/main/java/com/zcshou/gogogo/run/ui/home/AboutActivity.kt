@@ -26,7 +26,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 class AboutActivity : AppCompatActivity() {
 
     companion object {
-        private const val REPO_URL = "https://github.com/ZCShou/GoGoGo"
+        private const val REPO_URL = "https://github.com/sonder123i/CloudTrace"
     }
 
     private var updateDialog: AlertDialog? = null
