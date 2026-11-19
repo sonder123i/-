@@ -8,50 +8,28 @@ If you are using an old unsupported version, please update to an new supported v
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.10.x   | :white_check_mark: |
-| < 1.10   | :x:                |
+| 1.13.x  | :white_check_mark: |
+| < 1.13  | :x:                |
 
 ## 报告漏洞 / Reporting a Vulnerability
 
-团队和社区非常重视影梭中的安全问题。感谢您为负责任地披露您的发现所做的努力。
+请优先通过本仓库的 GitHub 私密安全公告报告漏洞：
 
-The team and community take security issues in GoGoGo seriously. We appreciate your efforts to responsibly disclose your findings. 
+<https://github.com/sonder123i/CloudTrace/security/advisories/new>
 
-如果您发现了任何安全漏洞，请给 zcsexp@gmail.com 发送邮件。邮件标题为 `[SECURITY][影梭] xxxxx`, 内容格式如下所示：
+Please report vulnerabilities through this repository's private security advisory:
 
-To report a security issue, email to zcsexp@gmail.com. The mail title should be `[SECURITY][GoGoGo] xxxxx` and content are as below:
-```
-### 漏洞描述 / Vulnerability description
+<https://github.com/sonder123i/CloudTrace/security/advisories/new>
 
+请尽量包含以下信息 / Please include:
 
+- 漏洞描述 / Vulnerability description
+- 影梭版本 / CloudTrace version
+- 系统版本 / OS version
+- 复现步骤 / Steps to reproduce
+- 可能的修复方式 / Suggested fix (optional)
 
-<!-- 请在上方详细地描述漏洞，然后删除该注释。  -->
-<!-- Please describe the vulnerability in detail above, then delete this comment. -->
+我们会在确认后尽快回复，并在修复发布后再公开细节。
+We will respond as soon as possible after triage, and disclose details after a fix ships.
 
-### 版本信息 / Version Info
-
-- 影梭版本 / GoGoGo Version : 
-- 系统版本 / OS Version : 
-
-<!-- 请在上方描述出问题的影梭版本及使用的系统版本，然后删除该注释。 -->
-<!-- Please describe version of GoGoGo and used OS above, then delete this comment. -->
-
-### 复现步骤 / Steps to Reproduce
-
-1. 
-2. 
-
-<!-- 请在上方描述如何复现该问题，然后删除该注释。 -->
-<!-- Please describe how to reproduce the bug, then delete this comment. -->
-
-### 如何修复 / How to fix
-
-
-
-<!-- 如果您有对应的修复方法，请在上方描述你的方法，然后删除该注释。欢迎直接提交一个 PR。 -->
-<!-- If you know how to fix, please describe your method above, then delete this comment. Welcome to submit a PR. -->
-```
-
-我们将努力尽快做出回复。感谢您的贡献！
-
-We'll endeavor to respond quickly. Thanks for your contribution.
+感谢您的贡献！ / Thanks for your contribution!

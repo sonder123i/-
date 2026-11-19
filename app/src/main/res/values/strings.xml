@@ -10,10 +10,10 @@
     <string name="app_history">历史记录</string>
     <string name="app_author">ZCShou</string>
     <string name="app_email">zcsexp@gmail.com</string>
-    <string name="app_statement">仅供学习使用，否则后果自负！</string>
+    <string name="app_statement">请仅用于合法用途，使用后果自负。</string>
     <string name="app_service_tips">云迹服务正在运行中</string>
     <string name="app_agreement">用户协议</string>
-    <string name="app_agreement_content">"1. 本软件专为学习 Android 开发使用，不会收集任何用户数据。"
+    <string name="app_agreement_content">"1. 本软件用于应用开发、地图与定位流程验证等合法场景，不会收集任何用户数据。"
     "严禁利用本软件侵犯他人隐私权或者用于游戏牟利，如软件使用者不能遵守此规定， 请立即删除。"
     "对于因用户使用本软件而造成自身或他人隐私泄露等任何不良后果，均由用户自行承担，软件作者不负任何责任。\n"
     "2. 本软件以 GNU General Public License v3.0 发布，源代码可从项目仓库获取；您有权依照该协议使用、修改与再分发本软件，并须遵守协议条款。\n"
@@ -121,7 +121,7 @@
     <string name="nav_menu_upgrade">检测更新</string>
     <string name="nav_menu_feedback">问题反馈</string>
     <string name="nav_menu_contact">联系作者</string>
-    <string name="nav_app_tips">仅供学习使用，否则后果自负!</string>
+    <string name="nav_app_tips">请仅用于合法用途，使用后果自负。</string>
 
     <!-- 主界面 -->
     <string name="label_longitude">经度</string>
