@@ -16,6 +16,7 @@ jobs:
     env:
       # 可选：配置后自动把 Release 与仓库信息同步到 Gitee
       GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
       # 可选：配置四项后切换到“无签名构建 + v3 lineage 签名”
       ROTATE_SIGNING_KEY: ${{ secrets.ROTATE_SIGNING_KEY }}
       ROTATE_KEY_PASSWORD: ${{ secrets.ROTATE_KEY_PASSWORD }}
