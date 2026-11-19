@@ -48,6 +48,9 @@ captures/
 # Google Services (e.g. APIs or Firebase)
 google-services.json
 
+# macOS metadata
+.DS_Store
+
 # Keystores must never be committed
 *.jks
 *.keystore
@@ -58,21 +61,14 @@ google-services.json
 .mimosa/
 .v2c/
 .video_agent/
+.tmp_mumu/
+.zcode/
 
 # Runtime artifacts pulled for debugging
 go_run.db
+*.db-shm
+*.db-wal
 
-# UI Automator dumps left in repo root
-/a.xml
-/h1.xml
-/w.xml
-/w2.xml
-/w3.xml
-/w4.xml
-/w5.xml
-/w6.xml
-/w7.xml
-/w8.xml
-/w9.xml
-/window.xml
-hub.png
+# UI Automator dumps & debug screenshots left in repo root
+/*.xml
+/*.png
