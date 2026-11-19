@@ -38,7 +38,7 @@ jobs:
             -d "access_token=${GITEE_TOKEN}" \
             -d "name=cloud-traces" \
             --data-urlencode "description=云迹（CloudTrace）— 开源 Android 位置模拟：地图选点、线路巡航、悬浮摇杆。GPL-3.0。" \
-            --data-urlencode "homepage=https://${OWNER}.github.io/CloudTrace/" > /dev/null
+            --data-urlencode "homepage=https://${OWNER}.github.io/new/" > /dev/null
           echo "::endgroup::"
 
           TAG="${{ inputs.tag }}"
