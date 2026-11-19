@@ -16,6 +16,11 @@ jobs:
     env:
       # 可选：配置后自动把 Release 与仓库信息同步到 Gitee
       GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+      # 可选：配置四项后切换到“无签名构建 + v3 lineage 签名”
+      ROTATE_SIGNING_KEY: ${{ secrets.ROTATE_SIGNING_KEY }}
+      ROTATE_KEY_PASSWORD: ${{ secrets.ROTATE_KEY_PASSWORD }}
+      ROTATE_KEY_ALIAS: ${{ secrets.ROTATE_KEY_ALIAS }}
+      SIGNING_LINEAGE: ${{ secrets.SIGNING_LINEAGE }}
     steps:
       # https://github.com/marketplace/actions/checkout
       - uses: actions/checkout@v5
@@ -38,13 +43,21 @@ jobs:
           cat << EOF > local.properties
           MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}
           MAPS_SAFE_CODE=${{ secrets.MAPS_SAFE_CODE }}
-          GOGOGO_KEYSTORE_FILE=keystore/release.jks
-          GOGOGO_KEYSTORE_PASSWORD=${{ secrets.KEY_STORE_PASSWORD }}
-          GOGOGO_KEY_ALIAS=${{ secrets.ALIAS }}
-          GOGOGO_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
           EOF
+          # 轮换模式：不配置 Gradle 签名，产出未签名 APK，后面用 lineage 签
+          if [ -z "${ROTATE_SIGNING_KEY:-}" ]; then
+            {
+              echo "GOGOGO_KEYSTORE_FILE=keystore/release.jks"
+              echo "GOGOGO_KEYSTORE_PASSWORD=${{ secrets.KEY_STORE_PASSWORD }}"
+              echo "GOGOGO_KEY_ALIAS=${{ secrets.ALIAS }}"
+              echo "GOGOGO_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}"
+            } >> local.properties
+          else
+            echo "Rotation signing enabled: Gradle will produce an unsigned APK"
+          fi
 
       - name: Decode signing keystore
+        if: env.ROTATE_SIGNING_KEY == ''
         run: |
           if [ -z "${{ secrets.SIGNING_KEY }}" ]; then
             echo "::error::SIGNING_KEY secret is empty; refusing to publish an unsigned APK"
@@ -64,10 +77,28 @@ jobs:
           echo "APK_PATH=${APK_PATH}" >> $GITHUB_ENV
           echo "FILENAME=$(basename "$APK_PATH")" >> $GITHUB_ENV
 
+      - name: Sign with rotated key
+        if: env.ROTATE_SIGNING_KEY != ''
+        run: |
+          set -euo pipefail
+          echo "$ROTATE_SIGNING_KEY" | base64 -d > /tmp/rotate.jks
+          echo "$SIGNING_LINEAGE" | base64 -d > /tmp/lineage.bin
+          test -s /tmp/rotate.jks || { echo "::error::ROTATE_SIGNING_KEY decode failed"; exit 1; }
+          test -s /tmp/lineage.bin || { echo "::error::SIGNING_LINEAGE decode failed"; exit 1; }
+          SIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
+          "$SIGNER" sign \
+            --ks /tmp/rotate.jks \
+            --ks-pass "env:ROTATE_KEY_PASSWORD" \
+            --ks-key-alias "$ROTATE_KEY_ALIAS" \
+            --lineage /tmp/lineage.bin \
+            --out "${APK_PATH%.apk}-signed.apk" "$APK_PATH"
+          mv "${APK_PATH%.apk}-signed.apk" "$APK_PATH"
+          rm -f /tmp/rotate.jks /tmp/lineage.bin
+
       - name: Verify APK signature
         run: |
           SIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
-          "$SIGNER" verify --print-certs "${{ env.APK_PATH }}"
+          "$SIGNER" verify --print-certs --print-rotation-min-sdk-version "${{ env.APK_PATH }}"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
