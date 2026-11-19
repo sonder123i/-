@@ -46,13 +46,15 @@
 
 ### 1.5 独立安装实例
 
+> 该功能尚未包含在当前开源版本中，本节仅描述后续规划。
+
 影梭可在满足应用内账号与会员条件时创建自身的独立安装实例，设置独立的应用名称、包名和地图配置，用于分别管理不同的配置与数据。该功能创建的是影梭自身的分身，不是任意第三方应用的多开容器。
 
 创建和安装过程会检查包信息、签名与授权状态。地图配置应与实例的实际包名和签名对应，具体要求以应用内提示为准。
 
 ## 2. 安装与启动
 
-当前维护版本面向 Android 10 及以上系统，正式发布包使用 ARM64（`arm64-v8a`）架构。历史发布版本的系统要求可能不同，下载时以对应版本说明为准。
+当前维护版本要求 Android 8.0 及以上系统（`minSdkVersion 27`），正式发布包使用 ARM64（`arm64-v8a`）架构。历史发布版本的系统要求可能不同，下载时以对应版本说明为准。
 
 ### 2.1 取得应用
 
@@ -66,9 +68,42 @@
 
 完成配置后，回到影梭选择一个位置或线路并启动。模拟位置应用的设置入口、后台运行与电池管理规则会随手机系统不同而变化。
 
-### 2.3 运行条件
+### 2.3 从源码构建
 
-后台持续运行、通知和定位权限会影响模拟服务的可用性。部分模拟及独立实例能力需要满足应用内显示的账号与会员条件；具体套餐和权限范围以当前版本界面为准。
+需要 JDK 17、Android SDK Platform 36 与 Build-Tools 36.0.0。
+
+1. 在仓库根目录创建 `local.properties`，写入 SDK 路径与百度地图密钥：
+
+   ```properties
+   sdk.dir=/path/to/Android/Sdk
+   MAPS_API_KEY=你的百度地图 AK
+   MAPS_SAFE_CODE=你的安全码
+   ```
+
+   没有密钥也能编译，只是地图相关功能不可用。
+
+2. 发布签名同样从 `local.properties`（或同名环境变量）读取，四项齐全才会启用，缺省时 `assembleRelease` 产出未签名 APK：
+
+   ```properties
+   GOGOGO_KEYSTORE_FILE=keystore/release.jks
+   GOGOGO_KEYSTORE_PASSWORD=...
+   GOGOGO_KEY_ALIAS=...
+   GOGOGO_KEY_PASSWORD=...
+   ```
+
+3. 构建：
+
+   ```bash
+   ./gradlew :app:assembleDebug      # 调试包
+   ./gradlew :app:testDebugUnitTest  # 单元测试
+   ./gradlew :app:assembleRelease    # 发布包（R8 + 资源压缩）
+   ```
+
+仓库不包含任何密钥或签名文件；第三方组件的许可见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+### 2.4 运行条件
+
+后台持续运行、通知和定位权限会影响模拟服务的可用性。系统定位策略、坐标系与目标应用自身逻辑也会影响最终效果。
 
 ## 3. 使用与反馈
 
