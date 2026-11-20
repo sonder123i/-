@@ -41,6 +41,30 @@ jobs:
             --data-urlencode "homepage=https://${OWNER}.github.io/CloudTrace/" > /dev/null
           echo "::endgroup::"
 
+          echo "::group::Sync signed update manifest"
+          MANIFEST_API="${API}/contents/docs/update/stable.json"
+          LOCAL_B64=$(base64 -w0 docs/update/stable.json)
+          REMOTE_JSON=$(curl -sS "${MANIFEST_API}?access_token=${GITEE_TOKEN}" || true)
+          REMOTE_SHA=$(printf '%s' "$REMOTE_JSON" | jq -r '.sha // empty' 2>/dev/null || true)
+          REMOTE_B64=$(printf '%s' "$REMOTE_JSON" | jq -r '.content // empty' 2>/dev/null | tr -d '\n' || true)
+          if [ "$REMOTE_B64" = "$LOCAL_B64" ]; then
+            echo "manifest already in sync"
+          elif [ -n "$REMOTE_SHA" ]; then
+            curl -fsS -X PUT "$MANIFEST_API" \
+              -d "access_token=${GITEE_TOKEN}" \
+              -d "sha=${REMOTE_SHA}" \
+              --data-urlencode "content=${LOCAL_B64}" \
+              --data-urlencode "message=chore(update): sync signed manifest" > /dev/null
+            echo "manifest updated"
+          else
+            curl -fsS -X POST "$MANIFEST_API" \
+              -d "access_token=${GITEE_TOKEN}" \
+              --data-urlencode "content=${LOCAL_B64}" \
+              --data-urlencode "message=chore(update): add signed manifest" > /dev/null
+            echo "manifest created"
+          fi
+          echo "::endgroup::"
+
           TAG="${{ inputs.tag }}"
           if [ -z "$TAG" ]; then
             echo "未指定 tag，仅同步仓库信息"
