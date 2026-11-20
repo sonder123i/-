@@ -120,14 +120,17 @@ def main():
 
     mirrors = []
     for spec in args.mirror:
-        match = re.match(r'([a-z0-9-]{1,32})=("?)([^"]{1,40})\2=(.+)$', spec)
+        # 格式 id="显示名"="URL"；URL 两侧的引号是分隔符，不能带进字段值
+        match = re.match(r'([a-z0-9-]{1,32})="?([^"]{1,40})"?="?([^"\s]+)"?\s*$', spec)
         if not match:
             raise SystemExit(f'--mirror 格式应为 id="名称"="URL"，收到: {spec}')
         mirrors.append({
             "id": match.group(1),
-            "name": match.group(3),
-            "url": match.group(4).strip(),
+            "name": match.group(2),
+            "url": match.group(3),
         })
+        if '"' in mirrors[-1]["url"] or not mirrors[-1]["url"].startswith("https://"):
+            raise SystemExit(f'--mirror 的 URL 必须是纯 https 地址，收到: {spec}')
     if not 1 <= len(mirrors) <= 8:
         raise SystemExit("镜像数量须在 1..8")
 

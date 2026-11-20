@@ -33,11 +33,16 @@ if (-not $apk) { throw "Release 中没有 APK" }
 
 $url = "https://github.com/$Repo/releases/download/$Tag/$($apk.Name)"
 $mirror = 'gh="GitHub Release"="' + $url + '"'
+
+$owner = $Repo.Split('/')[0]
+$giteeUrl = "https://gitee.com/$owner/cloud-traces/releases/download/$Tag/$($apk.Name)"
+$giteeMirror = 'gitee="Gitee 发行版"="' + $giteeUrl + '"'
 if ([string]::IsNullOrWhiteSpace($Notes)) { $Notes = "云迹 $Tag" }
 
 python scripts/make_update_manifest.py `
     --apk $apk.FullName `
     --mirror $mirror `
+    --mirror $giteeMirror `
     --notes $Notes `
     --key-file $KeyFile `
     --out docs/update/stable.json
