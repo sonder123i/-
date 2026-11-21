@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$OutDir = "$env:USERPROFILE\projects\gogogo-update-signing",
     [string]$KeyId = "gogogo-update-2026-11"
 )
