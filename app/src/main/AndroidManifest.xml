@@ -24,6 +24,10 @@
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
     <!-- 悬浮控制胶囊（向导第一步） -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- 支持云迹：Android 9 及以下保存赞赏码到公共相册需要；10+ 走 MediaStore 不再申请 -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
     <!-- 模拟位置应用（开发者选项内选择，不再读取设备识别码） -->
     <uses-permission
         android:name="android.permission.ACCESS_MOCK_LOCATION"
@@ -35,6 +39,8 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
+        <!-- 赞赏页保存后可以「打开微信」 -->
+        <package android:name="com.tencent.mm" />
     </queries>
 
     <application
@@ -171,6 +177,41 @@
             android:name=".run.ui.home.SetupWizardActivity"
             android:exported="false"
             android:label="基础配置"
+            android:theme="@style/Theme.PaceFlow.Light" />
+
+        <!-- 权限设置图文教程（真实截图 + 直达系统设置） -->
+        <activity
+            android:name=".run.ui.home.SetupGuideActivity"
+            android:exported="false"
+            android:label="权限图文教程"
+            android:theme="@style/Theme.PaceFlow.Light" />
+
+        <!-- 功能使用指南（第一次跑的 4 步 + 其他功能） -->
+        <activity
+            android:name=".run.ui.home.UsageGuideActivity"
+            android:exported="false"
+            android:label="使用指南"
+            android:theme="@style/Theme.PaceFlow.Light" />
+
+        <!-- 支持云迹：纯静态赞赏码页，不接支付 SDK -->
+        <activity
+            android:name=".run.ui.home.SupportActivity"
+            android:exported="false"
+            android:label="支持云迹"
+            android:theme="@style/Theme.PaceFlow.Light" />
+
+        <!-- 问题反馈与诊断：本地生成诊断信息、分享日志、预填 GitHub Issue -->
+        <activity
+            android:name=".run.ui.home.FeedbackActivity"
+            android:exported="false"
+            android:label="问题反馈与诊断"
+            android:theme="@style/Theme.PaceFlow.Light" />
+
+        <!-- 更新日志：渲染 assets/changelog.md -->
+        <activity
+            android:name=".run.ui.home.ChangelogActivity"
+            android:exported="false"
+            android:label="更新日志"
             android:theme="@style/Theme.PaceFlow.Light" />
 
         <!-- run 模块：Phase 2 引擎演示驱动页（Phase 4 由 RunHomeActivity 正式替代；adb 调试入口放 debug 变体） -->

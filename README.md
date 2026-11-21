@@ -118,3 +118,7 @@
 ### 3.2 问题反馈
 
 通过 [GitHub Issues](https://github.com/sonder123i/CloudTrace/issues) 或应用内“帮助与反馈”提交问题时，请提供云迹版本、手机型号、Android 版本、使用的位置或线路模式、权限状态与复现步骤。分享地图、线路文件或截图前，请检查是否包含家庭地址等个人信息。
+
+## 4. 角色形象署名
+
+应用内「鲸鲸」运动伴侣形象灵感源自社区同人角色「蓝色大肥鱼 / 鲸鱼娘」：基础形象原作 **上善无形**，女仆装二次设计 **ZipZipPipe**，遵循 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 非商业共享协议。该形象不属于本仓库的 GPLv3 授权范围；伴侣模块默认关闭，可在设置中完全隐藏。完整说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

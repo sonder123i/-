@@ -221,8 +221,12 @@ class UpdateManager internal constructor(
                         val chosen = UpdateManifestVerifier.choose(results.toList())
                         val previousManifest = previous
                         val value = chosen ?: previousManifest
-                        if (chosen != null) write(cacheFile(), chosen.envelope)
                         val current = getCurrentVersionCode()
+                        // 离线时缓存仍在：区分「缓存里确实有更新」和「上次检查本来就没更新」，
+                        // 两种情况都不该用红色报错吓人，提示里说清楚是旧结果即可。
+                        val cachedAvailable = chosen == null && previousManifest != null &&
+                            previousManifest.isInstallCandidate(current, Build.VERSION.SDK_INT)
+                        if (chosen != null) write(cacheFile(), chosen.envelope)
                         val available = value != null &&
                             value.isInstallCandidate(current, Build.VERSION.SDK_INT)
                         val canRemind = value?.let {
@@ -251,8 +255,10 @@ class UpdateManager internal constructor(
                                 showDialog = s.showDialog ||
                                     (chosen != null && available && canRemind),
                                 message = if (activeTask) s.message else when {
+                                    chosen == null && cachedAvailable ->
+                                        "本次检查失败 · 上次检查发现 v${previousManifest!!.versionName}，可直接下载"
                                     chosen == null && previousManifest != null ->
-                                        "检查失败，显示上次验证的更新信息"
+                                        "本次检查失败 · 上次检查未发现新版本"
                                     chosen == null && neverPublished -> "已是最新版本"
                                     chosen == null -> "检查更新失败，请重试"
                                     value != null && value.minSdk > Build.VERSION.SDK_INT ->
@@ -261,9 +267,13 @@ class UpdateManager internal constructor(
                                     else -> "已是最新版本"
                                 },
                                 errorCode = if (activeTask) s.errorCode
-                                else if (chosen == null && !neverPublished)
-                                    (firstFailure ?: "CHECK_FAILED")
-                                else ""
+                                else if (chosen == null && previousManifest == null &&
+                                    !neverPublished
+                                ) {
+                                    firstFailure ?: "CHECK_FAILED"
+                                } else {
+                                    ""
+                                }
                             )
                         }
                     } catch (e: CancellationException) {

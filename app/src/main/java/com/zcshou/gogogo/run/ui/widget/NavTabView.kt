@@ -118,6 +118,7 @@ class NavTabView @JvmOverloads constructor(
         spec = when (typed.getInt(R.styleable.NavTabView_navGlyph, 0)) {
             1 -> NavGlyphSpec.MAP
             2 -> NavGlyphSpec.SHIELD
+            3 -> NavGlyphSpec.SLIDERS
             else -> NavGlyphSpec.ROUTE
         }
         typed.getString(R.styleable.NavTabView_navLabel)?.let { label = it }

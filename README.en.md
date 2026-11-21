@@ -24,6 +24,10 @@ CloudTrace - A mock location app without root on Android 8.0+.
 
 [Chinese documentation](./README.md) · [Third-party notices](./THIRD_PARTY_NOTICES.md)
 
+## Character Artwork
+
+The in-app "Jingjing" companion is inspired by the community character "Blue Big Fish / Whale Girl": original base design by **上善无形**, maid redesign by **ZipZipPipe**, licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). The artwork is **not** covered by this repository's GPL-3.0 license. The companion is disabled by default and can be fully hidden in Settings. See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
+
 ## License
 GPL-3.0-only © ZCShou and CloudTrace contributors. Based on [ZCShou/GoGoGo](https://github.com/ZCShou/GoGoGo).
 

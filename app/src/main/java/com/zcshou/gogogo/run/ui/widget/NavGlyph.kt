@@ -7,8 +7,8 @@ import android.graphics.Path
 import kotlin.math.PI
 import kotlin.math.sin
 
-/** 首页三个 Tab 的图标规格。 */
-enum class NavGlyphSpec { ROUTE, MAP, SHIELD }
+/** 首页四个 Tab 的图标规格。 */
+enum class NavGlyphSpec { ROUTE, MAP, SHIELD, SLIDERS }
 
 /**
  * 双色调导航图标 + 选中动作（移植自 capybara 的 PhosphorNavigationIcon）。
@@ -78,6 +78,7 @@ object NavGlyph {
             NavGlyphSpec.ROUTE -> drawRoute(canvas, t)
             NavGlyphSpec.MAP -> drawMap(canvas, t)
             NavGlyphSpec.SHIELD -> drawShield(canvas, t)
+            NavGlyphSpec.SLIDERS -> drawSliders(canvas, t)
         }
         canvas.restore()
     }
@@ -171,5 +172,33 @@ object NavGlyph {
         canvas.restore()
 
         canvas.restore()
+    }
+
+    // ---------------------------------------------------------------- 设置
+
+    /**
+     * 三条滑杆 + 三个旋钮。动作：旋钮沿轨道错相滑动，
+     * 读作"参数被拨了一下"。
+     */
+    private fun drawSliders(canvas: Canvas, t: Float) {
+        val f = flourish(t)
+        val f2 = flourish(((t - 0.10f) / 0.90f).coerceIn(0f, 1f))
+        val knob1 = 8.5f + 2.4f * f
+        val knob2 = 15.5f - 2.4f * f2
+        val knob3 = 10f + 1.8f * f
+
+        val ys = floatArrayOf(6.5f, 12f, 17.5f)
+        for (y in ys) {
+            path.reset()
+            path.moveTo(4f, y)
+            path.lineTo(20f, y)
+            canvas.drawPath(path, stroke)
+        }
+
+        val knobs = floatArrayOf(knob1, knob2, knob3)
+        for (i in knobs.indices) {
+            canvas.drawCircle(knobs[i], ys[i], 2.2f, fill)
+            canvas.drawCircle(knobs[i], ys[i], 2.2f, stroke)
+        }
     }
 }

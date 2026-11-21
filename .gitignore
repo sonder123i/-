@@ -63,6 +63,10 @@ google-services.json
 .video_agent/
 .tmp_mumu/
 .zcode/
+# 权限图文教程的原始截图（含设备信息，永不入库；标注后的成品放 res/drawable-nodpi）
+setup-guide-raw/
+# 本地素材脚本的 Python 缓存
+__pycache__/
 
 # Runtime artifacts pulled for debugging
 go_run.db

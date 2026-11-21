@@ -15,6 +15,7 @@ import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.backup.NeverBackupStrategy;
 import com.elvishew.xlog.printer.file.clean.FileLastModifiedCleanStrategy;
 import com.elvishew.xlog.printer.file.naming.ChangelessFileNameGenerator;
+import com.zcshou.gogogo.run.diagnostics.CrashJournal;
 import com.zcshou.gogogo.run.ui.theme.ThemeHelper;
 
 import java.io.File;
@@ -27,6 +28,9 @@ public class GoApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        // 最早安装崩溃记录：写一份本地记录后原样交还系统，不做第三方上报。
+        CrashJournal.INSTANCE.install(this);
 
         initXlog();
 

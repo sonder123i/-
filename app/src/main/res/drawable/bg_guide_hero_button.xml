@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 深色引导卡内的反色按钮：浅色模式白底黑字，深色模式黑底白字。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/pf_on_primary" />
+    <corners android:radius="100dp" />
+</shape>

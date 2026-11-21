@@ -9,6 +9,23 @@ import android.provider.Settings
  */
 object SetupGuard {
 
+    enum class Brand { XIAOMI, HUAWEI, OPPO, VIVO, SAMSUNG, OTHER }
+
+    /** 粗略识别品牌，只用于引导文案，不参与任何权限判断。 */
+    fun brandFamily(): Brand {
+        val brand = ((Build.MANUFACTURER ?: "") + " " + (Build.BRAND ?: "")).lowercase()
+        return when {
+            brand.contains("xiaomi") || brand.contains("redmi") || brand.contains("poco") ->
+                Brand.XIAOMI
+            brand.contains("huawei") || brand.contains("honor") -> Brand.HUAWEI
+            brand.contains("oppo") || brand.contains("oneplus") ||
+                brand.contains("realme") || brand.contains("heytap") -> Brand.OPPO
+            brand.contains("vivo") || brand.contains("iqoo") -> Brand.VIVO
+            brand.contains("samsung") -> Brand.SAMSUNG
+            else -> Brand.OTHER
+        }
+    }
+
     private const val PREFS = "pf_setup"
     private const val KEY_MANUAL_DEV = "dev_options_manual"
     private const val KEY_DEV_INFO_VISITED = "dev_info_visited"
@@ -84,7 +101,7 @@ object SetupGuard {
         val model = (Build.BRAND ?: "").lowercase()
         return when {
             brand.contains("xiaomi") || brand.contains("redmi") || model.contains("redmi") ->
-                "进入「全部参数与信息」→ 连续点击「OS 版本 / MIUI 版本」7 次"
+                "进入「全部参数与信息」（HyperOS 2 为「版本信息」）→ 连续点击「OS 版本 / 软件版本号」7 次"
 
             brand.contains("huawei") || brand.contains("honor") ->
                 "连续点击「版本号」7 次，提示已进入开发者模式即可"
@@ -119,7 +136,7 @@ object SetupGuard {
      */
     fun locateVersionHint(): String =
         "往下滑到页面最底部，找到「版本号」" +
-            "（也可能叫「Build 号」「编译编号」「内部版本号」「OS 版本」）"
+            "（也可能叫「Build 号」「编译编号」「内部版本号」「OS 版本」「软件版本号」）"
 
     /**
      * 点版本号之后的预期反馈。

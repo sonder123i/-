@@ -82,6 +82,18 @@
         android:textSize="13sp"
         android:textStyle="bold" />
 
+    <TextView
+        android:id="@+id/guidePictures"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_secondary_button"
+        android:gravity="center"
+        android:text="不会设置？看图文步骤（含截图）"
+        android:textColor="@color/pf_text_primary"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

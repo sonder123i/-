@@ -16,6 +16,20 @@
 | liquidglass（QWEA0/Liquid-Glass-Android） | v2.0.11 | MIT | JitPack 依赖 |
 | GKD（gkd-kit/gkd） | — | GPL-3.0 | 仅界面选择器思路来源；如后续引入其代码，须保留版权与许可声明 |
 
+## 角色形象 / Character Artwork
+
+应用内「鲸鲸」伴侣形象**不属于 GPLv3 授权范围**，单独遵循以下非商业共享许可：
+
+| 项目 | 说明 |
+|---|---|
+| 形象来源 | 社区同人角色「蓝色大肥鱼 / 鲸鱼娘」 |
+| 基础形象原作 | 上善无形 |
+| 女仆装二次设计 | ZipZipPipe |
+| 许可 | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) |
+| 范围 | 仅作非商业开源项目兴趣联动；伴侣模块默认关闭，用户可在「设置 → 鲸鲸运动伴侣」完全隐藏 |
+
+再分发或商用前，请自行确认角色形象的授权范围；如无法满足 CC BY-NC-SA 4.0，请从 `app/src/main/res/drawable-nodpi/` 移除 `jing_*`、`map_jing_*`、`egg_*` 资源。
+
 ## 再分发者注意
 
 - 如果你只再分发本仓库的**源代码**，请保留 `LICENSE` 与本文件。

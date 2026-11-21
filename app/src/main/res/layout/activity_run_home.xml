@@ -109,7 +109,15 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 app:navGlyph="shield"
-                app:navLabel="体检设置" />
+                app:navLabel="体检" />
+
+            <com.zcshou.gogogo.run.ui.widget.NavTabView
+                android:id="@+id/tabSettings"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                app:navGlyph="sliders"
+                app:navLabel="设置" />
             </LinearLayout>
         </FrameLayout>
     </FrameLayout>

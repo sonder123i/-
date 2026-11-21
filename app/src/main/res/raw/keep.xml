@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    权限图文教程按资源名动态加载截图（SetupGuideActivity.bindShot），
+    支持页的微信赞赏码同理（SupportActivity）；两者都没有 R.drawable 静态引用。
+    release 的 shrinkResources 会把它们当成未使用资源删掉，这里显式保留。
+    鲸鲸双帧/异常头像/彩蛋卡都按资源名动态解析，一并保留，避免被裁掉。
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/setup_*,@drawable/support_*,@drawable/jing_*,@drawable/map_jing_*,@drawable/egg_*" />

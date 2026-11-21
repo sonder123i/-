@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ImageView
+        android:id="@+id/mascotImage"
+        android:layout_width="wrap_content"
+        android:layout_height="72dp"
+        android:layout_gravity="bottom|end"
+        android:adjustViewBounds="true"
+        android:contentDescription="鲸鲸"
+        android:scaleType="fitCenter" />
+
+    <TextView
+        android:id="@+id/mascotBubble"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:background="@drawable/bg_bubble"
+        android:elevation="2dp"
+        android:ellipsize="end"
+        android:maxLines="3"
+        android:maxWidth="170dp"
+        android:paddingStart="10dp"
+        android:paddingTop="7dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="7dp"
+        android:textColor="@color/pf_text_primary"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+</merge>

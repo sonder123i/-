@@ -31,6 +31,7 @@
             <enum name="route" value="0" />
             <enum name="map" value="1" />
             <enum name="shield" value="2" />
+            <enum name="sliders" value="3" />
         </attr>
         <attr name="navLabel" format="string" />
     </declare-styleable>

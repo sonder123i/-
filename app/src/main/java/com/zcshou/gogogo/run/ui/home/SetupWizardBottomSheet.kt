@@ -81,6 +81,12 @@ class SetupWizardBottomSheet : BottomSheetDialogFragment() {
         copyMockBtn.setOnClickListener { copyMockKeyword() }
         primary.setOnClickListener { onPrimary() }
         view.findViewById<View>(R.id.btnGuideClose).setOnClickListener { dismissAllowingStateLoss() }
+        // 不关闭底部向导：从图文教程返回后正好回到原来的步骤卡片。
+        view.findViewById<TextView>(R.id.guidePictures).setOnClickListener {
+            runCatching {
+                startActivity(SetupGuideActivity.intent(requireContext()))
+            }
+        }
         view.findViewById<TextView>(R.id.guideSandbox).setOnClickListener {
             runCatching { startActivity(Intent(requireContext(), DemoPreviewActivity::class.java)) }
             dismissAllowingStateLoss()
@@ -172,7 +178,11 @@ class SetupWizardBottomSheet : BottomSheetDialogFragment() {
             // 屏幕上变成「去关于手机 / 稍后再说 / 我已开启」三段错位，
             // 主操作反而不在最显眼的位置。
             .setPositiveButton("去「关于手机」") { _, _ -> openDeviceInfo() }
-            .setNegativeButton("稍后再说", null)
+            .setNegativeButton("看图文步骤") { _, _ ->
+                runCatching {
+                    startActivity(SetupGuideActivity.intent(context, 0))
+                }
+            }
             .show()
     }
 
@@ -274,7 +284,11 @@ class SetupWizardBottomSheet : BottomSheetDialogFragment() {
                     "点「解除设置限制 / 解除限制 / 允许受限制的设置」后，回到本页重新开启悬浮窗即可。\n\n" +
                     "如果刚才没有看到任何限制提示，直接回到悬浮窗开关再试一次。"
             )
-            .setPositiveButton("打开应用信息") { _, _ -> openAppInfo() }
+            .setPositiveButton("看图文步骤") { _, _ ->
+                runCatching {
+                    startActivity(SetupGuideActivity.intent(context, 2))
+                }
+            }
             .setNegativeButton("暂不解除，用通知栏控制") { _, _ ->
                 refresh()
                 if (SetupGuard.check(context).ready) {
@@ -337,7 +351,7 @@ class SetupWizardBottomSheet : BottomSheetDialogFragment() {
                 "马上会打开「关于手机」页面，请按这个顺序操作：\n\n" +
                     "1. 手指往上滑，滚到页面最底部\n" +
                     "2. 找到「版本号」\n" +
-                    "   （有的手机叫「Build 号」「编译编号」「内部版本号」「OS 版本」）\n" +
+                    "   （有的手机叫「Build 号」「编译编号」「内部版本号」「OS 版本」「软件版本号」）\n" +
                     "3. 连续点它 7 次\n\n" +
                     "点对了会看到屏幕底部倒数「再点 N 次即可进入开发者模式」。\n" +
                     "看到「已进入开发者模式」就成功了，按返回键回来。"
@@ -384,7 +398,11 @@ class SetupWizardBottomSheet : BottomSheetDialogFragment() {
                     "找不到这一项？页面顶部搜索框里粘贴「模拟位置」即可。"
             )
             .setPositiveButton("明白了，去操作") { _, _ -> openDevSettings() }
-            .setNegativeButton("稍后再说", null)
+            .setNegativeButton("看图文步骤") { _, _ ->
+                runCatching {
+                    startActivity(SetupGuideActivity.intent(requireContext(), 1))
+                }
+            }
             .show()
     }
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 暗夜主题下给鲸鲸的极轻冷青光托底，避免深蓝描边融进黑底。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:centerColor="#1A38BDF8"
+        android:endColor="#0038BDF8"
+        android:gradientRadius="50%"
+        android:startColor="#3338BDF8"
+        android:type="radial" />
+</shape>

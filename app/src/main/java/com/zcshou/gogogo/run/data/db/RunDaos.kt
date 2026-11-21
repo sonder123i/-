@@ -64,6 +64,19 @@ interface RunRecordDao {
     @Query("SELECT COUNT(*) FROM run_records WHERE startedAt >= :sinceMs AND status = 'COMPLETED'")
     fun observeCompletedCountSince(sinceMs: Long): Flow<Int>
 
+    /** 支持邀请的触发依据：只统计真正完成过的跑次与里程。 */
+    @Query(
+        """
+        SELECT COUNT(*) AS completedCount,
+               COALESCE(SUM(actualDistanceMeters), 0) AS totalMeters,
+               MIN(startedAt) AS firstCompletedAt,
+               MAX(startedAt) AS lastCompletedAt
+        FROM run_records
+        WHERE status = 'COMPLETED'
+        """
+    )
+    suspend fun completedStats(): RunUsageStats
+
     @Insert
     suspend fun insert(record: RunRecordEntity): Long
 }

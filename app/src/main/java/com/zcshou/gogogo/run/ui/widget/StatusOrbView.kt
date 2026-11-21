@@ -33,6 +33,13 @@ class StatusOrbView @JvmOverloads constructor(
     private var animator: ValueAnimator? = null
     private var breath = 1f
 
+    init {
+        // 初始状态就是 null；setState(null) 会因为状态未变而提前返回，
+        // 必须在构造时把画笔设成中性灰，否则会保留 Paint 默认的黑色。
+        corePaint.color = context.getColor(R.color.pf_neutral_dot)
+        haloPaint.color = corePaint.color
+    }
+
     var state: Boolean? = null
         private set
 

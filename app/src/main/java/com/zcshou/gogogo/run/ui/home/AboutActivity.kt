@@ -7,6 +7,7 @@ import android.text.Spanned
 import android.text.method.LinkMovementMethod
 import android.text.style.StyleSpan
 import android.text.style.URLSpan
+import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -24,10 +25,6 @@ import com.google.android.material.switchmaterial.SwitchMaterial
  * 关于页：新品牌展示 + 全应用唯一的开源许可与致谢（GPLv3）。
  */
 class AboutActivity : AppCompatActivity() {
-
-    companion object {
-        private const val REPO_URL = "https://github.com/sonder123i/CloudTrace"
-    }
 
     private var updateDialog: AlertDialog? = null
 
@@ -55,6 +52,20 @@ class AboutActivity : AppCompatActivity() {
 
         val license = findViewById<TextView>(R.id.aboutLicense)
         license.text = buildLicenseText()
+
+        // Star 的常驻入口：弹窗拒绝满 3 次后，这里仍然可以主动去点。
+        findViewById<View>(R.id.aboutStar).setOnClickListener {
+            StarPrompt.openRepo(this)
+        }
+        findViewById<View>(R.id.aboutFeedback).setOnClickListener {
+            runCatching { startActivity(FeedbackActivity.intent(this)) }
+        }
+        findViewById<View>(R.id.aboutChangelog).setOnClickListener {
+            runCatching { startActivity(ChangelogActivity.intent(this)) }
+        }
+        findViewById<View>(R.id.aboutBuild).setOnClickListener {
+            BuildInfoDialog.show(this)
+        }
 
         val autoCheck = findViewById<SwitchMaterial>(R.id.aboutAutoCheck)
         autoCheck.isChecked = UpdatePrefs.autoCheck(this)
@@ -87,9 +98,9 @@ class AboutActivity : AppCompatActivity() {
         builder.append("\n\n")
         builder.append(label)
         val urlStart = builder.length
-        builder.append(REPO_URL)
+        builder.append(StarPrompt.REPO_URL)
         builder.setSpan(
-            URLSpan(REPO_URL),
+            URLSpan(StarPrompt.REPO_URL),
             urlStart,
             builder.length,
             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE

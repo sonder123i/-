@@ -28,6 +28,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:orientation="vertical"
             android:paddingStart="16dp"
             android:paddingEnd="16dp">
@@ -249,19 +251,36 @@
                 android:layout_marginTop="10dp" />
 
             <!-- 空状态：首次建圈引导卡（无边框玻璃） -->
-            <LinearLayout
+            <FrameLayout
                 android:id="@+id/routeEmpty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/bg_hub_panel"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:paddingStart="20dp"
-                android:paddingTop="22dp"
-                android:paddingEnd="20dp"
-                android:paddingBottom="20dp"
+                android:clipChildren="false"
+                android:clipToPadding="false"
                 android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <View
+                        android:id="@+id/homeMascotSpace"
+                        android:layout_width="match_parent"
+                        android:layout_height="72dp"
+                        android:visibility="gone" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_hub_panel"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:paddingStart="20dp"
+                        android:paddingTop="22dp"
+                        android:paddingEnd="20dp"
+                        android:paddingBottom="20dp">
 
                 <ImageView
                     android:layout_width="112dp"
@@ -321,7 +340,41 @@
                     android:text="好友在路线卡点「分享口令」，把整段发给你即可"
                     android:textColor="@color/pf_text_tertiary"
                     android:textSize="10sp" />
-            </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btnEmptyUsage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="4dp"
+                    android:text="第一次用？看 30 秒上手 →"
+                    android:textColor="@color/pf_text_primary"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+                </LinearLayout>
+                </LinearLayout>
+
+                <com.zcshou.gogogo.mascot.MascotPeekView
+                    android:id="@+id/homeMascot"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginEnd="8dp"
+                    android:elevation="3dp"
+                    android:visibility="gone" />
+
+                <com.zcshou.gogogo.mascot.MascotEggCardView
+                    android:id="@+id/homeEggCard"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:elevation="5dp"
+                    android:visibility="gone" />
+            </FrameLayout>
 
             <!-- 路线工坊：无边框圆角玻璃卡片 -->
             <TextView

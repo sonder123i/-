@@ -34,6 +34,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.zcshou.gogogo.R
 import com.zcshou.gogogo.run.data.db.RunRouteEntity
 import com.zcshou.gogogo.run.data.repository.RunRepository
+import com.zcshou.gogogo.run.diagnostics.CrashJournal
 import com.zcshou.gogogo.run.engine.RunPhase
 import com.zcshou.gogogo.run.engine.RunRuntimeState
 import com.zcshou.gogogo.run.engine.TrackMathUtils
@@ -43,6 +44,7 @@ import com.zcshou.gogogo.run.guard.SetupGuard
 import com.zcshou.gogogo.run.service.RunSessionHolder
 import com.zcshou.gogogo.run.service.RunSessionService
 import com.zcshou.gogogo.run.service.RoamService
+import com.zcshou.gogogo.run.ui.glass.GlassDialogs
 import com.zcshou.gogogo.run.ui.glass.OverlayGlassStyle
 import com.zcshou.gogogo.run.ui.overlay.FloatingCapsuleView
 import com.zcshou.gogogo.run.ui.theme.ThemeHelper
@@ -67,9 +69,13 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         private const val DETOUR_METERS = 150.0
         private const val REQ_NOTIFICATIONS = 1001
         private const val STATE_TAB = "selected_tab"
+        private const val STATE_STAR_SHOWN = "star_prompt_shown"
+        private const val STATE_UPDATE_SHOWN = "update_prompt_shown"
+        private const val STATE_CRASH_SHOWN = "crash_prompt_shown"
         private const val TAB_AUTO = "tab_auto"
         private const val TAB_ROAM = "tab_roam"
         private const val TAB_ENV = "tab_env"
+        private const val TAB_SETTINGS = "tab_settings"
         /** 自动弹出引导的次数上限：未配置也不会每次开 App 都弹。 */
         private const val MAX_AUTO_GUIDE_SHOWS = 3
         private const val KEY_GUIDE_SHOWN_COUNT = "auto_guide_count"
@@ -90,6 +96,7 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
     private lateinit var tabRoutes: NavTabView
     private lateinit var tabRoam: NavTabView
     private lateinit var tabEnv: NavTabView
+    private lateinit var tabSettings: NavTabView
     private lateinit var bottomTabs: View
     private lateinit var tabBar: LiquidTabBar
     private lateinit var navGlassView: com.example.liquidglass.LiquidGlassView
@@ -105,6 +112,13 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
 
     private var latestState = RunRuntimeState()
     private var updateDialog: AlertDialog? = null
+    private var starDialog: AlertDialog? = null
+    private var supportDialog: AlertDialog? = null
+    private var crashDialog: AlertDialog? = null
+    /** 同一会话已经打扰过的弹窗，支持邀请要让位，避免连着弹两个。 */
+    private var starPromptShown = false
+    private var updatePromptShown = false
+    private var crashPromptShown = false
     private var pendingLaunchAfterWifi: (() -> Unit)? = null
 
     private var capsule: FloatingCapsuleView? = null
@@ -144,6 +158,13 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         getSharedPreferences("KEY_ACCEPT_AGREEMENT", MODE_PRIVATE).edit()
             .putBoolean("KEY_ONBOARDED", true)
             .apply()
+        // 每次真正进入首页记一次打开：Star 邀请靠它判断「是不是常客」，
+        // 转屏恢复不重复计数，否则一次冷启动会被记成好几次。
+        if (savedInstanceState == null) StarPrompt.noteLaunch(this)
+        // 转屏后不要重新弹已经出现过的软提醒。
+        starPromptShown = savedInstanceState?.getBoolean(STATE_STAR_SHOWN, false) ?: false
+        updatePromptShown = savedInstanceState?.getBoolean(STATE_UPDATE_SHOWN, false) ?: false
+        crashPromptShown = savedInstanceState?.getBoolean(STATE_CRASH_SHOWN, false) ?: false
         ThemeHelper.enableEdgeToEdge(this)
         setContentView(R.layout.activity_run_home)
         // 不再给整页加 systemBars padding：地图需要真正铺到四边，
@@ -153,6 +174,7 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         tabRoutes = findViewById(R.id.tabRoutes)
         tabRoam = findViewById(R.id.tabRoam)
         tabEnv = findViewById(R.id.tabEnv)
+        tabSettings = findViewById(R.id.tabSettings)
         bottomTabs = findViewById(R.id.bottomTabs)
         navContainerView = findViewById(R.id.bottomTabs)
         navGlassView = findViewById<com.example.liquidglass.LiquidGlassView>(R.id.navGlass)
@@ -192,7 +214,7 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
             container = navContainerView,
             glass = navGlassView,
             tabHost = findViewById(R.id.tabHost),
-            tabs = listOf(tabRoutes, tabRoam, tabEnv)
+            tabs = listOf(tabRoutes, tabRoam, tabEnv, tabSettings)
         ) { index -> selectTab(index) }
         applyBottomBarInsets()
 
@@ -212,6 +234,7 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         tabRoutes.setOnClickListener { selectTab(0) }
         tabRoam.setOnClickListener { selectTab(1) }
         tabEnv.setOnClickListener { selectTab(2) }
+        tabSettings.setOnClickListener { selectTab(3) }
         applyNavTabTints()
 
         // 独立导航投影：跟随玻璃宽度、底边距与 Tab 行高度
@@ -245,6 +268,7 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
                 .add(R.id.fragmentContainer, RouteListFragment(), TAB_AUTO)
                 .add(R.id.fragmentContainer, FreeRoamFragment(), TAB_ROAM)
                 .add(R.id.fragmentContainer, EnvCheckFragment(), TAB_ENV)
+                .add(R.id.fragmentContainer, SettingsFragment(), TAB_SETTINGS)
                 .commitNow()
         }
         selectTab(savedInstanceState?.getInt(STATE_TAB) ?: 0)
@@ -260,6 +284,9 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         maybeShowSetupGuide()
         observeUpdates()
         handleUpdateIntent(intent)
+        maybeShowCrashReport()
+        maybeInviteStar()
+        maybeInviteSupport()
         findViewById<View>(R.id.homeRoot).postDelayed({
             if (!isFinishing && !isDestroyed && UpdateConfig.enabled &&
                 UpdatePrefs.autoCheck(this)
@@ -278,8 +305,13 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 UpdateManager.getInstance(this@RunHomeActivity).state.collect { state ->
                     if (!state.showDialog || updateDialog != null) return@collect
-                    val canShow = state.manualRequest || SetupGuard.isReady(this@RunHomeActivity)
+                    // 慢网下更新检查可能晚于其他软提醒返回，别把弹窗叠到它们上面。
+                    val canShow = (state.manualRequest ||
+                        SetupGuard.isReady(this@RunHomeActivity)) &&
+                        starDialog?.isShowing != true && supportDialog?.isShowing != true &&
+                            crashDialog?.isShowing != true
                     if (canShow) {
+                        updatePromptShown = true
                         updateDialog = UpdateDialog.show(this@RunHomeActivity) {
                             updateDialog = null
                         }
@@ -316,6 +348,112 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         }, 700)
     }
 
+    /**
+     * GitHub Star 邀请：等首页稳定展示后再问，并让位给配置向导与更新弹窗。
+     *
+     * 频率由 [StarPrompt] 自己把控：打开够多次、用够多天之后才会出现一次，
+     * 两次之间至少隔两周，总共最多两次；点过 Star 或「不再提示」后永久静默。
+     * 关于页保留常驻入口，用户拒绝后仍可主动去点。
+     */
+    private fun maybeInviteStar() {
+        if (crashPromptShown || CrashJournal.pending(this)) return
+        if (!StarPrompt.isInvitePending(this)) return
+        window.decorView.postDelayed({
+            if (isFinishing || isDestroyed) return@postDelayed
+            // 2.6 秒内用户可能已经切到别的页面/应用，别把弹窗盖到别的界面上。
+            if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return@postDelayed
+            if (!SetupGuard.isReady(this)) return@postDelayed
+            if (crashPromptShown) return@postDelayed
+            if (updateDialog?.isShowing == true || starDialog?.isShowing == true ||
+                crashDialog?.isShowing == true
+            ) return@postDelayed
+            if (supportFragmentManager.findFragmentByTag("setup_guide") != null) return@postDelayed
+            starPromptShown = true
+            starDialog = StarPrompt.show(this) { starDialog = null }
+        }, 2600)
+    }
+
+    /**
+     * 上次崩溃的恢复提示：只在下一次启动提示一次，且优先于 Star / 支持邀请。
+     *
+     * 崩溃记录由 [CrashJournal] 在进程退出前写本地文件；这里只负责提示与跳转，
+     * 不自动上报任何内容。用户点「导出诊断信息」会进入问题反馈页。
+     */
+    private fun maybeShowCrashReport() {
+        if (!CrashJournal.pending(this)) return
+        window.decorView.postDelayed({
+            if (isFinishing || isDestroyed) return@postDelayed
+            if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return@postDelayed
+            if (!CrashJournal.pending(this)) return@postDelayed
+            if (updateDialog?.isShowing == true || starDialog?.isShowing == true ||
+                supportDialog?.isShowing == true || crashDialog?.isShowing == true
+            ) return@postDelayed
+            if (supportFragmentManager.findFragmentByTag("setup_guide") != null) return@postDelayed
+            crashPromptShown = true
+            // 标记已提示，避免每次启动重复打扰；记录本身保留 7 天供诊断包读取。
+            CrashJournal.markPrompted(this)
+            crashDialog = showCrashDialog()
+        }, 1500)
+    }
+
+    private fun showCrashDialog(): AlertDialog {
+        val body = getString(R.string.crash_body) +
+            "\n\n上次崩溃：${CrashJournal.formatTime(CrashJournal.lastCrashAt(this))}"
+        val dialog = GlassDialogs.builder(this)
+            .setTitle(R.string.crash_title)
+            .setMessage(body)
+            .setPositiveButton(R.string.crash_export) { _, _ ->
+                runCatching { startActivity(FeedbackActivity.intent(this)) }
+            }
+            .setNegativeButton(R.string.crash_ack, null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.transformationMethod = null
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.transformationMethod = null
+        }
+        dialog.setOnDismissListener { crashDialog = null }
+        dialog.show()
+        return dialog
+    }
+
+    /**
+     * 「支持云迹」邀请：只有真实完成过多次跑步、跑够里程后才出现。
+     *
+     * 比 Star 邀请更克制：延迟 6 秒、只在首页空闲时触发；同一会话弹过 Star / 更新，
+     * 或正在跑步，都不再打扰。是否满足条件由 [SupportPrompt] 依据历史记录判定。
+     */
+    private fun maybeInviteSupport() {
+        if (crashPromptShown || CrashJournal.pending(this) ||
+            starPromptShown || updatePromptShown
+        ) return
+        if (!SupportPrompt.canPrompt(this)) return
+        window.decorView.postDelayed({
+            if (isFinishing || isDestroyed) return@postDelayed
+            if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return@postDelayed
+            if (!SetupGuard.isReady(this)) return@postDelayed
+            if (latestState.phase != RunPhase.IDLE) return@postDelayed
+            if (crashPromptShown || starPromptShown || updatePromptShown) return@postDelayed
+            if (updateDialog?.isShowing == true || starDialog?.isShowing == true ||
+                supportDialog?.isShowing == true || crashDialog?.isShowing == true
+            ) return@postDelayed
+            if (supportFragmentManager.findFragmentByTag("setup_guide") != null) return@postDelayed
+            lifecycleScope.launch {
+                val stats = runCatching { repository.usageStats() }.getOrNull() ?: return@launch
+                if (!SupportPrompt.isEligible(this@RunHomeActivity, stats)) return@launch
+                if (isFinishing || isDestroyed) return@launch
+                if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return@launch
+                if (latestState.phase != RunPhase.IDLE) return@launch
+                if (crashPromptShown || starPromptShown || updatePromptShown) return@launch
+                if (updateDialog?.isShowing == true || starDialog?.isShowing == true ||
+                    supportDialog?.isShowing == true || crashDialog?.isShowing == true
+                ) return@launch
+                supportDialog = SupportPrompt.show(this@RunHomeActivity, stats) {
+                    supportDialog = null
+                }
+            }
+        }, 6000)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -331,6 +469,9 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putInt(STATE_TAB, selectedTab)
+        outState.putBoolean(STATE_STAR_SHOWN, starPromptShown)
+        outState.putBoolean(STATE_UPDATE_SHOWN, updatePromptShown)
+        outState.putBoolean(STATE_CRASH_SHOWN, crashPromptShown)
         super.onSaveInstanceState(outState)
     }
 
@@ -383,6 +524,12 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
     override fun onDestroy() {
         runCatching { updateDialog?.dismiss() }
         updateDialog = null
+        runCatching { starDialog?.dismiss() }
+        starDialog = null
+        runCatching { supportDialog?.dismiss() }
+        supportDialog = null
+        runCatching { crashDialog?.dismiss() }
+        crashDialog = null
         runCatching { unregisterReceiver(screenReceiver) }
         hideCapsule()
         super.onDestroy()
@@ -725,7 +872,7 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         )
         val accent = getColor(R.color.pf_volt)
         val labelSelected = getColor(R.color.pf_text_primary)
-        listOf(tabRoutes, tabRoam, tabEnv).forEach { tab ->
+        listOf(tabRoutes, tabRoam, tabEnv, tabSettings).forEach { tab ->
             tab.tintUnselected = unselected
             tab.tintAccent = accent
             tab.tintLabelSelected = labelSelected
@@ -734,7 +881,7 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
 
     private fun selectTab(index: Int) {
         selectedTab = index
-        val tags = arrayOf(TAB_AUTO, TAB_ROAM, TAB_ENV)
+        val tags = arrayOf(TAB_AUTO, TAB_ROAM, TAB_ENV, TAB_SETTINGS)
         supportFragmentManager.beginTransaction().apply {
             tags.forEachIndexed { i, tag ->
                 val fragment = supportFragmentManager.findFragmentByTag(tag)
@@ -821,7 +968,8 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
         val tab = when (selectedTab) {
             0 -> tabRoutes
             1 -> tabRoam
-            else -> tabEnv
+            2 -> tabEnv
+            else -> tabSettings
         }
         navMini.text = tab.label
         // 迷你胶囊的图标与格子同源：把同一份 NavGlyph 画成 20dp 的 Drawable。

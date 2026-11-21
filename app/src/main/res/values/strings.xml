@@ -151,8 +151,165 @@
     <!-- 关于页 -->
     <string name="about_version_format">版本 %1$s · Kinetic Athletic</string>
     <string name="about_license_title">开源许可与致谢</string>
-    <string name="about_license_body">本应用底层的模拟定位架构基于开源项目 ZCShou/GoGoGo（影梭）构建，遵循 GPLv3 开源协议发布。感谢原作者的开源贡献。\n\n一键配置的界面选择器引擎源自 GKD（gkd-kit/gkd），遵循 GPL-3.0 协议，版权归其贡献者所有。\n\n百度地图 Android SDK 为专有组件，适用百度地图开放平台服务条款，不属于 GPLv3 授权范围；Shizuku、Liquid Glass、AndroidX 等组件的许可与版权归各自作者所有。完整清单见仓库 THIRD_PARTY_NOTICES.md。</string>
+    <string name="about_license_body">本应用底层的模拟定位架构基于开源项目 ZCShou/GoGoGo（影梭）构建，遵循 GPLv3 开源协议发布。感谢原作者的开源贡献。\n\n一键配置的界面选择器引擎源自 GKD（gkd-kit/gkd），遵循 GPL-3.0 协议，版权归其贡献者所有。\n\n百度地图 Android SDK 为专有组件，适用百度地图开放平台服务条款，不属于 GPLv3 授权范围；Shizuku、Liquid Glass、AndroidX 等组件的许可与版权归各自作者所有。完整清单见仓库 THIRD_PARTY_NOTICES.md。\n\n鲸鲸伴侣形象灵感源自社区同人角色「蓝色大肥鱼 / 鲸鱼娘」（基础形象原作：上善无形；女仆装二次设计：ZipZipPipe），遵循 CC BY-NC-SA 4.0 非商业共享协议；该形象不属于 GPLv3 授权范围，伴侣模块默认关闭，可在设置中完全隐藏。</string>
     <string name="about_license_link_label">项目地址：</string>
     <string name="about_auto_check">启动时自动检查更新</string>
+    <string name="about_star_title">喜欢云迹？去 GitHub 点个 Star</string>
+    <string name="about_star_subtitle">你的 Star 是持续维护与更新最大的动力</string>
+    <string name="about_support_subtitle">如果它帮到了你，可以请作者喝杯咖啡</string>
+
+    <!-- 支持云迹（微信赞赏码） -->
+    <string name="support_hero_eyebrow">支持云迹</string>
+    <string name="support_title">支持云迹继续打磨</string>
+    <string name="support_intro">如果云迹让你的每次出行更省心，欢迎支持后续开发与维护。</string>
+    <string name="support_qr_label">微信赞赏码</string>
+    <string name="support_qr_empty">赞赏码暂未配置</string>
+    <string name="support_enlarge">点击查看大图</string>
+    <string name="support_qr_hint">长按赞赏码也可以保存</string>
+    <string name="support_voluntary">自愿赞赏，金额随心</string>
+    <string name="support_steps">1. 保存赞赏码到相册\n2. 打开微信「扫一扫」→ 相册\n3. 选择赞赏码，完成赞赏</string>
+    <string name="support_save">保存赞赏码</string>
+    <string name="support_saving">正在保存…</string>
+    <string name="support_save_again">再次保存赞赏码</string>
+    <string name="support_saved">已保存到相册。打开微信「扫一扫」→ 相册，选择这张图即可。</string>
+    <string name="support_save_failed">保存失败，请检查存储空间后重试，也可以截图保存。</string>
+    <string name="support_permission_denied">没有存储权限，无法保存。可以查看大图后截图。</string>
+    <string name="support_open_wechat">打开微信</string>
+    <string name="support_wechat_unavailable">没有找到微信，请手动打开微信并从相册选择赞赏码。</string>
+    <string name="support_preview_hint">点击任意位置关闭 · 长按保存到相册</string>
+    <string name="support_save_confirm_title">保存赞赏码？</string>
+    <string name="support_save_confirm_message">是否将赞赏码原图保存到相册？</string>
+    <string name="support_thanks">感谢每一份支持。</string>
+    <string name="support_disclaimer">赞赏完全自愿、无偿，不解锁任何功能，也不影响使用；不构成购买商品或服务的对价，不附带售后义务。没有赞赏同样可以完整使用云迹。</string>
+    <string name="support_cancel">取消</string>
+
+    <!-- 支持云迹邀请：只在真实跑过多次、跑够里程后出现 -->
+    <string name="support_prompt_title">云迹已经陪你跑了 %1$s 公里</string>
+    <string name="support_prompt_body">已经完成了 %2$d 次。如果它确实帮到了你，欢迎请作者喝杯咖啡 ☕\n\n赞赏完全自愿，不解锁功能，也不影响使用。</string>
+    <string name="support_prompt_go">去支持</string>
+    <string name="support_prompt_later">暂不</string>
+    <string name="support_prompt_never">不再提示</string>
+
+    <!-- 问题反馈与诊断 -->
+    <string name="feedback_eyebrow">问题反馈</string>
+    <string name="feedback_title">遇到问题了？</string>
+    <string name="feedback_intro">把诊断信息和日志一起发到 GitHub Issues，能最快定位 ROM 权限、更新或崩溃问题。</string>
+    <string name="feedback_diag_title">诊断信息</string>
+    <string name="feedback_diag_loading">正在收集…</string>
+    <string name="feedback_copy">复制诊断信息</string>
+    <string name="feedback_copy_done">诊断信息已复制</string>
+    <string name="feedback_log_title">运行日志</string>
+    <string name="feedback_log_missing">暂无日志文件，运行一段时间后再试</string>
+    <string name="feedback_share">分享日志与诊断</string>
+    <string name="feedback_share_failed">导出失败，请稍后重试</string>
+    <string name="feedback_issue">去 GitHub 提 Issue →</string>
+    <string name="feedback_issue_failed">无法打开浏览器，可手动访问 GitHub 仓库</string>
+    <string name="feedback_privacy">诊断只包含版本、机型、权限状态和计数，不含坐标、路线名称和应用列表；日志只保留最近 3 天。</string>
+    <string name="about_feedback_title">问题反馈与诊断</string>
+    <string name="about_feedback_subtitle">复制设备信息、导出日志，快速定位问题</string>
+
+    <!-- 更新日志 -->
+    <string name="changelog_title">更新日志</string>
+    <string name="about_changelog_title">版本更新日志</string>
+    <string name="about_changelog_subtitle">看看每个版本改了什么</string>
+
+    <!-- 构建信息 -->
+    <string name="build_info_title">构建信息</string>
+    <string name="about_build_title">构建信息</string>
+    <string name="about_build_subtitle">版本、签名指纹、更新源与日志路径</string>
+    <string name="build_copy">复制</string>
+    <string name="build_close">关闭</string>
+    <string name="build_copied">构建信息已复制</string>
+
+    <!-- 崩溃提示 -->
+    <string name="crash_title">上次意外退出了</string>
+    <string name="crash_body">如果反复出现，把诊断信息和日志发到 GitHub 能帮助定位。可能是 ROM 权限或兼容性问题。</string>
+    <string name="crash_export">导出诊断信息</string>
+    <string name="crash_ack">知道了</string>
+
+    <!-- GitHub Star 邀请 -->
+    <string name="star_prompt_title_first">在 GitHub 上支持云迹</string>
+    <string name="star_prompt_title_last">最后一次邀请</string>
+    <string name="star_prompt_body_first">感谢使用云迹。\n\n如果它帮到了你，欢迎去 GitHub 仓库点一个 Star，支持项目继续维护与更新。</string>
+    <string name="star_prompt_body_last">这是最后一次提示。\n\n如果你愿意，欢迎去 GitHub 留下一个 Star；无论如何，都感谢你的使用。</string>
+    <string name="star_prompt_go">去点 Star</string>
+    <string name="star_prompt_later">暂不</string>
+    <string name="star_prompt_never">不再提示</string>
+    <string name="star_prompt_no_browser">无法打开浏览器，可手动访问 GitHub 仓库</string>
+
+    <!-- 体检（环境检查） -->
+    <string name="checkup_title">体检</string>
+    <string name="checkup_subtitle">开跑前确认必需项；红灯项点一下就能去修</string>
+    <string name="checkup_hero_eyebrow">体检结果</string>
+    <string name="checkup_ready_title">环境已就绪</string>
+    <string name="checkup_ready_desc">可以开跑，下面是没有强制要求的增强项。</string>
+    <string name="checkup_missing_title">还差 %1$d 项</string>
+    <string name="checkup_missing_desc">先处理下面标红的必需项，再回来重新检测。</string>
+    <string name="checkup_metrics">必需 %1$d/%2$d · 可选 %3$d/%4$d</string>
+    <string name="checkup_recheck">重新检测</string>
+    <string name="checkup_guide">不会设置？跟着图文做 →</string>
+    <string name="checkup_section_required">开跑必需</string>
+    <string name="checkup_section_optional">可选增强</string>
+    <string name="checkup_done">已就绪</string>
+    <string name="checkup_dev_title">开发者选项</string>
+    <string name="checkup_dev_ok">已开启，可以修改模拟位置应用</string>
+    <string name="checkup_dev_todo">未开启：到「关于手机」连点版本号 7 次</string>
+    <string name="checkup_dev_action">去开启</string>
+    <string name="checkup_mock_title">模拟位置授权</string>
+    <string name="checkup_mock_ok">已授权本应用注入模拟位置</string>
+    <string name="checkup_mock_todo">未授权：开发者选项 → 选择模拟位置应用</string>
+    <string name="checkup_mock_action">去选择</string>
+    <string name="checkup_mock_need_dev">先完成开发者选项，再选择模拟位置应用</string>
+    <string name="checkup_overlay_title">悬浮窗权限</string>
+    <string name="checkup_overlay_ok">已允许，巡航胶囊可用</string>
+    <string name="checkup_overlay_todo">未允许：不开也能跑，暂停/收尾用通知栏</string>
+    <string name="checkup_overlay_action">去开启</string>
+    <string name="checkup_battery_title">忽略电池优化</string>
+    <string name="checkup_battery_ok">已加入白名单，长跑不易被冻结</string>
+    <string name="checkup_battery_todo">未加入：后台可能被系统冻结</string>
+    <string name="checkup_battery_action">去处理</string>
+    <string name="checkup_wifi_title">Wi-Fi 连接</string>
+    <string name="checkup_wifi_ok">当前未连接 Wi-Fi，开跑不会弹提醒</string>
+    <string name="checkup_wifi_todo">已连接：开跑前会提醒关闭，避免定位闪回</string>
+    <string name="checkup_wifi_action">去关闭</string>
+    <string name="checkup_trust_line">无通讯录/相册读取 · 轨迹仅存本机 · 停止即恢复 GPS</string>
+    <string name="checkup_trust_title">本地安全运行承诺</string>
+    <string name="checkup_trust_body">不读取通讯录、相册或设备识别码。\n\n轨迹与路线只保存在本机，不向作者服务器上传任何数据。\n\n停止模拟后立即恢复设备的真实 GPS。</string>
+    <string name="checkup_trust_more">查看完整说明</string>
+    <string name="checkup_footnote">检测结果仅用于本机功能授权</string>
+
+    <!-- 设置页 -->
+    <string name="run_settings_title">设置</string>
+    <string name="settings_subtitle">偏好、高级项与应用入口</string>
+    <string name="settings_guide_eyebrow">使用指南</string>
+    <string name="settings_guide_title">第一次用？4 步跑起来</string>
+    <string name="settings_guide_desc">建路线 → 设目标 → 发车 → 看战报。不用先学设置，照着按钮走。</string>
+    <string name="settings_guide_action">看使用指南 →</string>
+    <string name="settings_support_title">支持云迹 ☕</string>
+    <string name="settings_section_prefs">偏好</string>
+    <string name="settings_section_advanced">高级与极客</string>
+    <string name="settings_section_mascot">鲸鲸运动伴侣</string>
+    <string name="mascot_mode_off">纯净模式 · 完全隐藏</string>
+    <string name="mascot_mode_light">陪伴模式 · 卡片边缘探头</string>
+    <string name="mascot_mode_full">深度伴侣 · 再加地图小人</string>
+    <string name="mascot_mode_hint">OFF 时所有页面保持原样、不占位；LIGHT 在首页/体检/赞赏页探头；FULL 额外在地图显示小人。后台自动暂停动画。</string>
+    <string name="settings_mascot_live_preview">实时预览</string>
+    <string name="settings_section_app">应用</string>
+    <string name="settings_target_app">目标跑步 App</string>
+    <string name="settings_target_app_none">未绑定：开跑时不会自动拉起运动 App</string>
+    <string name="settings_target_app_bound">开跑 5s 预热时自动拉起：%1$s</string>
+    <string name="settings_theme">视觉主题</string>
+    <string name="settings_render">渲染质量</string>
+    <string name="settings_wifi_scan">后台 Wi-Fi 扫描</string>
+    <string name="settings_inject">坐标注入频率</string>
+    <string name="settings_shizuku">Shizuku 自动断网（实验性）</string>
+    <string name="settings_update">应用更新</string>
+    <string name="settings_feedback">问题反馈与诊断</string>
+    <string name="settings_feedback_sub">复制设备信息、导出日志</string>
+    <string name="settings_changelog">更新日志</string>
+    <string name="settings_changelog_sub">看看每个版本改了什么</string>
+    <string name="settings_about">关于云迹</string>
+    <string name="settings_about_sub">版本信息 · 开源许可与致谢</string>
+    <string name="settings_footer">云迹 v%1$s · 构建信息</string>
 
 </resources>

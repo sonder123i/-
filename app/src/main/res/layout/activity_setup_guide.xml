@@ -1,0 +1,991 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/setupGuideRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/pf_canvas">
+
+    <LinearLayout
+        android:id="@+id/detailPage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="10dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="2dp">
+
+            <ImageView
+                android:id="@+id/btnSetupGuideBack"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="返回"
+                android:padding="11dp"
+                android:src="@drawable/ic_arrow_left_line"
+                app:tint="@color/pf_text_primary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="2dp"
+                android:text="权限图文教程"
+                android:textColor="@color/pf_text_primary"
+                android:textSize="19sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ScrollView
+            android:id="@+id/guideScroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:scrollbars="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="32dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:lineSpacingExtra="2dp"
+                    android:text="照着顶部提示做，点「继续」展开对应步骤。设置完按返回键回到云迹即可。"
+                    android:textColor="@color/pf_text_secondary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:lineSpacingExtra="2dp"
+                    android:text="截图来自小米 / Redmi（HyperOS）。其他品牌的入口见文末「其他品牌速查」。"
+                    android:textColor="@color/pf_text_tertiary"
+                    android:textSize="11sp" />
+
+                <!-- 当前下一步：醒目的深色引导卡 -->
+                <LinearLayout
+                    android:id="@+id/guideHero"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_guide_hero"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/guideHeroEyebrow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:alpha="0.6"
+                        android:text="当前进度"
+                        android:textColor="@color/pf_on_primary"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/guideHeroTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:text="第 1 步 · 开启开发者选项"
+                        android:textColor="@color/pf_on_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/guideHeroDesc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:alpha="0.75"
+                        android:lineSpacingExtra="2dp"
+                        android:text="所有后续权限的入口，先把它打开。"
+                        android:textColor="@color/pf_on_primary"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/btnGuideNext"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_guide_hero_button"
+                        android:gravity="center"
+                        android:text="继续第 1 步 →"
+                        android:textColor="@color/pf_volt"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 1 · 开发者选项 -->
+                <LinearLayout
+                    android:id="@+id/sectionDev"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_capsule"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <LinearLayout
+                        android:id="@+id/headerDev"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="1 · 开启开发者选项"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/statusDev"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="6dp"
+                            android:text="待开启"
+                            android:textColor="@color/pf_bad"
+                            android:textSize="12sp" />
+
+                        <ImageView
+                            android:id="@+id/chevronDev"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="展开"
+                            android:src="@drawable/ic_chevron_down"
+                            app:tint="@color/pf_text_secondary" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/summaryDev"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="连点「软件版本号」7 次"
+                        android:textColor="@color/pf_text_secondary"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:id="@+id/bodyDev"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="小米 / Redmi：设置 → 我的设备 → 全部参数与信息（HyperOS 2 为「版本信息」）"
+                            android:textColor="@color/pf_text_secondary"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:lineSpacingExtra="3dp"
+                            android:text="找到「软件版本号」（HyperOS 2），或「OS 版本 / 版本号 / 编译编号」，连续点 7 次。看到屏幕底部倒数「再点 N 次即可进入开发者模式」就成功了。"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="13sp" />
+
+                        <LinearLayout
+                            android:id="@+id/shotVersionBlock"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:id="@+id/shotVersionImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:adjustViewBounds="true"
+                                android:background="@color/pf_card_solid"
+                                android:contentDescription="关于手机页面底部的版本号位置"
+                                android:padding="6dp"
+                                android:scaleType="fitCenter" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="在「版本信息」页连点「软件版本号」7 次"
+                                android:textColor="@color/pf_text_tertiary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/btnGuideDeviceInfo"
+                            android:layout_width="match_parent"
+                            android:layout_height="42dp"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_primary_button"
+                            android:gravity="center"
+                            android:text="去「关于手机」"
+                            android:textColor="@color/pf_on_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 2 · 模拟位置信息应用 -->
+                <LinearLayout
+                    android:id="@+id/sectionMock"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_capsule"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <LinearLayout
+                        android:id="@+id/headerMock"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="2 · 选择模拟位置信息应用"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/statusMock"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="6dp"
+                            android:text="待选择"
+                            android:textColor="@color/pf_bad"
+                            android:textSize="12sp" />
+
+                        <ImageView
+                            android:id="@+id/chevronMock"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="展开"
+                            android:src="@drawable/ic_chevron_down"
+                            app:tint="@color/pf_text_secondary" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/summaryMock"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="开发者选项最底部 → 选「云迹」"
+                        android:textColor="@color/pf_text_secondary"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:id="@+id/bodyMock"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="小米 / Redmi：设置 → 更多设置（或「系统」）→ 开发者选项 → 滑到页面最底部"
+                            android:textColor="@color/pf_text_secondary"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:lineSpacingExtra="3dp"
+                            android:text="点「选择模拟位置信息应用」，在列表里选「云迹」。这一项在开发者选项页的最底部，往下多滑一屏。找不到入口时，回到设置首页搜索「模拟位置」。"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="13sp" />
+
+                        <LinearLayout
+                            android:id="@+id/shotDevBlock"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:id="@+id/shotDevImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:adjustViewBounds="true"
+                                android:background="@color/pf_card_solid"
+                                android:contentDescription="开发者选项页底部的选择模拟位置信息应用"
+                                android:padding="6dp"
+                                android:scaleType="fitCenter" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="开发者选项页最底部：点「选择模拟位置信息应用」"
+                                android:textColor="@color/pf_text_tertiary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/shotMockBlock"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:id="@+id/shotMockImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:adjustViewBounds="true"
+                                android:background="@color/pf_card_solid"
+                                android:contentDescription="应用列表里选择云迹"
+                                android:padding="6dp"
+                                android:scaleType="fitCenter" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="在列表里选「云迹」"
+                                android:textColor="@color/pf_text_tertiary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/shotSearchBlock"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:id="@+id/shotSearchImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:adjustViewBounds="true"
+                                android:background="@color/pf_card_solid"
+                                android:contentDescription="在设置里搜索模拟位置"
+                                android:padding="6dp"
+                                android:scaleType="fitCenter" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="找不到入口？在设置顶部搜索「模拟位置」"
+                                android:textColor="@color/pf_text_tertiary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/btnGuideDevSettings"
+                            android:layout_width="match_parent"
+                            android:layout_height="42dp"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_primary_button"
+                            android:gravity="center"
+                            android:text="去开发者选项"
+                            android:textColor="@color/pf_on_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/btnGuideCopyKeyword"
+                            android:layout_width="match_parent"
+                            android:layout_height="38dp"
+                            android:layout_marginTop="6dp"
+                            android:background="@drawable/bg_secondary_button"
+                            android:gravity="center"
+                            android:text="复制「模拟位置」去设置里搜"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 3 · 解除受限设置（侧载必做） -->
+                <LinearLayout
+                    android:id="@+id/sectionRestrict"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_capsule"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <LinearLayout
+                        android:id="@+id/headerRestrict"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="3 · 解除「受限设置」"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/statusRestrict"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="6dp"
+                            android:text="待解除"
+                            android:textColor="@color/pf_bad"
+                            android:textSize="12sp" />
+
+                        <ImageView
+                            android:id="@+id/chevronRestrict"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="展开"
+                            android:src="@drawable/ic_chevron_down"
+                            app:tint="@color/pf_text_secondary" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/summaryRestrict"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="从浏览器 / 网盘安装基本都会被限制，先解除再开悬浮窗"
+                        android:textColor="@color/pf_text_secondary"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:id="@+id/bodyRestrict"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="小米 / Redmi：应用信息 → 右上角「⋮」→ 解除设置限制"
+                            android:textColor="@color/pf_text_secondary"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:lineSpacingExtra="3dp"
+                            android:text="从 GitHub、浏览器或网盘安装的云迹，会被 Android 当作「未知来源」应用，悬浮窗等敏感权限会被直接冻结。这不是安装失败，也不是云迹在索取额外权限。"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:lineSpacingExtra="3dp"
+                            android:text="如果悬浮窗开关能直接打开，说明没有被限制，可以跳过这一步。"
+                            android:textColor="@color/pf_text_secondary"
+                            android:textSize="12sp" />
+
+                        <LinearLayout
+                            android:id="@+id/shotRestrictDialogBlock"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:id="@+id/shotRestrictDialogImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:adjustViewBounds="true"
+                                android:background="@color/pf_card_solid"
+                                android:contentDescription="系统的部分功能已被限制提示"
+                                android:padding="6dp"
+                                android:scaleType="fitCenter" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="侧载安装时通常会先看到这个系统提示"
+                                android:textColor="@color/pf_text_tertiary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/shotRestrictMenuBlock"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:id="@+id/shotRestrictMenuImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:adjustViewBounds="true"
+                                android:background="@color/pf_card_solid"
+                                android:contentDescription="应用信息右上角菜单里的解除设置限制"
+                                android:padding="6dp"
+                                android:scaleType="fitCenter" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="应用信息右上角「⋮」里点「解除设置限制」"
+                                android:textColor="@color/pf_text_tertiary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/btnGuideAppInfo"
+                            android:layout_width="match_parent"
+                            android:layout_height="42dp"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_primary_button"
+                            android:gravity="center"
+                            android:text="打开云迹的应用信息"
+                            android:textColor="@color/pf_on_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/btnGuideOverlayFromRestrict"
+                            android:layout_width="match_parent"
+                            android:layout_height="38dp"
+                            android:layout_marginTop="6dp"
+                            android:background="@drawable/bg_secondary_button"
+                            android:gravity="center"
+                            android:text="我已解除，去打开悬浮窗"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 4 · 悬浮窗（可选） -->
+                <LinearLayout
+                    android:id="@+id/sectionOverlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_capsule"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <LinearLayout
+                        android:id="@+id/headerOverlay"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="4 · 允许悬浮窗（可选）"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/statusOverlay"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="6dp"
+                            android:text="可选"
+                            android:textColor="@color/pf_text_secondary"
+                            android:textSize="12sp" />
+
+                        <ImageView
+                            android:id="@+id/chevronOverlay"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="展开"
+                            android:src="@drawable/ic_chevron_down"
+                            app:tint="@color/pf_text_secondary" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/summaryOverlay"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="只影响悬浮控制胶囊，不开也能跑"
+                        android:textColor="@color/pf_text_secondary"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:id="@+id/bodyOverlay"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:lineSpacingExtra="3dp"
+                            android:text="悬浮窗只用来显示控制胶囊，不读取屏幕内容。不开也能开跑，暂停 / 收尾 / 继续都在通知栏完成。"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:lineSpacingExtra="3dp"
+                            android:text="如果开关是灰的、点了没反应，先回到第 3 步解除限制。"
+                            android:textColor="@color/pf_text_secondary"
+                            android:textSize="12sp" />
+
+                        <LinearLayout
+                            android:id="@+id/shotOverlayBlock"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:id="@+id/shotOverlayImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:adjustViewBounds="true"
+                                android:background="@color/pf_card_solid"
+                                android:contentDescription="悬浮窗列表里打开云迹"
+                                android:padding="6dp"
+                                android:scaleType="fitCenter" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="在悬浮窗列表里打开「云迹」"
+                                android:textColor="@color/pf_text_tertiary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/btnGuideOverlay"
+                            android:layout_width="match_parent"
+                            android:layout_height="42dp"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_primary_button"
+                            android:gravity="center"
+                            android:text="去开启悬浮窗"
+                            android:textColor="@color/pf_on_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 其他品牌速查（常驻，内容短） -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_capsule"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="其他品牌速查"
+                        android:textColor="@color/pf_text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/guideOtherBrandDev"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:lineSpacingExtra="3dp"
+                        android:textColor="@color/pf_text_primary"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/guideOtherBrandRestrict"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:lineSpacingExtra="3dp"
+                        android:textColor="@color/pf_text_secondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:lineSpacingExtra="3dp"
+                    android:text="配置完成后回到云迹，向导会自动重新检测。悬浮窗失败但开发者选项和模拟位置已就绪时，也可以直接开跑。"
+                    android:textColor="@color/pf_text_tertiary"
+                    android:textSize="11sp" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+
+    <!-- 一步一屏的引导：默认只显示这一层。用户不需要看懂结构，照着当前这一步做即可。 -->
+    <LinearLayout
+        android:id="@+id/focusPage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/pf_canvas"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="10dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="2dp">
+
+            <ImageView
+                android:id="@+id/btnFocusBack"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="返回"
+                android:padding="11dp"
+                android:src="@drawable/ic_arrow_left_line"
+                app:tint="@color/pf_text_primary" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="2dp"
+                android:layout_weight="1"
+                android:text="跟着做，几步搞定"
+                android:textColor="@color/pf_text_primary"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/focusProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFeatureSettings="tnum"
+                android:text="1 / 4"
+                android:textColor="@color/pf_text_secondary"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/focusDots"
+            android:layout_width="match_parent"
+            android:layout_height="18dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp" />
+
+        <ScrollView
+            android:id="@+id/focusScroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:scrollbars="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="24dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="24dp"
+                android:paddingBottom="32dp">
+
+                <TextView
+                    android:id="@+id/focusEyebrow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="第 1 步 / 共 4 步"
+                    android:textColor="@color/pf_text_secondary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/focusTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="打开开发者模式"
+                    android:textColor="@color/pf_text_primary"
+                    android:textSize="26sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/focusWhy"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:lineSpacingExtra="4dp"
+                    android:textColor="@color/pf_text_secondary"
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:id="@+id/focusImageBlock"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/focusImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:adjustViewBounds="true"
+                        android:background="@color/pf_card_solid"
+                        android:contentDescription="这一步的示例截图"
+                        android:padding="6dp"
+                        android:scaleType="fitCenter" />
+
+                    <TextView
+                        android:id="@+id/focusCaption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textColor="@color/pf_text_tertiary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/focusHowLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:text="照这样做"
+                    android:textColor="@color/pf_text_secondary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/focusHow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:lineSpacingExtra="5dp"
+                    android:textColor="@color/pf_text_primary"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/btnFocusAction"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/bg_primary_button"
+                    android:gravity="center"
+                    android:textColor="@color/pf_on_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnFocusDone"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_secondary_button"
+                    android:gravity="center"
+                    android:text="已经做好了，下一步 →"
+                    android:textColor="@color/pf_text_primary"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/focusManualDev"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:gravity="center"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:text="已经开启了但没检测到？点此继续"
+                    android:textColor="@color/pf_text_secondary"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/btnFocusSkip"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:text="暂时跳过（不开也能跑）"
+                    android:textColor="@color/pf_text_secondary"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/btnFocusUsage"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_secondary_button"
+                    android:gravity="center"
+                    android:text="去看看怎么用 →"
+                    android:textColor="@color/pf_text_primary"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/btnFocusDetails"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:gravity="center"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:text="看不明白？查看详细说明 →"
+                    android:textColor="@color/pf_text_primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</FrameLayout>

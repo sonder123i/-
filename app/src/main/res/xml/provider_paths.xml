@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- 只暴露真正共享的两处：应用内更新包与“意见反馈”日志。
+    <!-- 只暴露真正共享的几处：应用内更新包、诊断包与“意见反馈”日志。
          不要把 filesDir/cacheDir/外部存储根目录整体暴露给 FileProvider。 -->
     <files-path name="updates" path="app-updates/" />
+    <files-path name="diagnostics" path="diagnostics/" />
     <external-files-path name="logs" path="Logs/" />
 </paths>

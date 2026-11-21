@@ -76,6 +76,9 @@ class SetupWizardActivity : AppCompatActivity() {
             SetupGuard.locateVersionHint() + "\n" + SetupGuard.tapVersionFeedbackHint()
 
         findViewById<View>(R.id.btnWizardClose).setOnClickListener { finish() }
+        findViewById<View>(R.id.btnWizardPictures).setOnClickListener {
+            runCatching { startActivity(SetupGuideActivity.intent(this)) }
+        }
         overlayAction.setOnClickListener { openOverlaySettings() }
         devAction.setOnClickListener { openDeviceInfo() }
         devActionDirect.setOnClickListener { openDevSettings() }
@@ -169,10 +172,12 @@ class SetupWizardActivity : AppCompatActivity() {
                     "3. 连续点它 7 次，直到看到「已进入开发者模式」\n\n" +
                     "完成后开发者选项会自动出现在设置里，回来这里点「下一步」即可。"
             )
-            // 只留两个按钮：三个按钮时 AlertDialog 会把 neutral 排到最下面，
-            // 主操作反而不在最显眼的位置。
+            // 两个按钮：去操作 / 看图文。返回键和点外部仍可「稍后再说」，
+            // 不再单占一个按钮位置。
             .setPositiveButton("去「关于手机」") { _, _ -> openDeviceInfo() }
-            .setNegativeButton("稍后再说", null)
+            .setNegativeButton("看图文步骤") { _, _ ->
+                runCatching { startActivity(SetupGuideActivity.intent(this, 0)) }
+            }
             .show()
     }
 
@@ -290,7 +295,9 @@ class SetupWizardActivity : AppCompatActivity() {
                     "点「解除设置限制 / 解除限制 / 允许受限制的设置」后，回到本页重新开启悬浮窗即可。\n\n" +
                     "如果刚才没有看到任何限制提示，直接回到悬浮窗开关再试一次。"
             )
-            .setPositiveButton("打开应用信息") { _, _ -> openAppInfo() }
+            .setPositiveButton("看图文步骤") { _, _ ->
+                runCatching { startActivity(SetupGuideActivity.intent(this, 2)) }
+            }
             .setNegativeButton("暂不解除，用通知栏控制") { _, _ ->
                 refresh()
                 if (SetupGuard.check(this).ready) {
@@ -345,7 +352,7 @@ class SetupWizardActivity : AppCompatActivity() {
                 "马上会打开「关于手机」页面，请按这个顺序操作：\n\n" +
                     "1. 手指往上滑，滚到页面最底部\n" +
                     "2. 找到「版本号」\n" +
-                    "   （有的手机叫「Build 号」「编译编号」「内部版本号」「OS 版本」）\n" +
+                    "   （有的手机叫「Build 号」「编译编号」「内部版本号」「OS 版本」「软件版本号」）\n" +
                     "3. 连续点它 7 次\n\n" +
                     "点对了会看到屏幕底部倒数「再点 N 次即可进入开发者模式」。\n" +
                     "看到「已进入开发者模式」就成功了，按返回键回来。"

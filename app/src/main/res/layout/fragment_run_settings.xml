@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- 与体检页同源的底色，给玻璃分组提供一致的折射环境 -->
+    <com.zcshou.gogogo.run.ui.overlay.BathymetricBackdropView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ScrollView
+        android:id="@+id/settingsScroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="108dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:letterSpacing="-0.02"
+                android:text="@string/run_settings_title"
+                android:textColor="@color/pf_text_primary"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="@string/settings_subtitle"
+                android:textColor="@color/pf_text_secondary"
+                android:textSize="12sp" />
+
+            <!-- 第一次用：先把使用指南放最上面 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_guide_hero"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.6"
+                    android:text="@string/settings_guide_eyebrow"
+                    android:textColor="@color/pf_on_primary"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/settings_guide_title"
+                    android:textColor="@color/pf_on_primary"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:alpha="0.75"
+                    android:lineSpacingExtra="2dp"
+                    android:text="@string/settings_guide_desc"
+                    android:textColor="@color/pf_on_primary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/btnSettingsGuide"
+                    android:layout_width="match_parent"
+                    android:layout_height="42dp"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_guide_hero_button"
+                    android:gravity="center"
+                    android:text="@string/settings_guide_action"
+                    android:textColor="@color/pf_volt"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="18dp"
+                android:letterSpacing="0.06"
+                android:text="@string/settings_section_prefs"
+                android:textColor="@color/pf_text_secondary"
+                android:textSize="11sp" />
+
+            <com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:elevation="0dp"
+                app:lgBevelWidth="5dp"
+                app:lgCaustics="false"
+                app:lgCornerRadius="22dp"
+                app:lgInteractive="false"
+                app:lgMatte="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <include
+                        android:id="@+id/rowTargetApp"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowTheme"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowRenderQuality"
+                        layout="@layout/item_env_row" />
+                </LinearLayout>
+            </com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="18dp"
+                android:letterSpacing="0.06"
+                android:text="@string/settings_section_mascot"
+                android:textColor="@color/pf_text_secondary"
+                android:textSize="11sp" />
+
+            <com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:elevation="0dp"
+                app:lgBevelWidth="5dp"
+                app:lgCaustics="false"
+                app:lgCornerRadius="22dp"
+                app:lgInteractive="false"
+                app:lgMatte="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:orientation="vertical"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="8dp">
+
+                    <RadioGroup
+                        android:id="@+id/mascotModeGroup"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp">
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/mascotModeOff"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/mascot_mode_off"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="14sp"
+                            app:buttonTint="@color/pf_volt" />
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/mascotModeLight"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/mascot_mode_light"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="14sp"
+                            app:buttonTint="@color/pf_volt" />
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/mascotModeFull"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/mascot_mode_full"
+                            android:textColor="@color/pf_text_primary"
+                            android:textSize="14sp"
+                            app:buttonTint="@color/pf_volt" />
+                    </RadioGroup>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:lineSpacingExtra="2dp"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:text="@string/mascot_mode_hint"
+                        android:textColor="@color/pf_text_secondary"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/settingsMascotPreviewLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/settings_mascot_live_preview"
+                        android:textColor="@color/pf_text_secondary"
+                        android:textSize="11sp"
+                        android:visibility="gone" />
+
+                    <com.zcshou.gogogo.mascot.MascotPeekView
+                        android:id="@+id/settingsMascotPreview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="40dp"
+                        android:visibility="gone" />
+
+                    <com.zcshou.gogogo.mascot.MascotEggCardView
+                        android:id="@+id/settingsEggCard"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="8dp"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="18dp"
+                android:letterSpacing="0.06"
+                android:text="@string/settings_section_advanced"
+                android:textColor="@color/pf_text_secondary"
+                android:textSize="11sp" />
+
+            <!-- 独立页面有空间，高级项直接展开，不再折叠 -->
+            <com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:elevation="0dp"
+                app:lgBevelWidth="5dp"
+                app:lgCaustics="false"
+                app:lgCornerRadius="22dp"
+                app:lgInteractive="false"
+                app:lgMatte="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <include
+                        android:id="@+id/rowWifiScan"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowInjectInterval"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowShizuku"
+                        layout="@layout/item_env_switch" />
+                </LinearLayout>
+            </com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="18dp"
+                android:letterSpacing="0.06"
+                android:text="@string/settings_section_app"
+                android:textColor="@color/pf_text_secondary"
+                android:textSize="11sp" />
+
+            <com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:elevation="0dp"
+                app:lgBevelWidth="5dp"
+                app:lgCaustics="false"
+                app:lgCornerRadius="22dp"
+                app:lgInteractive="false"
+                app:lgMatte="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+<include
+                        android:id="@+id/rowUpdate"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowFeedback"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowChangelog"
+                        layout="@layout/item_env_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/pf_stroke" />
+
+                    <include
+                        android:id="@+id/rowAbout"
+                        layout="@layout/item_env_row" />
+                </LinearLayout>
+            </com.zcshou.gogogo.run.ui.glass.LiquidGlassContainer>
+
+            <!-- 支持云迹从关于页拿出来，独立成一张卡片 -->
+            <LinearLayout
+                android:id="@+id/rowSupport"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_capsule"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_support_title"
+                        android:textColor="@color/pf_text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/about_support_subtitle"
+                        android:textColor="@color/pf_text_secondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginStart="8dp"
+                    android:contentDescription="@string/settings_support_title"
+                    android:src="@drawable/ic_chevron_right"
+                    app:tint="@color/pf_text_tertiary" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/settingsFooter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="8dp"
+                android:textColor="@color/pf_text_tertiary"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </ScrollView>
+
+    <com.example.liquidglass.ScrollEdgeBlurView
+        android:id="@+id/settingsTopEdgeBlur"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:layout_gravity="top"
+        android:visibility="invisible" />
+
+    <View
+        android:id="@+id/settingsTopScrim"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:layout_gravity="top"
+        android:alpha="0.55"
+        android:background="@drawable/bg_top_scrim" />
+</FrameLayout>

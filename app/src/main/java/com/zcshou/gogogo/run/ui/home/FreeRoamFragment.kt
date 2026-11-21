@@ -37,6 +37,9 @@ import com.baidu.mapapi.search.sug.SuggestionSearch
 import com.baidu.mapapi.search.sug.SuggestionSearchOption
 import com.google.android.material.button.MaterialButton
 import com.zcshou.gogogo.R
+import com.zcshou.gogogo.mascot.MapMascotOverlayView
+import com.zcshou.gogogo.mascot.MascotDialogueEngine
+import com.zcshou.gogogo.mascot.MascotPrefs
 import com.zcshou.gogogo.run.data.db.RunRouteEntity
 import com.zcshou.gogogo.run.data.prefs.RoamSpeeds
 import com.zcshou.gogogo.run.data.prefs.RunPrefs
@@ -92,6 +95,11 @@ class FreeRoamFragment : Fragment() {
     private var trailOverlay: FiberTrail? = null
     private var positionMarker: Marker? = null
     private var positionIcon: BitmapDescriptor? = null
+    private lateinit var mapMascot: MapMascotOverlayView
+    private var lastMascotPos: TrackMathUtils.LatLng? = null
+    private var lastMascotBearing = 0f
+    private var lastMascotMoving = false
+    private var mapRunLineShown = false
     private var pendingTarget: TrackMathUtils.LatLng? = null
     private var lastTrailSize = -1
     private var centeredOnce = false
@@ -122,6 +130,7 @@ class FreeRoamFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         mapView = view.findViewById(R.id.roamMap)
         baiduMap = mapView.map
+        mapMascot = view.findViewById(R.id.mapMascot)
         MapStyleHelper.applyForTheme(mapView)
         // 地图引擎就绪后重套一次皮肤，确保深色模式不会残留亮白底图
         baiduMap.setOnMapLoadedCallback {
@@ -185,9 +194,12 @@ class FreeRoamFragment : Fragment() {
 
             override fun onMapStatusChange(status: MapStatus) {
                 com.zcshou.gogogo.run.ui.glass.GlassRenderGate.requestRefresh(260L)
+                repositionMapMascot()
             }
 
-            override fun onMapStatusChangeFinish(status: MapStatus) = Unit
+            override fun onMapStatusChangeFinish(status: MapStatus) {
+                repositionMapMascot()
+            }
         })
 
         view.findViewById<TextView>(R.id.btnRoamTeleport).setOnClickListener { confirmTeleport() }
@@ -236,6 +248,7 @@ class FreeRoamFragment : Fragment() {
                     val pos = state.position
                     updateHud(pos, state)
                     updatePositionMarker(pos)
+                    updateMapMascot(pos)
                     if (pos != null) {
                         if (!centeredOnce || followEnabled) {
                             followCamera(pos, force = !centeredOnce)
@@ -294,6 +307,50 @@ class FreeRoamFragment : Fragment() {
         }
     }
 
+    private fun updateMapMascot(pos: TrackMathUtils.LatLng?) {
+        if (!isAdded || !::mapMascot.isInitialized) return
+        if (pos == null) {
+            mapMascot.hide()
+            lastMascotPos = null
+            lastMascotMoving = false
+            mapRunLineShown = false
+            return
+        }
+        val previous = lastMascotPos
+        val moved = previous != null && (previous.lat != pos.lat || previous.lng != pos.lng)
+        if (moved) {
+            lastMascotBearing = TrackMathUtils.bearingDegrees(previous, pos).toFloat()
+        }
+        lastMascotMoving = moved
+        lastMascotPos = pos
+
+        if (!isResumed || isHidden || !MascotPrefs.isFull(requireContext())) {
+            mapMascot.hide()
+            return
+        }
+        val point = baiduMap.projection.toScreenLocation(toBd(pos))
+        mapMascot.showAt(point.x, point.y, lastMascotBearing, lastMascotMoving)
+        if (moved && !mapRunLineShown) {
+            mapRunLineShown = true
+            val line = MascotDialogueEngine.onSystemEvent(
+                MascotDialogueEngine.State.RUNNING,
+                bypassCooldown = true
+            )
+            if (line != null) mapMascot.showBubble(line)
+        }
+    }
+
+    private fun repositionMapMascot() {
+        if (!isAdded || !::mapMascot.isInitialized) return
+        if (!isResumed || isHidden || !MascotPrefs.isFull(requireContext())) {
+            mapMascot.hide()
+            return
+        }
+        val pos = lastMascotPos ?: return
+        val point = baiduMap.projection.toScreenLocation(toBd(pos))
+        mapMascot.showAt(point.x, point.y, lastMascotBearing, lastMascotMoving)
+    }
+
     private fun followCamera(pos: TrackMathUtils.LatLng, force: Boolean = false) {
         val now = SystemClock.elapsedRealtime()
         if (!force && now - lastFollowAt < 200) return
@@ -318,6 +375,7 @@ class FreeRoamFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         runCatching { mapView.onResume() }
+        if (::mapMascot.isInitialized) repositionMapMascot()
         // 不再进入本页就自动拉起常驻悬浮摇杆：点地图上的「显示悬浮摇杆」提示
         // 或使用录制/空降等动作时，服务会自行启动并显示摇杆。
     }
@@ -328,10 +386,14 @@ class FreeRoamFragment : Fragment() {
             autoLocateOnce()
             renderFavorites()
             MapStyleHelper.applyForTheme(mapView)
+            if (::mapMascot.isInitialized) repositionMapMascot()
+        } else if (::mapMascot.isInitialized) {
+            mapMascot.hide()
         }
     }
 
     override fun onPause() {
+        if (::mapMascot.isInitialized) mapMascot.hide()
         runCatching { mapView.onPause() }
         super.onPause()
     }
@@ -339,6 +401,7 @@ class FreeRoamFragment : Fragment() {
     override fun onDestroyView() {
         mapView.removeCallbacks(reapplySkin)
         runCatching { suggestionSearch.destroy() }
+        if (::mapMascot.isInitialized) mapMascot.release()
         trailOverlay = null
         targetMarker = null
         positionMarker = null

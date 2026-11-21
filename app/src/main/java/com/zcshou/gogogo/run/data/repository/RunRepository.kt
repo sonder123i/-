@@ -5,6 +5,7 @@ import com.zcshou.gogogo.run.data.db.GoRunDatabase
 import com.zcshou.gogogo.run.data.db.RunRecordEntity
 import com.zcshou.gogogo.run.data.db.RunRouteEntity
 import com.zcshou.gogogo.run.data.db.RunScheduleEntity
+import com.zcshou.gogogo.run.data.db.RunUsageStats
 import com.zcshou.gogogo.run.data.prefs.RunSnapshot
 import com.zcshou.gogogo.run.data.prefs.RunSnapshotStore
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +24,7 @@ class RunRepository(context: Context) {
     suspend fun saveRoute(route: RunRouteEntity): Long = db.routeDao().insert(route)
     suspend fun updateRoute(route: RunRouteEntity) = db.routeDao().update(route)
     suspend fun deleteRoute(route: RunRouteEntity) = db.routeDao().delete(route)
+    suspend fun routeCount(): Int = db.routeDao().count()
 
     // --- 定时计划 ---
     fun observeSchedules(): Flow<List<RunScheduleEntity>> = db.scheduleDao().observeSchedules()
@@ -41,6 +43,9 @@ class RunRepository(context: Context) {
     fun observeCompletedCountSince(sinceMs: Long): Flow<Int> =
         db.recordDao().observeCompletedCountSince(sinceMs)
     suspend fun addRecord(record: RunRecordEntity): Long = db.recordDao().insert(record)
+
+    /** 支持云迹邀请的触发依据：已完成跑次、累计里程与首末完成时间。 */
+    suspend fun usageStats(): RunUsageStats = db.recordDao().completedStats()
 
     // --- 断点快照 ---
     val snapshotFlow: Flow<RunSnapshot?> = snapshotStore.snapshotFlow

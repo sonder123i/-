@@ -26,6 +26,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.snackbar.Snackbar
 import com.zcshou.gogogo.R
+import com.zcshou.gogogo.mascot.MascotDialogueEngine
+import com.zcshou.gogogo.mascot.MascotEgg
+import com.zcshou.gogogo.mascot.MascotEggCardView
+import com.zcshou.gogogo.mascot.MascotMode
+import com.zcshou.gogogo.mascot.MascotPeekView
+import com.zcshou.gogogo.mascot.MascotPrefs
+import com.zcshou.gogogo.mascot.MascotState
 import com.zcshou.gogogo.run.BrandConfig
 import com.zcshou.gogogo.run.data.db.RunRouteEntity
 import com.zcshou.gogogo.run.data.db.RunScheduleEntity
@@ -66,6 +73,9 @@ class RouteListFragment : Fragment() {
 
     private lateinit var repository: RunRepository
     private lateinit var emptyView: View
+    private lateinit var mascot: MascotPeekView
+    private lateinit var eggCard: MascotEggCardView
+    private lateinit var mascotSpace: View
     private lateinit var mainCard: View
     private lateinit var chipScroll: View
     private lateinit var chipScrollView: HorizontalScrollView
@@ -124,6 +134,14 @@ class RouteListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         repository = RunRepository(requireContext())
         emptyView = view.findViewById(R.id.routeEmpty)
+        mascot = view.findViewById(R.id.homeMascot)
+        // 首页上方紧挨周统计，气泡放下面，只临时遮住卡片的装饰鱼，不挡数据。
+        mascot.setBubbleBelow(true)
+        eggCard = view.findViewById(R.id.homeEggCard)
+        mascotSpace = view.findViewById(R.id.homeMascotSpace)
+        mascot.onPokeCombo = {
+            eggCard.showFor(MascotEgg.POKE_PRESSURE, 2500L)
+        }
         mainCard = view.findViewById(R.id.routeMainCard)
         chipScroll = view.findViewById(R.id.routeChipScroll)
         chipScrollView = view.findViewById(R.id.routeChipScrollView)
@@ -166,8 +184,18 @@ class RouteListFragment : Fragment() {
         }
         view.findViewById<View>(R.id.btnImportShare).setOnClickListener { importShareCode() }
         view.findViewById<View>(R.id.btnEmptyImport).setOnClickListener { importShareCode() }
+        view.findViewById<View>(R.id.btnEmptyUsage).setOnClickListener {
+            runCatching {
+                startActivity(UsageGuideActivity.intent(requireContext()))
+            }
+        }
         setupBanner.setOnClickListener {
-            (activity as? RunHomeActivity)?.openSetupWizard()
+            // 一步一屏的引导比完整向导更「无脑」：点一下就直接进当前该做的那一步。
+            runCatching {
+                startActivity(SetupGuideActivity.intent(requireContext()))
+            }.onFailure {
+                (activity as? RunHomeActivity)?.openSetupWizard()
+            }
         }
         view.findViewById<View>(R.id.weekCard).setOnClickListener {
             HistoryReportDialog.show(requireContext(), repository)
@@ -236,9 +264,11 @@ class RouteListFragment : Fragment() {
         // 页面可见时恢复巡航光点；相位为巡航中则不启动（0fps）
         val phase = lastRunPhase
         thumb.setCometRunning(phase == null || phase == RunPhase.IDLE || phase == RunPhase.FINISHED)
+        refreshMascot()
     }
 
     override fun onPause() {
+        if (::mascot.isInitialized) mascot.pause()
         thumb.setCometRunning(false)
         super.onPause()
     }
@@ -302,6 +332,7 @@ class RouteListFragment : Fragment() {
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
         if (hidden) {
+            if (::mascot.isInitialized) mascot.pause()
             thumb.setCometRunning(false)
         } else {
             refreshSetupBanner()
@@ -309,6 +340,7 @@ class RouteListFragment : Fragment() {
             thumb.setCometRunning(
                 phase == null || phase == RunPhase.IDLE || phase == RunPhase.FINISHED
             )
+            refreshMascot()
         }
     }
 
@@ -349,6 +381,33 @@ class RouteListFragment : Fragment() {
         workshopCard.visibility = if (empty) View.GONE else View.VISIBLE
         renderChips(selected?.id ?: 0L)
         selected?.let { bindMainCard(it) }
+        refreshMascot()
+    }
+
+    private fun refreshMascot() {
+        if (!isAdded || !::mascot.isInitialized) return
+        val context = requireContext()
+        val mode = MascotPrefs.mode(context)
+        val show = mode != MascotMode.OFF && emptyView.visibility == View.VISIBLE
+        // 固定 72dp 透明占位：鲸鲸落在这个区域内才收得到触摸，卡片只下移一个身高。
+        mascotSpace.visibility = if (show) View.VISIBLE else View.GONE
+        if (!show) {
+            eggCard.hideImmediately()
+            mascot.bind(MascotMode.OFF, MascotState.PEEK_IDLE)
+            return
+        }
+
+        val dialogue = if (!SetupGuard.isReady(context)) {
+            MascotDialogueEngine.State.WARNING_ENV
+        } else {
+            MascotDialogueEngine.State.IDLE
+        }
+        val visual = if (MascotDialogueEngine.isLateNight()) {
+            MascotState.SLEEP
+        } else {
+            MascotState.PEEK_IDLE
+        }
+        mascot.bind(mode, visual, MascotDialogueEngine.contextState(dialogue))
     }
 
     private fun renderChips(selectedId: Long) {

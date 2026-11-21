@@ -60,3 +60,16 @@ data class RunRecordEntity(
     val startedAt: Long,
     val status: String                     // "COMPLETED" | "ABORTED"
 )
+
+/**
+ * 已完成跑次的使用总览。
+ *
+ * 只用于「支持云迹」邀请的触发判定：必须真的跑过多次、跑够里程，
+ * 才认为用户确实体验到了功能价值，而不是按安装时长硬推。
+ */
+data class RunUsageStats(
+    val completedCount: Int,
+    val totalMeters: Double,
+    val firstCompletedAt: Long?,
+    val lastCompletedAt: Long?
+)
