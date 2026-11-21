@@ -37,13 +37,14 @@ def releaseKeyPassword = signingValue('GOGOGO_KEY_PASSWORD')
 def releaseSigningFile = releaseStorePath ? rootProject.file(releaseStorePath) : null
 def hasReleaseSigning = releaseSigningFile != null && releaseSigningFile.length() > 0 &&
     !releaseStorePassword.isEmpty() && !releaseKeyAlias.isEmpty() && !releaseKeyPassword.isEmpty()
+// 国内主源：Gitee raw 直连快；Pages 为备源。检查更新时双源并行拉取、按 versionCode 择优。
 def updateManifestUrl = updateValue(
     'GOGOGO_UPDATE_URL',
-    'https://sonder123i.github.io/CloudTrace/update/stable.json'
+    'https://gitee.com/sonder123i/cloud-traces/raw/master/docs/update/stable.json'
 )
 def updateBackupUrl = updateValue(
     'GOGOGO_UPDATE_BACKUP_URL',
-    'https://gitee.com/sonder123i/cloud-traces/raw/master/docs/update/stable.json'
+    'https://sonder123i.github.io/CloudTrace/update/stable.json'
 )
 def updateAllowedHosts = updateValue(
     'GOGOGO_UPDATE_ALLOWED_HOSTS',

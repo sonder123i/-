@@ -36,13 +36,15 @@ $mirror = 'gh="GitHub Release"="' + $url + '"'
 
 $owner = $Repo.Split('/')[0]
 $giteeUrl = "https://gitee.com/$owner/cloud-traces/releases/download/$Tag/$($apk.Name)"
+# 国内主源：Gitee 发行版放在镜像列表首位，首装下载默认走快线；
+# 下载器会记住「上次成功线路」，之后每台设备自动粘住各自的快线
 $giteeMirror = 'gitee="Gitee 发行版"="' + $giteeUrl + '"'
 if ([string]::IsNullOrWhiteSpace($Notes)) { $Notes = "云迹 $Tag" }
 
 python scripts/make_update_manifest.py `
     --apk $apk.FullName `
-    --mirror $mirror `
     --mirror $giteeMirror `
+    --mirror $mirror `
     --notes $Notes `
     --key-file $KeyFile `
     --out docs/update/stable.json
