@@ -10,7 +10,9 @@ import com.zcshou.gogogo.run.data.prefs.RunSnapshotStore
 import com.zcshou.gogogo.run.data.repository.RunRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import kotlin.math.cos
 import kotlin.math.sin
@@ -30,7 +33,7 @@ import kotlin.random.Random
 class RunCruiseEngine(
     private val env: EngineEnv,
     private val injector: ILocationInjector,
-    private val repository: RunRepository? = null,
+    private val repository: RunRecordSink? = null,
     private val tickMillis: Long = 500L,
     private val random: Random = Random.Default,
     private val settleMillis: Long = SETTLE_DURATION_MS,
@@ -44,7 +47,7 @@ class RunCruiseEngine(
     constructor(
         context: Context,
         injector: ILocationInjector,
-        repository: RunRepository? = null,
+        repository: RunRecordSink? = null,
         tickMillis: Long = 500L,
         random: Random = Random.Default,
         overshootMeters: IntRange = 0..0
@@ -80,11 +83,23 @@ class RunCruiseEngine(
         private const val BEARING_ACC_MAX = 15.0f
     }
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    // 引擎单线程：所有可变状态只在它上面读写。limitedParallelism(1) 保证
+    // 命令（暂停/插点/调参）与 tick 循环串行执行，消除“主线程写 / tick 读”的
+    // 可见性与读改写竞态；startWithPoints 在调用线程完成初始化后经 launchLoop
+    // 交接（协程 launch 自带 happens-before）。
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val engineDispatcher = Dispatchers.Default.limitedParallelism(1)
+    private val scope = CoroutineScope(SupervisorJob() + engineDispatcher)
+
+    // 收尾专用：不随 release() 取消，保证“服务被回收/销毁”路径上的结束记录也能落库
+    private val finalizeScope = CoroutineScope(SupervisorJob() + engineDispatcher)
+
     private val _state = MutableStateFlow(RunRuntimeState())
     val state: StateFlow<RunRuntimeState> = _state.asStateFlow()
 
     private var job: Job? = null
+    // 调用线程（startWithPoints 置位）与引擎线程（tick/finalize 读写）都会访问
+    @Volatile
     private var active = false
 
     private var routeId = 0L
@@ -95,17 +110,17 @@ class RunCruiseEngine(
 
     private var progressMeters = 0.0
     private var totalMeters = 0.0
-    // 以下三个字段会被主线程（adjustTargetPace / adjustTargetMeters）写入、
-    // 由 Dispatchers.Default 的 tick 循环读取，需保证跨线程可见性。
-    @Volatile private var targetMeters = 0.0
-    @Volatile private var finishThresholdMeters = 0.0
+    // 以下字段全部只在引擎单线程上读写（见 engineDispatcher 注释），
+    // 主线程一律经 onEngineThread 投递，不再需要 @Volatile
+    private var targetMeters = 0.0
+    private var finishThresholdMeters = 0.0
     private var lapIndex = 0
     private var currentSpeedMps = 0.0
     private var lastPosition: TrackMathUtils.LatLng? = null
     private var lastBearing = 0.0
 
-    @Volatile private var paceSim: PaceSimulator? = null
-    @Volatile private var targetPaceSecPerKm = 340
+    private var paceSim: PaceSimulator? = null
+    private var targetPaceSecPerKm = 340
     private var laneDriftEnabled = true
     private var cooldownEnabled = true
     private var laneFrom = 0.0
@@ -245,8 +260,8 @@ class RunCruiseEngine(
         launchLoop()
     }
 
-    fun pause() {
-        if (!active || detourActive) return
+    fun pause() = onEngineThread {
+        if (!active || detourActive) return@onEngineThread
         paused = true
         val center = lastPosition ?: positionAt(progressMeters)
         pauseCenter = center
@@ -254,8 +269,8 @@ class RunCruiseEngine(
         _state.value = _state.value.copy(phase = RunPhase.PAUSED, message = "暂停中")
     }
 
-    fun resume() {
-        if (!active || !paused) return
+    fun resume() = onEngineThread {
+        if (!active || !paused) return@onEngineThread
         paused = false
         pauseCenter = null
         wanderPos = null
@@ -263,7 +278,7 @@ class RunCruiseEngine(
     }
 
     /** 临时手动接管：暂停引擎自身的坐标注入，把注入权交给摇杆 */
-    fun setManualOverride(enabled: Boolean) {
+    fun setManualOverride(enabled: Boolean) = onEngineThread {
         manualOverride = enabled
     }
 
@@ -271,10 +286,10 @@ class RunCruiseEngine(
      * 运行中调整目标配速（秒/公里）。
      * 重新创建 PaceSimulator 只重置热身/冲刺系数，不改变已跑里程与路线进度。
      */
-    fun adjustTargetPace(paceSecPerKm: Int) {
-        if (!active || paceSecPerKm <= 0) return
+    fun adjustTargetPace(paceSecPerKm: Int) = onEngineThread {
+        if (!active || paceSecPerKm <= 0) return@onEngineThread
         val clamped = paceSecPerKm.coerceIn(180, 900)
-        if (clamped == targetPaceSecPerKm) return
+        if (clamped == targetPaceSecPerKm) return@onEngineThread
         targetPaceSecPerKm = clamped
         paceSim = PaceSimulator(clamped, random)
         publish()
@@ -284,11 +299,11 @@ class RunCruiseEngine(
      * 运行中调整目标距离（米）。
      * 不允许把目标设到已跑里程以下（至少保留 10m），避免立刻触发结束。
      */
-    fun adjustTargetMeters(meters: Double) {
-        if (!active || meters <= 0.0) return
+    fun adjustTargetMeters(meters: Double) = onEngineThread {
+        if (!active || meters <= 0.0) return@onEngineThread
         val minTarget = totalMeters + 10.0
         val newTarget = meters.coerceIn(minTarget, 100_000.0)
-        if (kotlin.math.abs(newTarget - targetMeters) < 0.5) return
+        if (kotlin.math.abs(newTarget - targetMeters) < 0.5) return@onEngineThread
         targetMeters = newTarget
         // 与起跑时一致：保留 15~65m 的随机超额，避免调整后每趟轨迹雷同
         finishThresholdMeters = if (overshootMeters.isEmpty() || overshootMeters.last <= 0) {
@@ -303,8 +318,9 @@ class RunCruiseEngine(
     }
 
     /** 响应悬浮窗「临时插点」：生成 当前点 -> 打卡点 -> 主线前方 30m 汇入点 的支线 */
-    fun insertDetour(lat: Double, lng: Double) {
-        if (!active || paused) return
+    fun insertDetour(lat: Double, lng: Double) = onEngineThread {
+        // lapLength<=0（如轨迹全是重复点）时取模会得到 NaN 坐标，直接拒绝插点
+        if (!active || paused || lapLength <= 0.0) return@onEngineThread
         val from = lastPosition ?: positionAt(progressMeters)
         val rejoinProgress = (progressMeters + DETOUR_REJOIN_M) % lapLength
         val rejoin = positionAt(rejoinProgress)
@@ -319,9 +335,9 @@ class RunCruiseEngine(
     }
 
     /** 提前慢走收尾 */
-    fun finishEarly() {
-        if (!active) return
-        if (_state.value.phase == RunPhase.COOLDOWN_WALK) return
+    fun finishEarly() = onEngineThread {
+        if (!active) return@onEngineThread
+        if (_state.value.phase == RunPhase.COOLDOWN_WALK) return@onEngineThread
         earlyFinishRequested = true
         cooldownRemainingMs = cooldownMillis
         detourActive = false
@@ -329,14 +345,20 @@ class RunCruiseEngine(
         _state.value = _state.value.copy(phase = RunPhase.COOLDOWN_WALK, message = "慢走缓冲收尾")
     }
 
-    fun abort() {
-        if (!active) return
-        finish("已手动中止", success = false)
+    fun abort() = onEngineThread {
+        if (active) finish("已手动中止", success = false)
     }
 
     fun release() {
-        if (active) finish("已释放", success = false)
+        // 收尾投递到 finalizeScope（同一引擎线程，串行于 tick）：scope.cancel()
+        // 不会影响它，保证服务被回收/销毁路径上的结束记录也能落库
+        finalizeScope.launch { if (active) finish("已释放", success = false) }
         scope.cancel()
+    }
+
+    /** 把命令投递到引擎单线程执行；所有可变状态变更必须经由此入口 */
+    private fun onEngineThread(block: () -> Unit) {
+        scope.launch { block() }
     }
 
     private fun launchLoop() {
@@ -647,10 +669,14 @@ class RunCruiseEngine(
             status = if (success) "COMPLETED" else "ABORTED"
         )
         repository?.let { repo ->
-            scope.launch {
-                runCatching {
-                    if (success) repo.clearSnapshot()
-                    repo.addRecord(record)
+            // finalizeScope 不随 release() 取消，外再包 NonCancellable 双保险：
+            // 结束记录是本次运行的唯一持久化产物，绝不能随协程取消而静默丢失
+            finalizeScope.launch {
+                withContext(NonCancellable) {
+                    runCatching {
+                        if (success) repo.clearSnapshot()
+                        repo.addRecord(record)
+                    }
                 }
             }
         }

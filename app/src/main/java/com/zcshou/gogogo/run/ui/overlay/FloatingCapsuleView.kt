@@ -20,8 +20,8 @@ import androidx.appcompat.app.AlertDialog
 import com.zcshou.gogogo.R
 import com.zcshou.gogogo.run.data.prefs.RoamSpeeds
 import com.zcshou.gogogo.run.engine.RunPhase
+import com.zcshou.gogogo.run.engine.FreeRoamController
 import com.zcshou.gogogo.run.engine.RunRuntimeState
-import com.zcshou.gogogo.run.ui.home.FreeRoamController
 import com.zcshou.gogogo.run.ui.home.RunHost
 import java.util.Locale
 import kotlin.math.hypot
@@ -72,6 +72,10 @@ class FloatingCapsuleView @JvmOverloads constructor(
     private var pulseAnimator: ObjectAnimator? = null
     private var idleRunnable: Runnable? = null
     private var ghostRunnable: Runnable? = null
+    /** 手动接管收尾回调：detach 后不得再触发 host（与 idle/ghost 同一套保存-清理模式） */
+    private var takeoverRunnable: Runnable? = null
+    /** 展开高度过渡动画：重复展开/收起时先取消旧动画，detach 时统一取消 */
+    private var morphAnimator: android.animation.ValueAnimator? = null
     private var stepsWarningState = false
     private var blurFallbackOn = false
 
@@ -645,6 +649,8 @@ class FloatingCapsuleView @JvmOverloads constructor(
      */
     private fun morphHeight(target: View, expand: Boolean) {
         val lp = target.layoutParams ?: return
+        // 重复展开/收起时先取消进行中的旧动画，避免两个 animator 同时写 lp.height
+        morphAnimator?.cancel()
         if (expand) {
             val widthSpec = MeasureSpec.makeMeasureSpec(
                 (parent as? View)?.width ?: width,
@@ -664,6 +670,7 @@ class FloatingCapsuleView @JvmOverloads constructor(
                     host?.relayoutOverlay()
                 }
                 start()
+                morphAnimator = this
             }
         } else {
             val from = target.height
@@ -682,6 +689,7 @@ class FloatingCapsuleView @JvmOverloads constructor(
                     }
                 })
                 start()
+                morphAnimator = this
             }
         }
     }
@@ -752,12 +760,15 @@ class FloatingCapsuleView @JvmOverloads constructor(
         if (target != null) {
             // 先平滑飞回跑道暂停点，避免瞬移
             FreeRoamController.teleport(target.lat, target.lng)
-            postDelayed({
+            takeoverRunnable?.let { removeCallbacks(it) }
+            val takeover = Runnable {
                 host?.endManualOverride()
                 if (host?.currentState()?.phase == RunPhase.PAUSED) {
                     host.pauseResume()
                 }
-            }, 900)
+            }
+            takeoverRunnable = takeover
+            postDelayed(takeover, 900)
         } else {
             host?.endManualOverride()
             if (host?.currentState()?.phase == RunPhase.PAUSED) {
@@ -840,6 +851,12 @@ class FloatingCapsuleView @JvmOverloads constructor(
         stopBeam()
         idleRunnable?.let { removeCallbacks(it) }
         ghostRunnable?.let { removeCallbacks(it) }
+        // 手动接管收尾回调与高度过渡动画同样纳入 detach 清理：
+        // 窗口移除后回调若仍触发 host?.endManualOverride()，会在空窗口上误操作
+        takeoverRunnable?.let { removeCallbacks(it) }
+        takeoverRunnable = null
+        morphAnimator?.cancel()
+        morphAnimator = null
         super.onDetachedFromWindow()
     }
 

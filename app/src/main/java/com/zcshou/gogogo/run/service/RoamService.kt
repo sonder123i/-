@@ -16,8 +16,9 @@ import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.zcshou.gogogo.R
+import com.zcshou.gogogo.run.guard.EnvGuardManager
 import com.zcshou.gogogo.run.ui.glass.OverlayGlassStyle
-import com.zcshou.gogogo.run.ui.home.FreeRoamController
+import com.zcshou.gogogo.run.engine.FreeRoamController
 import com.zcshou.gogogo.run.ui.home.RunHomeActivity
 import com.zcshou.gogogo.run.ui.overlay.RoamHubView
 import com.zcshou.gogogo.run.ui.theme.ThemeHelper
@@ -39,6 +40,8 @@ class RoamService : Service() {
     companion object {
         private const val CHANNEL_ID = "roam_session"
         private const val NOTIFICATION_ID = 31
+        /** FGS 启动失败时的兜底通知 id（避免与前台通知 31 冲突） */
+        private const val NOTIFICATION_BLOCKED_ID = 32
 
         private const val ACTION_START = "com.zcshou.gogogo.roam.START"
         private const val ACTION_STOP = "com.zcshou.gogogo.roam.STOP"
@@ -70,7 +73,24 @@ class RoamService : Service() {
     override fun onCreate() {
         super.onCreate()
         createChannel()
-        startForeground(NOTIFICATION_ID, buildNotification(0.0))
+        // targetSdk 34：location 型 FGS 的 startForeground 需要运行时定位权限，
+        // 缺失/被系统拒绝时降级为普通提示通知并自毁，防崩溃循环（同 RunSessionService）
+        val foregroundStarted = EnvGuardManager.hasRuntimeLocation(this) && runCatching {
+            startForeground(NOTIFICATION_ID, buildNotification(0.0))
+        }.isSuccess
+        if (!foregroundStarted) {
+            val blocked = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_cloudtrace)
+                .setContentTitle("${getString(R.string.app_name)} · 无法开始漫游")
+                .setContentText("缺少定位权限：请在系统设置授予「精确位置」后再试")
+                .setAutoCancel(true)
+                .build()
+            runCatching {
+                getSystemService(NotificationManager::class.java).notify(NOTIFICATION_BLOCKED_ID, blocked)
+            }
+            stopSelf()
+            return
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

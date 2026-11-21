@@ -13,6 +13,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.zcshou.gogogo.R
+import com.zcshou.gogogo.run.bridge.InjectorProvider
 import com.zcshou.gogogo.run.data.db.RunRouteEntity
 import com.zcshou.gogogo.run.data.repository.RunRepository
 import com.zcshou.gogogo.run.engine.RunCruiseEngine
@@ -48,7 +49,7 @@ class RunEngineDemoActivity : AppCompatActivity() {
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = service as? ServiceGo.ServiceGoBinder ?: return
+            val binder = service as? InjectorProvider ?: return
             val cruise = RunCruiseEngine(applicationContext, binder.injector, repository)
             engine = cruise
             lifecycleScope.launch {

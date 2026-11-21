@@ -8,12 +8,13 @@ import com.zcshou.gogogo.run.data.db.RunScheduleEntity
 import com.zcshou.gogogo.run.data.db.RunUsageStats
 import com.zcshou.gogogo.run.data.prefs.RunSnapshot
 import com.zcshou.gogogo.run.data.prefs.RunSnapshotStore
+import com.zcshou.gogogo.run.engine.RunRecordSink
 import kotlinx.coroutines.flow.Flow
 
 /**
  * run 模块统一数据仓库：Room（路线/计划/历史）+ DataStore（断点快照）。
  */
-class RunRepository(context: Context) {
+class RunRepository(context: Context) : RunRecordSink {
 
     private val db = GoRunDatabase.get(context)
     private val snapshotStore = RunSnapshotStore(context.applicationContext)
@@ -42,13 +43,13 @@ class RunRepository(context: Context) {
         db.recordDao().observeCompletedMetersSince(sinceMs)
     fun observeCompletedCountSince(sinceMs: Long): Flow<Int> =
         db.recordDao().observeCompletedCountSince(sinceMs)
-    suspend fun addRecord(record: RunRecordEntity): Long = db.recordDao().insert(record)
+    override suspend fun addRecord(record: RunRecordEntity): Long = db.recordDao().insert(record)
 
     /** 支持云迹邀请的触发依据：已完成跑次、累计里程与首末完成时间。 */
     suspend fun usageStats(): RunUsageStats = db.recordDao().completedStats()
 
     // --- 断点快照 ---
     val snapshotFlow: Flow<RunSnapshot?> = snapshotStore.snapshotFlow
-    suspend fun saveSnapshot(snapshot: RunSnapshot) = snapshotStore.save(snapshot)
-    suspend fun clearSnapshot() = snapshotStore.clear()
+    override suspend fun saveSnapshot(snapshot: RunSnapshot) = snapshotStore.save(snapshot)
+    override suspend fun clearSnapshot() = snapshotStore.clear()
 }

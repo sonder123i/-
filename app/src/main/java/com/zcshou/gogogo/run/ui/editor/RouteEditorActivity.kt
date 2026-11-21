@@ -121,6 +121,9 @@ class RouteEditorActivity : AppCompatActivity() {
         private const val SEARCH_KEY = "history"
         private const val SEGMENT_TIMEOUT_MS = 3_000L
         private const val PREVIEW_DURATION_MS = 3_000L
+
+        /** GPX 导入大小上限：10MB（正常 GPX 远小于此，防超大 XML 全量读入内存） */
+        private const val MAX_GPX_BYTES = 10 * 1024 * 1024
     }
 
     private enum class EditMode { PRESET, TRACK, FREE, GPX }
@@ -246,18 +249,35 @@ class RouteEditorActivity : AppCompatActivity() {
     private val openGpx = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@registerForActivityResult
         lifecycleScope.launch {
-            val text = withContext(Dispatchers.IO) {
-                runCatching {
-                    contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-                }.getOrNull()
+            val (tooLarge, text) = withContext(Dispatchers.IO) {
+                readGpxBounded(uri)
             }
-            if (text.isNullOrBlank()) {
-                toast("读取文件失败")
-                return@launch
+            when {
+                tooLarge -> toast("GPX 文件超过 10MB，请精简后再导入")
+                text.isNullOrBlank() -> toast("读取文件失败")
+                else -> applyGpx(text)
             }
-            applyGpx(text)
         }
     }
+
+    /**
+     * GPX 文件大小预检：任意大的 XML 全量 readText 进内存会 OOM/卡死。
+     * 读流时按字节截断在 MAX_GPX_BYTES + 1，超出即判定超限（与更新清单的
+     * MANIFEST_LIMIT 同一套思路）。
+     */
+    private suspend fun readGpxBounded(uri: android.net.Uri): Pair<Boolean, String?> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                contentResolver.openInputStream(uri)?.use { input ->
+                    val bytes = input.readNBytes(MAX_GPX_BYTES + 1)
+                    if (bytes.size > MAX_GPX_BYTES) {
+                        true to null
+                    } else {
+                        false to String(bytes, Charsets.UTF_8)
+                    }
+                }
+            }.getOrNull() ?: (false to null)
+        }
 
     private val locationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->

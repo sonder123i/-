@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     生成新的发布签名密钥，并创建旧 key -> 新 key 的 APK Signature Scheme v3 轮换谱系。
 

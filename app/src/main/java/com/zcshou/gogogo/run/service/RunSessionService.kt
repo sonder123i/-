@@ -20,6 +20,7 @@ import android.os.VibratorManager
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import com.zcshou.gogogo.R
+import com.zcshou.gogogo.run.bridge.InjectorProvider
 import com.zcshou.gogogo.run.data.prefs.AdvancedPrefs
 import com.zcshou.gogogo.run.data.repository.RunRepository
 import com.zcshou.gogogo.run.engine.RunCruiseEngine
@@ -28,7 +29,6 @@ import com.zcshou.gogogo.run.engine.RunRuntimeState
 import com.zcshou.gogogo.run.guard.EnvGuardManager
 import com.zcshou.gogogo.run.guard.ShizukuWifiHelper
 import com.zcshou.gogogo.run.guard.StepGuard
-import com.zcshou.gogogo.run.ui.glass.DeepRunGlassManager
 import com.zcshou.gogogo.run.ui.home.RunHomeActivity
 import com.zcshou.service.ServiceGo
 import kotlinx.coroutines.CoroutineScope
@@ -49,6 +49,12 @@ class RunSessionService : Service() {
     companion object {
         private const val CHANNEL_ID = "run_session"
         private const val NOTIFICATION_ID = 2
+        /** FGS 启动失败时的兜底通知 id（避免与前台通知 2 冲突） */
+        private const val NOTIFICATION_BLOCKED_ID = 22
+        /** WakeLock 单次持有上限（保险丝）：3 小时 */
+        private const val WAKE_LOCK_TIMEOUT_MS = 3 * 60 * 60 * 1000L
+        /** 持有超过该时长后由下一次状态回调滑动续期 */
+        private const val WAKE_LOCK_RENEW_INTERVAL_MS = 2 * 60 * 60 * 1000L
         private const val EXTRA_ROUTE_ID = "route_id"
         private const val EXTRA_KM = "km"
         private const val EXTRA_PACE = "pace"
@@ -125,6 +131,8 @@ class RunSessionService : Service() {
     private lateinit var repository: RunRepository
 
     private var engine: RunCruiseEngine? = null
+    /** 引擎状态收集协程：断连/重绑时必须取消，防止双 collector 并存 */
+    private var stateCollectJob: kotlinx.coroutines.Job? = null
     /** 悬浮窗授权结果：通知每秒刷新多次，缓存一次 appops 查询避免反复 IPC。 */
     private var overlayAllowed = false
     private var serviceGoRequested = false
@@ -139,6 +147,7 @@ class RunSessionService : Service() {
     private var lastPhase: RunPhase? = null
     private var stepGuard: StepGuard? = null
     private var wakeLock: PowerManager.WakeLock? = null
+    private var wakeLockAcquiredAtMs = 0L
     private var lastHapticPhase: RunPhase? = null
     private var halfHapticDone = false
     private var lastStepWarningAt = 0L
@@ -149,7 +158,7 @@ class RunSessionService : Service() {
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = service as? ServiceGo.ServiceGoBinder ?: return
+            val binder = service as? InjectorProvider ?: return
             val cruise = RunCruiseEngine(
                 applicationContext,
                 binder.injector,
@@ -157,8 +166,11 @@ class RunSessionService : Service() {
                 tickMillis = AdvancedPrefs.injectionIntervalMs(applicationContext),
                 overshootMeters = 15..65
             )
+            // 系统自动重连会再次回调 onServiceConnected：先取消旧收集，
+            // 避免新旧两个 collector 交替向 Holder/通知发布状态
+            stateCollectJob?.cancel()
             engine = cruise
-            scope.launch {
+            stateCollectJob = scope.launch {
                 cruise.state.collect { state ->
                     val warn = stepGuard?.update(state.accumulatedMeters) == true
                     if (warn) {
@@ -185,7 +197,27 @@ class RunSessionService : Service() {
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
+            // ServiceGo 进程内死亡后系统会自动重连（BIND_AUTO_CREATE），但旧引擎已失联：
+            // 不处理会导致旧引擎协程继续注入 + 新旧两个 collector 交替发布状态（通知抖动）。
+            // 这里立即取消收集、释放引擎（release 会在 finalizeScope 落库 ABORTED 记录），
+            // 发布 PAUSED 防止“跑圈中”假进度，随后结束本服务
+            stateCollectJob?.cancel()
+            stateCollectJob = null
+            engine?.release()
             engine = null
+            cruiseIsRunning = false
+            updateRenderSuppression()
+            releaseWakeLock()
+            val disconnected = RunRuntimeState(
+                phase = RunPhase.PAUSED,
+                message = "注入服务已断开，本次运行已中止"
+            )
+            RunSessionHolder.publish(disconnected)
+            updateNotification(disconnected)
+            scope.launch {
+                delay(1_500)
+                stopSelf()
+            }
         }
     }
 
@@ -194,10 +226,46 @@ class RunSessionService : Service() {
         repository = RunRepository(applicationContext)
         overlayAllowed = Settings.canDrawOverlays(this)
         createChannel()
-        startForeground(NOTIFICATION_ID, buildNotification(RunRuntimeState(), "准备中…"))
+        // targetSdk 34：location 型 FGS 的 startForeground 有硬前提——运行时定位权限
+        // 已授予且应用处于可用状态，否则系统直接抛 SecurityException 崩溃循环。
+        // 缺权限/被拒绝时降级为普通提示通知并自毁，绝不崩溃
+        if (!EnvGuardManager.hasRuntimeLocation(this)) {
+            notifyForegroundStartBlocked("缺少定位权限：请在系统设置授予「精确位置」后再开跑")
+            stopSelf()
+            return
+        }
+        if (runCatching {
+                startForeground(NOTIFICATION_ID, buildNotification(RunRuntimeState(), "准备中…"))
+            }.isFailure
+        ) {
+            notifyForegroundStartBlocked("前台服务被系统拒绝启动，请从首页重新开跑")
+            stopSelf()
+            return
+        }
         stepGuard = StepGuard(this)
         registerInjectionAlarm()
         registerScreenState()
+    }
+
+    /** FGS 启动失败时的兜底：普通通知（非前台），引导用户回到首页修复环境 */
+    private fun notifyForegroundStartBlocked(reason: String) {
+        val contentIntent = PendingIntent.getActivity(
+            this,
+            3,
+            Intent(this, RunHomeActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_cloudtrace)
+            .setContentTitle("${getString(R.string.app_name)} · 无法开跑")
+            .setContentText(reason)
+            .setContentIntent(contentIntent)
+            .setAutoCancel(true)
+            .build()
+        runCatching {
+            getSystemService(NotificationManager::class.java)
+                .notify(NOTIFICATION_BLOCKED_ID, notification)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -265,7 +333,7 @@ class RunSessionService : Service() {
         injectionReceiver = null
         screenReceiver?.let { runCatching { unregisterReceiver(it) } }
         screenReceiver = null
-        DeepRunGlassManager.setRenderSuppressed(false)
+        RenderGate.setRenderSuppressed(false, "服务退出")
         if (serviceGoRequested) {
             runCatching { unbindService(connection) }
             // ServiceGo 可能曾被旧入口 startService 拉起（started 状态），
@@ -414,9 +482,9 @@ class RunSessionService : Service() {
     /** V4.0 巡航零额外耗电：RUNNING / 锁屏时冻结所有玻璃卡片的渲染。 */
     private fun updateRenderSuppression() {
         if (screenOff) {
-            DeepRunGlassManager.setRenderSuppressed(true, "锁屏")
+            RenderGate.setRenderSuppressed(true, "锁屏")
         } else {
-            DeepRunGlassManager.setRenderSuppressed(cruiseIsRunning, "巡航中")
+            RenderGate.setRenderSuppressed(cruiseIsRunning, "巡航中")
         }
     }
 
@@ -453,13 +521,20 @@ class RunSessionService : Service() {
     }
 
     private fun acquireWakeLock() {
-        if (wakeLock?.isHeld == true) return
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (wakeLock?.isHeld == true) {
+            // 滑动续期：固定 3 小时上限会让全马（约 4 小时）等长距离在后半程
+            // 锁屏停摆——持有超过 2 小时就先释放再重取，覆盖整个会话
+            if (now - wakeLockAcquiredAtMs < WAKE_LOCK_RENEW_INTERVAL_MS) return
+            runCatching { wakeLock?.takeIf { it.isHeld }?.release() }
+        }
         runCatching {
             val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
             wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DeepRun:run").apply {
                 setReferenceCounted(false)
-                acquire(3 * 60 * 60 * 1000L)
+                acquire(WAKE_LOCK_TIMEOUT_MS)
             }
+            wakeLockAcquiredAtMs = now
         }
     }
 

@@ -1,1 +1,20 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    // 仓库统一在 settings 声明，模块/项目内不再重复声明
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+    repositories {
+        google()
+        mavenCentral()
+        // Liquid Glass 2.0（View 级真实 SDF 折射）
+        maven { url = 'https://jitpack.io' }
+    }
+}
+
 include ':app'

@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import com.zcshou.gogogo.HistoryActivity
 import com.zcshou.gogogo.R
 import com.zcshou.gogogo.mascot.MascotEgg
 import com.zcshou.gogogo.mascot.MascotEggCardView
@@ -49,9 +48,6 @@ class UsageGuideActivity : AppCompatActivity() {
             runCatching { startActivity(Intent(this, DemoPreviewActivity::class.java)) }
         }
         findViewById<View>(R.id.btnUsageHome).setOnClickListener { finish() }
-        findViewById<View>(R.id.btnUsageHistory).setOnClickListener {
-            runCatching { startActivity(Intent(this, HistoryActivity::class.java)) }
-        }
     }
 
     /**

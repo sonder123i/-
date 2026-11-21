@@ -3,11 +3,13 @@ package com.zcshou.gogogo.run.guard
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.core.content.ContextCompat
 import com.zcshou.gogogo.run.data.repository.RunRepository
 import com.zcshou.gogogo.run.service.RunSessionService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
@@ -24,7 +26,8 @@ class RunScheduleAlarmReceiver : BroadcastReceiver() {
         val scheduleId = intent.getLongExtra(EXTRA_SCHEDULE_ID, -1)
         if (scheduleId <= 0) return
         val pending = goAsync()
-        CoroutineScope(Dispatchers.IO).launch {
+        // SupervisorJob 兜住单个计划查询异常，避免无名 scope 把失败吞成静默无响应
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 val repository = RunRepository(context.applicationContext)
                 val schedule = repository.getSchedule(scheduleId) ?: return@launch
@@ -48,6 +51,9 @@ class RunScheduleAlarmReceiver : BroadcastReceiver() {
                 } catch (e: Exception) {
                     RunScheduleNotifier.postFallback(context, schedule, route)
                 }
+            } catch (e: Exception) {
+                // goAsync 只有 10 秒窗口，失败必须留痕，否则“闹钟没响”无从排查
+                Log.e("RunScheduleAlarm", "定时开跑执行失败", e)
             } finally {
                 pending.finish()
             }

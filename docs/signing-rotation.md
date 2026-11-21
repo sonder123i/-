@@ -1,7 +1,10 @@
 # 发布签名轮换（APK Signature Scheme v3）
 
-> 状态：**工具已就绪，尚未执行。** 执行前必须先完成下面「前置条件」里的两项确认，
-> 否则会造成更新中断或百度地图鉴权失败。
+> 状态：**本地密钥已生成（2026-11-21）。** 新 keystore（RSA 4096，alias `cloudtrace`）与
+> lineage.bin 已产出并保存在仓库外 `%USERPROFILE%\projects\cloudtrace-signing\`
+> （含 HANDOVER.md，记录 GitHub Secrets 值与新证书指纹）。
+> 尚未完成的两步：百度控制台加入新 SHA1、GitHub Secrets 配置四项 ROTATE_*。
+> 执行发版前必须先完成下面「前置条件」里的两项确认，否则会造成更新中断或百度地图鉴权失败。
 
 ## 为什么要轮换
 

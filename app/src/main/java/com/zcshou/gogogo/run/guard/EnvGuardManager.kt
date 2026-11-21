@@ -1,19 +1,33 @@
 package com.zcshou.gogogo.run.guard
 
+import android.Manifest
 import android.app.AlarmManager
 import android.app.AppOpsManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
+import androidx.core.content.ContextCompat
 
 /**
  * 免 Root 运行环境体检：模拟位置授权 / 悬浮窗 / 电池白名单 / Wi-Fi 连接 / 精确定时权限。
  */
 object EnvGuardManager {
+
+    /**
+     * 运行时定位权限（精确或粗略至少一项）。
+     * targetSdk 34 起，location 型前台服务 startForeground 的硬前提：
+     * 缺失时系统直接抛 SecurityException，服务必须先行检查或优雅降级。
+     */
+    fun hasRuntimeLocation(context: Context): Boolean =
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
 
     fun isMockLocationAllowed(context: Context): Boolean = try {
         val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager

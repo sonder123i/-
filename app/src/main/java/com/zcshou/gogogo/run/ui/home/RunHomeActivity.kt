@@ -35,6 +35,7 @@ import com.zcshou.gogogo.R
 import com.zcshou.gogogo.run.data.db.RunRouteEntity
 import com.zcshou.gogogo.run.data.repository.RunRepository
 import com.zcshou.gogogo.run.diagnostics.CrashJournal
+import com.zcshou.gogogo.run.engine.FreeRoamController
 import com.zcshou.gogogo.run.engine.RunPhase
 import com.zcshou.gogogo.run.engine.RunRuntimeState
 import com.zcshou.gogogo.run.engine.TrackMathUtils
@@ -134,6 +135,20 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
             pendingStartAfterSetup = null
             refreshSetupBanner()
         }
+
+    /** 开跑前预请求运行时定位权限（targetSdk 34 的 location FGS 硬前提） */
+    private var pendingRunStart: (() -> Unit)? = null
+    private val runLocationPermissionLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        val start = pendingRunStart
+        pendingRunStart = null
+        if (grants.values.any { it } && start != null) {
+            start()
+        } else {
+            toast("缺少定位权限，系统要求授权后才能开跑")
+        }
+    }
 
     fun openSetupWizard(onReady: (() -> Unit)? = null) {
         if (isFinishing) return
@@ -549,6 +564,20 @@ class RunHomeActivity : AppCompatActivity(), RunHost {
             openSetupWizard {
                 startRun(route, targetKm, paceSecPerKm, laneDrift, cooldown, reverseDirection)
             }
+            return
+        }
+        // targetSdk 34：location 型前台服务必须已授予运行时定位权限，
+        // 否则 RunSessionService.startForeground 会抛 SecurityException
+        if (!EnvGuardManager.hasRuntimeLocation(this)) {
+            pendingRunStart = {
+                startRun(route, targetKm, paceSecPerKm, laneDrift, cooldown, reverseDirection)
+            }
+            runLocationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
             return
         }
         val launch: () -> Unit = {

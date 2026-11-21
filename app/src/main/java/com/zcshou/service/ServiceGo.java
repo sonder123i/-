@@ -28,11 +28,10 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 
 import com.elvishew.xlog.XLog;
-import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.R;
 import com.zcshou.gogogo.run.bridge.ILocationInjector;
+import com.zcshou.gogogo.run.bridge.InjectorProvider;
 import com.zcshou.gogogo.run.ui.home.RunHomeActivity;
-import com.zcshou.joystick.JoyStick;
 
 public class ServiceGo extends Service implements ILocationInjector {
     // 定位相关变量
@@ -41,6 +40,10 @@ public class ServiceGo extends Service implements ILocationInjector {
     public static final double DEFAULT_ALT = 55.0D;
     public static final float DEFAULT_BEA = 0.0F;
     public static final String ACTION_INJECTION_LOST = "com.zcshou.gogogo.run.ACTION_INJECTION_LOST";
+    /** 显式坐标启动 extra 键（键名沿用旧 MainActivity 契约，供 adb/外部工具调试注入用） */
+    public static final String LNG_MSG_ID = "LNG_VALUE";
+    public static final String LAT_MSG_ID = "LAT_VALUE";
+    public static final String ALT_MSG_ID = "ALT_VALUE";
     private final java.util.Random mRandom = new java.util.Random();
     private long mLastInjectionLostAt = 0L;
     private double mCurLat = DEFAULT_LAT;
@@ -61,8 +64,6 @@ public class ServiceGo extends Service implements ILocationInjector {
     private static final int SERVICE_GO_NOTE_ID = 1;
     private static final String SERVICE_GO_NOTE_CHANNEL_ID = "SERVICE_GO_NOTE";
     private static final String SERVICE_GO_NOTE_CHANNEL_NAME = "SERVICE_GO_NOTE";
-    // 摇杆相关
-    private JoyStick mJoyStick;
 
     private final ServiceGoBinder mBinder = new ServiceGoBinder();
 
@@ -84,8 +85,6 @@ public class ServiceGo extends Service implements ILocationInjector {
         addTestProviderGPS();
 
         initGoLocation();
-
-        initJoyStick();
     }
 
     @Override
@@ -94,12 +93,11 @@ public class ServiceGo extends Service implements ILocationInjector {
         // 无坐标的启动（巡航/漫游绑定接管前）不允许把位置重置为默认济南值再注入，
         // 否则用户位置会先闪跳济南再跳回目标点。
         if (intent != null
-                && intent.hasExtra(MainActivity.LNG_MSG_ID)
-                && intent.hasExtra(MainActivity.LAT_MSG_ID)) {
-            mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
-            mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
-            mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
-            mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+                && intent.hasExtra(LNG_MSG_ID)
+                && intent.hasExtra(LAT_MSG_ID)) {
+            mCurLng = intent.getDoubleExtra(LNG_MSG_ID, DEFAULT_LNG);
+            mCurLat = intent.getDoubleExtra(LAT_MSG_ID, DEFAULT_LAT);
+            mCurAlt = intent.getDoubleExtra(ALT_MSG_ID, DEFAULT_ALT);
             mLocHandler.removeMessages(HANDLER_MSG_ID);
             mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
         }
@@ -116,8 +114,6 @@ public class ServiceGo extends Service implements ILocationInjector {
         isStop = true;
         mLocHandler.removeMessages(HANDLER_MSG_ID);
         mLocHandlerThread.quit();
-
-        mJoyStick.destroy();
 
         removeTestProviderNetwork();
         removeTestProviderGPS();
@@ -149,31 +145,6 @@ public class ServiceGo extends Service implements ILocationInjector {
                 .build();
 
         startForeground(SERVICE_GO_NOTE_ID, notification);
-    }
-
-    private void initJoyStick() {
-        mJoyStick = new JoyStick(this);
-        mJoyStick.setListener(new JoyStick.JoyStickClickListener() {
-            @Override
-            public void onMoveInfo(double speed, double disLng, double disLat, double angle) {
-                mSpeed = speed;
-                // 根据当前的经纬度和距离，计算下一个经纬度
-                // Latitude: 1 deg = 110.574 km // 纬度的每度的距离大约为 110.574km
-                // Longitude: 1 deg = 111.320*cos(latitude) km  // 经度的每度的距离从0km到111km不等
-                // 具体见：http://wp.mlab.tw/?p=2200
-                mCurLng += disLng / (111.320 * Math.cos(Math.abs(mCurLat) * Math.PI / 180));
-                mCurLat += disLat / 110.574;
-                mCurBea = (float) angle;
-            }
-
-            @Override
-            public void onPositionInfo(double lng, double lat, double alt) {
-                mCurLng = lng;
-                mCurLat = lat;
-                mCurAlt = alt;
-            }
-        });
-        // 旧版摇杆浮窗停用：由新的自由漫游页 / 统一悬浮窗接管
     }
 
     private void initGoLocation() {
@@ -411,9 +382,8 @@ public class ServiceGo extends Service implements ILocationInjector {
             removeTestProviderGPS();
             addTestProviderGPS();
             mLocHandler.removeMessages(HANDLER_MSG_ID);
-            mJoyStick.hide();
         } else {
-            // 旧摇杆浮窗已整体停用（漫游摇杆/悬浮胶囊接管），false 分支只恢复注入循环
+            // 旧摇杆浮窗已整体清退（漫游摇杆/悬浮胶囊接管），false 分支只恢复注入循环
             mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
         }
     }
@@ -426,8 +396,9 @@ public class ServiceGo extends Service implements ILocationInjector {
         removeTestProviderGPS();
     }
 
-    public class ServiceGoBinder extends Binder {
-        /** run 引擎通过 Binder 拿到注入桥梁实例 */
+    public class ServiceGoBinder extends Binder implements InjectorProvider {
+        /** run 引擎通过 Binder 拿到注入桥梁实例（bridge.InjectorProvider 契约） */
+        @Override
         public ILocationInjector getInjector() {
             return ServiceGo.this;
         }
@@ -441,7 +412,6 @@ public class ServiceGo extends Service implements ILocationInjector {
             mCurLat = lat;
             mCurAlt = alt;
             mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
-            mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
         }
     }
 }

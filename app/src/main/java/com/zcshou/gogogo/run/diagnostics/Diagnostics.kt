@@ -32,7 +32,7 @@ object Diagnostics {
     private const val KEEP_BUNDLES = 2
     private const val MAX_CRASH_CHARS = 4000
 
-    private const val LOG_DIR = "Logs"
+    private const val LOG_DIR = "logs"
     private const val BUNDLE_DIR = "diagnostics"
 
     /** 生成完整诊断文本（含最近一次崩溃记录，若有）。 */
@@ -77,7 +77,8 @@ object Diagnostics {
     }
 
     fun logFile(context: Context): File? {
-        val dir = context.getExternalFilesDir(LOG_DIR) ?: return null
+        // 与 GoApplication.initXlog 的存储策略对齐：日志在内部 filesDir/logs
+        val dir = File(context.filesDir, LOG_DIR)
         val file = File(dir, GoApplication.LOG_FILE_NAME)
         return file.takeIf { it.isFile }
     }
@@ -176,10 +177,10 @@ object Diagnostics {
         old.drop(KEEP_BUNDLES).forEach { runCatching { it.delete() } }
     }
 
-    /** 旧版本曾把诊断包写在外部 Logs/ 下，迁移后顺手清掉遗留（不动日志本体）。 */
+    /** 旧版本曾把诊断包写在外部 Logs/ 下，迁移后顺手清掉遗留（含旧日志本体）。 */
     private fun cleanupLegacyBundles(context: Context) {
-        val legacy = context.getExternalFilesDir(LOG_DIR) ?: return
-        legacy.listFiles { file -> file.isFile && file.name.startsWith(BUNDLE_PREFIX) }
+        val legacy = context.getExternalFilesDir("Logs") ?: return
+        legacy.listFiles { file -> file.isFile }
             ?.forEach { runCatching { it.delete() } }
     }
 

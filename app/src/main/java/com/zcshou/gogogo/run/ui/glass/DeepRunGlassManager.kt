@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.PowerManager
 import android.provider.Settings
 import com.zcshou.gogogo.run.data.prefs.DisplayPrefs
+import com.zcshou.gogogo.run.service.RenderGate
 import java.util.Collections
 import java.util.WeakHashMap
 
@@ -17,8 +18,16 @@ import java.util.WeakHashMap
  * V4.0 的三层降级（AGSL 折射 / RenderEffect 模糊 / 磨砂）已全部下线：
  * 逐帧截屏 + 实时高斯模糊会与百度地图抢 GPU，真机上直接卡死。
  * 现在所有设备统一使用同一套静态磨砂材质，渲染开销恒定为一层圆角矩形填充。
+ *
+ * 本 object 同时是 run/service.RenderGate 的实现方：服务层（RunSessionService）
+ * 只依赖接口发布「巡航/锁屏冻结渲染」，不反向 import UI 包。
  */
-object DeepRunGlassManager {
+object DeepRunGlassManager : RenderGate {
+
+    init {
+        // object 与应用同生命周期，注册一次即可；服务层经 RenderGate 接口调用本实现
+        RenderGate.register(this)
+    }
 
     /** 材质等级：V4.1 只剩静态磨砂一种。 */
     enum class Tier(val title: String, val detail: String) {
@@ -59,7 +68,7 @@ object DeepRunGlassManager {
      * 进入 RUNNING / 锁屏时调用 true，恢复前台或结束后调用 false。
      * V4.1 只记录状态供宿主查询，玻璃本身是静态的，无需冻结任何绘制。
      */
-    fun setRenderSuppressed(suppressed: Boolean, reason: String = "") {
+    override fun setRenderSuppressed(suppressed: Boolean, reason: String) {
         if (isRenderSuppressed == suppressed) return
         isRenderSuppressed = suppressed
         suppressReason = if (suppressed) reason else ""

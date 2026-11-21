@@ -17,7 +17,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.zcshou.gogogo.R
 import com.zcshou.gogogo.run.data.prefs.RoamSpeeds
-import com.zcshou.gogogo.run.ui.home.FreeRoamController
+import com.zcshou.gogogo.run.engine.FreeRoamController
 import java.util.Locale
 import kotlin.math.hypot
 

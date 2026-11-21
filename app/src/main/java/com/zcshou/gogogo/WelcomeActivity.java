@@ -25,7 +25,6 @@ import androidx.preference.PreferenceManager;
 
 import com.zcshou.gogogo.run.ui.home.RunHomeActivity;
 import com.zcshou.gogogo.run.ui.theme.ThemeHelper;
-import com.zcshou.utils.GoUtils;
 
 public class WelcomeActivity extends AppCompatActivity {
     private static SharedPreferences preferences;

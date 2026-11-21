@@ -1,7 +1,7 @@
 plugins {
-    id "com.android.application"
-    id "org.jetbrains.kotlin.android"
-    id "com.google.devtools.ksp"
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
 }
 
 // 应用更新源：public URL 不是凭据，可随构建配置；local.properties 优先于环境变量。
@@ -73,10 +73,9 @@ android {
     defaultConfig {
         applicationId "com.zcshou.gogogo"
         minSdkVersion 27
-        //noinspection ExpiredTargetSdkVersion
-        targetSdkVersion 32
-        versionCode 1140
-        versionName '1.14.0' // https://semver.org/lang/zh-CN/
+        targetSdkVersion 34
+        versionCode 1141
+        versionName '1.14.1' // https://semver.org/lang/zh-CN/
         buildConfigField "String", "UPDATE_MANIFEST_URL", buildConfigString(updateManifestUrl)
         buildConfigField "String", "UPDATE_BACKUP_URL", buildConfigString(updateBackupUrl)
         buildConfigField "String", "UPDATE_ALLOWED_HOSTS", buildConfigString(updateAllowedHosts)
@@ -126,6 +125,11 @@ android {
         viewBinding = true
     }
 
+    // Room schema JSON 导出到 app/schemas/ 入库（GoRunDatabase.exportSchema = true）
+    ksp {
+        arg('room.schemaLocation', "$projectDir/schemas")
+    }
+
     testOptions {
         unitTests.returnDefaultValues = true
     }
@@ -154,6 +158,10 @@ android {
         main {
             jniLibs.srcDirs = ['libs']
         }
+        // MigrationTestHelper 从 assets 读 schema JSON 逐版本校验迁移
+        androidTest {
+            assets.srcDirs += files("$projectDir/schemas")
+        }
     }
 
     dependenciesInfo {
@@ -181,34 +189,36 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     // AppCompat 1.5.1 开始显式依赖于 Lifecycle 2.5.1 和 SavedState 1.2.0
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1'
-    implementation 'androidx.appcompat:appcompat:1.5.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.preference:preference:1.2.1'
-    implementation 'com.google.android.material:material:1.7.0'
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'com.elvishew:xlog:1.11.1'
-    implementation 'io.noties.markwon:core:4.6.2'
-    implementation files('libs/BaiduLBS_Android.jar')
+    implementation libs.lifecycle.viewmodel.ktx
+    implementation libs.appcompat
+    implementation libs.constraintlayout
+    implementation libs.preference
+    implementation libs.material
+    implementation libs.okhttp
+    implementation libs.xlog
+    implementation libs.markwon.core
+    // 百度 LBS SDK 经上方 fileTree(libs/*.jar) 引入
     // V4.0：底部玻璃坞站与面板展开的物理弹簧动画（SpringAnimation）
-    implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
+    implementation libs.dynamicanimation
     // V6.0：iOS 26 液态玻璃 —— View 级 SDF 折射 / 色散 / Liquid Press
-    implementation 'com.github.QWEA0:liquidglass:v2.0.11'
+    implementation libs.liquidglass
     // --- run 包二开依赖（Kotlin + Coroutines + Room + DataStore） ---
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
-    implementation 'androidx.room:room-runtime:2.6.1'
-    implementation 'androidx.room:room-ktx:2.6.1'
-    ksp 'androidx.room:room-compiler:2.6.1'
-    implementation 'androidx.datastore:datastore-preferences:1.1.1'
+    implementation libs.kotlinx.coroutines.android
+    implementation libs.room.runtime
+    implementation libs.room.ktx
+    ksp libs.room.compiler
+    implementation libs.datastore.preferences
     // Phase 5：可选 Shizuku 联动（未安装/未授权时安全降级为弹窗提醒）
-    implementation 'dev.rikka.shizuku:api:13.1.5'
-    implementation 'dev.rikka.shizuku:provider:13.1.5'
-    testImplementation 'junit:junit:4.13.2'
+    implementation libs.shizuku.api
+    implementation libs.shizuku.provider
+    testImplementation libs.junit
     // 更新清单验签单测：android.jar 里的 org.json 是空壳，补真实实现
-    testImplementation 'org.json:json:20231013'
-    androidTestImplementation 'androidx.test.ext:junit:1.3.0'
-    androidTestImplementation 'androidx.test:runner:1.7.0'
-    androidTestImplementation('androidx.test.espresso:espresso-core:3.7.0', {
+    testImplementation libs.org.json
+    androidTestImplementation libs.androidx.test.junit
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation(libs.espresso.core, {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+    // Room 迁移测试：用导出的 schema JSON 校验 1→2→3 迁移的列/默认值正确性
+    androidTestImplementation libs.room.testing
 }

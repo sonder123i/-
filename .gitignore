@@ -54,6 +54,15 @@ google-services.json
 # Keystores must never be committed
 *.jks
 *.keystore
+keystore/
+
+# Built APK artifacts
+*.apk
+
+# Legacy Eclipse/ADT project metadata
+.project
+.classpath
+.settings/
 
 # --- Local secondary-dev artifacts (virtgo) ---
 # Agent/tool working dirs

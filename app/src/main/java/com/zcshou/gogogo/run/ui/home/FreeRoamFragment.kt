@@ -45,6 +45,7 @@ import com.zcshou.gogogo.run.data.prefs.RoamSpeeds
 import com.zcshou.gogogo.run.data.prefs.RunPrefs
 import com.zcshou.gogogo.run.data.repository.RunRepository
 import com.zcshou.gogogo.run.engine.CoordTransformUtil
+import com.zcshou.gogogo.run.engine.FreeRoamController
 import com.zcshou.gogogo.run.engine.TrackMathUtils
 import com.zcshou.gogogo.run.engine.toWgsJson
 import com.zcshou.gogogo.run.guard.RealLocationSampler

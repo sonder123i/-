@@ -11,7 +11,7 @@ import android.os.Bundle
 import android.os.Looper
 import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
-import com.zcshou.gogogo.run.ui.home.FreeRoamController
+import com.zcshou.gogogo.run.engine.FreeRoamController
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume

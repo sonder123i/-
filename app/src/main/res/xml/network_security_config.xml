@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 显式禁明文：不依赖 targetSdk 的平台默认行为，未来升级/依赖变更时兜底。
+     全仓库业务流量均为 HTTPS（更新链路另有域名白名单逐跳校验）。 -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

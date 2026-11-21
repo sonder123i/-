@@ -10,7 +10,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @Database(
     entities = [RunRouteEntity::class, RunScheduleEntity::class, RunRecordEntity::class],
     version = 3,
-    exportSchema = false
+    // schema JSON 随构建导出到 app/schemas/ 并入库：迁移正确性可被
+    // MigrationTestHelper 逐版本校验，避免升级用户数据库打不开
+    exportSchema = true
 )
 abstract class GoRunDatabase : RoomDatabase() {
     abstract fun routeDao(): RunRouteDao
@@ -21,8 +23,8 @@ abstract class GoRunDatabase : RoomDatabase() {
         @Volatile
         private var instance: GoRunDatabase? = null
 
-        /** v1 -> v2：云迹规格新增 方向/记忆参数/关联 App/记录 routeId 字段 */
-        private val MIGRATION_1_2 = object : Migration(1, 2) {
+        /** v1 -> v2：云迹规格新增 方向/记忆参数/关联 App/记录 routeId 字段（androidTest 迁移测试用） */
+        internal val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE run_routes ADD COLUMN isClockwise INTEGER NOT NULL DEFAULT 1")
                 db.execSQL("ALTER TABLE run_routes ADD COLUMN lastTargetDistanceKm REAL NOT NULL DEFAULT 3.0")
@@ -34,8 +36,8 @@ abstract class GoRunDatabase : RoomDatabase() {
             }
         }
 
-        /** v2 -> v3：新增当地真实基准海拔 */
-        private val MIGRATION_2_3 = object : Migration(2, 3) {
+        /** v2 -> v3：新增当地真实基准海拔（androidTest 迁移测试用） */
+        internal val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE run_routes ADD COLUMN baseAltitudeMeters REAL NOT NULL DEFAULT 50.0")
             }

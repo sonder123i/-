@@ -1,4 +1,4 @@
-package com.zcshou.gogogo.run.ui.home
+package com.zcshou.gogogo.run.engine
 
 import android.content.ComponentName
 import android.content.Context
@@ -9,7 +9,7 @@ import android.os.IBinder
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import com.zcshou.gogogo.run.bridge.ILocationInjector
-import com.zcshou.gogogo.run.engine.TrackMathUtils
+import com.zcshou.gogogo.run.bridge.InjectorProvider
 import com.zcshou.gogogo.run.service.RunSessionHolder
 import com.zcshou.service.ServiceGo
 import kotlinx.coroutines.CoroutineScope
@@ -25,8 +25,11 @@ import kotlinx.coroutines.launch
 import kotlin.math.sin
 
 /**
- * 自由漫游控制器：复用 ServiceGo 的注入通道，自行以 2Hz 驱动坐标；
+ * 自由漫游控制器：复用 ServiceGo 的注入通道，自行以 10Hz 驱动坐标；
  * 无 UI，地图页只订阅 [state] 绘制位置与尾迹。
+ *
+ * 注：本控制器虽由地图页驱动，但本质是注入驱动器，按依赖方向应居于 engine 包
+ * （UI 只订阅状态、调用命令），故从 run/ui/home 迁入 run/engine。
  */
 object FreeRoamController {
 
@@ -57,8 +60,8 @@ object FreeRoamController {
 
     private val connection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = service as? ServiceGo.ServiceGoBinder ?: return
-            val inj = binder.injector
+            val provider = service as? InjectorProvider ?: return
+            val inj = provider.injector
             injector = inj
             inj.setEngineDriven(true)
             val ctx = appContext ?: return
@@ -117,15 +120,19 @@ object FreeRoamController {
             val total = TrackMathUtils.distanceMeters(from, target)
             val steps = 14
             val bearing = TrackMathUtils.bearingDegrees(from, target)
-            for (i in 1..steps) {
-                delay(55)
-                val f = i / steps.toDouble()
-                val p = TrackMathUtils.LatLng(
-                    from.lat + (target.lat - from.lat) * f,
-                    from.lng + (target.lng - from.lng) * f
-                )
-                injectFrame(p, total / (steps * 0.055), bearing)
-                appendTrail(p)
+            try {
+                for (i in 1..steps) {
+                    delay(55)
+                    val f = i / steps.toDouble()
+                    val p = TrackMathUtils.LatLng(
+                        from.lat + (target.lat - from.lat) * f,
+                        from.lng + (target.lng - from.lng) * f
+                    )
+                    injectFrame(p, total / (steps * 0.055), bearing)
+                    appendTrail(p)
+                }
+            } finally {
+                clearGlideJobIfCurrent(coroutineContext[Job])
             }
         }
     }
@@ -197,7 +204,7 @@ object FreeRoamController {
                     delay(100)
                 }
             } finally {
-                glideJob = null
+                clearGlideJobIfCurrent(coroutineContext[Job])
             }
         }
     }
@@ -249,6 +256,15 @@ object FreeRoamController {
             runCatching { ctx.stopService(Intent(ctx, ServiceGo::class.java)) }
         }
         _state.value = RoamState()
+    }
+
+    /**
+     * finally 自清必须带身份校验：被取消的旧协程，其 finally 可能在
+     * 新 glideJob 赋值之后才执行，直接置空会丢掉新任务的引用，
+     * 导致后续 teleport/drive 取消不到正在跑的 glide（两路注入交错）
+     */
+    private fun clearGlideJobIfCurrent(self: Job?) {
+        if (self != null && glideJob === self) glideJob = null
     }
 
     private fun injectFrame(p: TrackMathUtils.LatLng, speed: Double, bearing: Double) {

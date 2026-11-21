@@ -21,7 +21,7 @@ import com.zcshou.gogogo.run.ui.theme.ThemeHelper;
 import java.io.File;
 
 public class GoApplication extends Application {
-    public static final String APP_NAME = "GoGoGo";
+    public static final String APP_NAME = "CloudTrace";
     public static final String LOG_FILE_NAME = APP_NAME + ".log";
     private static final long MAX_TIME = 1000 * 60 * 60 * 24 * 3; // 3 days
 
@@ -51,9 +51,15 @@ public class GoApplication extends Application {
 
     /**
      * Initialize XLog.
+     *
+     * 日志落在内部存储（filesDir/logs）：外部 getExternalFilesDir 在 Android 8/9 上
+     * 可被持有读权限的其他应用读取，与 Diagnostics 的存储策略保持同一隐私立场。
      */
     private void initXlog() {
-        File logPath = getExternalFilesDir("Logs");
+        File logPath = new File(getFilesDir(), "logs");
+        if (!logPath.isDirectory() && !logPath.mkdirs()) {
+            logPath = null;
+        }
         if (logPath != null) {
             LogConfiguration config = new LogConfiguration.Builder()
                     .logLevel(LogLevel.ALL)
